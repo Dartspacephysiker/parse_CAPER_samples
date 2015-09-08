@@ -11,32 +11,43 @@
 
 #include "TM1_majorframe.h"
 
-#define DEF_N_SAMPBITS           10 //in bits
-#define MAX_N_MINORFRAMES       256
-#define DEF_SAMPSPERMINORFRAME       120
-#define DEF_VERBOSE               0 //please tell me
-#define DEF_SWAPBYTEORDER     1
+#define DEF_N_SAMPBITS                   16 //in bits
+#define MAX_N_MINORFRAMES               256
+#define DEF_SAMPSPERMINORFRAME          120
+#define DEF_MINOR_PER_MAJOR              32
+
+#define DEF_VERBOSE                       0 //please tell me
+
+#define DEF_OUTPREFIX  "parsed_TM1-samples"
+#define DEF_STR_SIZE                   1024
 
 //struct declarations
 struct suChanInfo
 {
-    char        szName[256];          //Name of the channel, e.g., "Langmuir Probe Channel 1 MSB"
-    char        szAbbrev[256];        //Abbreviation for channel, e.g., "LP01MSB"
-    char        szUser[16];	      //Who is the user? E.g., Dartmouth, U Iowa
+    char        szName[1024];          //Name of the channel, e.g., "Langmuir Probe Channel 1 MSB"
+    char        szAbbrev[1024];        //Abbreviation for channel, e.g., "LP01MSB"
+    char        szUser[1024];	      //Who is the user? E.g., Dartmouth, U Iowa
     uint16_t    uWord;		      //Beginning word in the frame
     uint16_t    uWdInt;		      //Word interval
     uint16_t    uNumWordsInFrame;     //How many of these to expect per frame? Most are just one.
     uint16_t    uMinorFrame;          //Which minor frame is it in?
     uint16_t    uMinorFrInt;          //How often does it show up?
     uint32_t    ulSPS;
+
+    uint16_t    uSample;
+
+    char        szOutFileName[1024];
+    FILE *      psuOutFile;
 };
 
 //function declarations
+int iChanInit(struct suChanInfo * psuChInfo, int16_t iChIdx,char * szOutPrefix);
+
 void vUsage(void);
 void vPrintChanInfo (struct suChanInfo * psuChInfo);
 void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t iMinorFrameIdx);
 
-struct suChanInfo * psuChanInit(int16_t iChIdx);
+//struct suChanInfo * psuChanInit(int16_t iChIdx);
 
 int main( int argc, char * argv[] )
     {
@@ -48,15 +59,17 @@ int main( int argc, char * argv[] )
 
     FILE       * psuInFile;
     FILE       * psuOutFile;
+    //    char         szOutPrefix[] = DEF_OUTPREFIX;
+    char         szOutPrefix[1024];
 
     struct stat  suInFileStat;		       //input stuff
     uint64_t     ulSampBitLength;	       //Sample size (in bytes)
     uint64_t     ullSampsPerMinorFrame;	       //Number of samples to grab at each periodic interval
     uint64_t     ullNBytesPerMinorFrame;	       //Number of bits in MinorFrame
 
-    uint64_t     ullNBytesPerOutBuf;
     uint16_t   * pauMinorFrame;
 
+    //    struct suChanInfo * psuChInfo[N_TM1_CHANS];
     struct suChanInfo ** ppsuChInfo;
     int16_t      iChIdx;
     int16_t      iNChans;
@@ -76,10 +89,6 @@ int main( int argc, char * argv[] )
     uint64_t     ullTotBytesRead;
     uint64_t     ullTotBytesWritten;
 
-    uint64_t     ullSampMask;
-    uint32_t     ulSampBitCount;
-
-    uint32_t     ulMinorFrameBitCount;
     uint32_t     ulMinorFrameSampCount;
     uint64_t     ullMinorFrameCount;
     int32_t      lSaveData;
@@ -90,25 +99,8 @@ int main( int argc, char * argv[] )
 
     //*******************
     //Initialize vars
-    ulSampBitLength        = DEF_N_SAMPBITS;
-    ullSampsPerMinorFrame  = DEF_SAMPSPERMINORFRAME;
-
-    ullInFilePos           = 0;
-    ullBytesRead            = 0;
-    ullBytesWritten         = 0;
-    ullNSampsRead          = 0;
-    ullTotBytesRead         = 0;
-    ullTotBytesWritten      = 0;
-
-    iChIdx                  = 0;
-    iNChans                 = N_TM1_CHANS;
-
-    ullSampMask            = 0;
-    ulSampBitCount         = 0;
-
-    ulMinorFrameBitCount    = 0;
-    ulMinorFrameSampCount   = 0;
-    ullMinorFrameCount      = 0;
+    ulMinorFrameSampCount  = 0;
+    ullMinorFrameCount     = 0;
     lSaveData              = 1;
 
     iArgIdx                = 0;
@@ -123,6 +115,27 @@ int main( int argc, char * argv[] )
 
     szInFile[0]  = '\0';
     strcpy(szOutFile,"");		       // Default is stdout
+
+    psuInFile = !NULL;
+    psuOutFile = !NULL;
+    strncpy(szOutPrefix,DEF_OUTPREFIX,1024);
+
+    ulSampBitLength         = DEF_N_SAMPBITS;
+    ullSampsPerMinorFrame   = DEF_SAMPSPERMINORFRAME;
+    ullNBytesPerMinorFrame  = ulSampBitLength * ullSampsPerMinorFrame;
+
+    ppsuChInfo = !NULL;
+    iChIdx                  = 0;
+    iNChans                 = N_TM1_CHANS;
+    iMinorFrameIdx = 0;
+    iMinorFramesPerMajorFrame = DEF_MINOR_PER_MAJOR;
+
+    ullInFilePos            = 0;
+    ullBytesRead            = 0;
+    ullBytesWritten         = 0;
+    ullNSampsRead           = 0;
+    ullTotBytesRead         = 0;
+    ullTotBytesWritten      = 0;
 
     for (iArgIdx=1; iArgIdx<argc; iArgIdx++)   //start with 1 to skip input file
 	{
@@ -177,18 +190,31 @@ int main( int argc, char * argv[] )
     printf(" \n");
 
     //init chans
-    ppsuChInfo = (struct suChanInfo**) malloc(sizeof(struct suChanInfo *) * iNChans);
+    //    psuChInfo = (struct suChanInfo *) malloc(sizeof(struct suChanInfo) * iNChans);
+    ppsuChInfo = malloc(N_TM1_CHANS * sizeof(struct suChanInfo *));
     for ( iChIdx = 0; iChIdx < iNChans; iChIdx++)
 	{
-	    ppsuChInfo[iChIdx] = psuChanInit(iChIdx);
+        int err;
+	//	    psuChInfo[iChIdx] = psuChanInit(iChIdx);
+	ppsuChInfo[iChIdx] = (struct suChanInfo *) malloc(sizeof(struct suChanInfo));
+	//	if (psuChInfo == (struct suChanInfo *) !NULL)
+	if (ppsuChInfo[iChIdx] == !NULL)
+	    {
+	    printf("Couldn't initialize channel %" PRIi16 "!\n",iChIdx);
+	    return -1;
+	    }
+
+            err = iChanInit(ppsuChInfo[iChIdx],iChIdx,szOutPrefix);
 	    if (bVerbose) vPrintChanInfo(ppsuChInfo[iChIdx]);
 	}
 
-    ullBytesInMajorFrame = iMinorFramesPerMajorFrame* sizeof(uint16_t *);
+    ullBytesInMajorFrame = iMinorFramesPerMajorFrame * sizeof(uint16_t *);
 
     //initialize major frame, binary array for keeping track of
-    pauIsMinorFrameCollected = calloc(iMinorFramesPerMajorFrame,2);
-    ppauMajorFrame = malloc(ullBytesInMajorFrame);
+    pauMinorFrame = malloc(ullSampsPerMinorFrame * ulSampBitLength);
+
+    pauIsMinorFrameCollected = (uint16_t *) calloc(iMinorFramesPerMajorFrame,2);
+    ppauMajorFrame = (uint16_t **) malloc(ullBytesInMajorFrame);
     temp = malloc(iMinorFramesPerMajorFrame * ullSampsPerMinorFrame * sizeof(uint16_t));
     iMinorFrameIdx;
     for (iMinorFrameIdx = 0; iMinorFrameIdx < iMinorFramesPerMajorFrame; iMinorFrameIdx++) 
@@ -240,6 +266,7 @@ int main( int argc, char * argv[] )
     //To the beginning!
     printf("\nConverting %" PRIu64 "-bit to 16-bit samples...\n", ulSampBitLength);
 
+    //Loop over whole file
     do
     	{
     	ullBytesWritten = 0;
@@ -251,11 +278,14 @@ int main( int argc, char * argv[] )
     	    break;
     	    }
 
-	//prepare all the samples, man
-	while(ulMinorFrameBitCount < ullNBytesPerMinorFrame)
-	    {
+	//set all samples to -1, reset counters
+	for (iChIdx = 0; iChIdx < iNChans; iChIdx++)
+	    ppsuChInfo[iChIdx]->uSample = -1;
+	ulMinorFrameSampCount = 0;
 
-	    // set all samples to -1 so we know whether we got data
+	//prepare all the samples, man
+	while(ulMinorFrameSampCount < ullSampsPerMinorFrame)
+	    {
 
 	    //locate which minor frame this is
 
@@ -263,25 +293,13 @@ int main( int argc, char * argv[] )
 
 	    //write this minor frame to the appropriate subframe
 	    // Collect all minor frames in this major frame
-	    if(ulMinorFrameSampCount == ullSampsPerMinorFrame)
-		{
-		if(ulMinorFrameBitCount != ullNBytesPerMinorFrame) //should have all data here
-		    {
-		    fprintf(stderr,"Something's wrong. How did you get a good bit count and a bad samp count?\n");
-		    fprintf(stderr,"MinorFrame Bit  Count: %" PRIu32 "\n",ulMinorFrameBitCount);
-		    fprintf(stderr,"MinorFrame Samp Count: %" PRIu32 "\n",ulMinorFrameSampCount);
-		    //		    return;
-		    }
-		int Count;
-		uint16_t tempSamp;
-		for (Count = 0; Count < ullSampsPerMinorFrame; Count++)
-		    {
-			tempSamp = (uint16_t)(pauMinorFrame[Count]);
-		    ullBytesWritten += fwrite(&pauMinorFrame[Count],
-					     1,2,psuOutFile); 
-		    }
-		}
-	    
+	for (iChIdx = 0; iChIdx < iNChans; iChIdx++)
+	    {
+		if ( ppsuChInfo[iChIdx]->uWdInt < ullSampsPerMinorFrame )
+
+		if ( ppsuChInf[iChIdx]->uWord
+	    }
+	    ulMinorFrameSampCount++;
 	    }
 
 	//did we get the whole major frame?
@@ -344,10 +362,10 @@ void vUsage(void)
     printf("   INPUT FILE PARAMETERS                                              \n");
     printf("   -s SIZE      Size of samples                    (in bits)  [%i]    \n",DEF_N_SAMPBITS);
     printf("   -n           Number of samples per minor frame  (optional) [%i]    \n",DEF_SAMPSPERMINORFRAME);
-    printf("   -S           Turn off byte swapping                                \n");
     printf("                                                                      \n");
     printf("                                                                      \n");
     printf("   OPTIONAL PARAMETERS                                                \n");
+    printf("   -P           Output file prefix                            [%s]    \n",DEF_OUTPREFIX);
     printf("   -v           Verbose                                       [%i]    \n",DEF_VERBOSE);
     printf("                                                                      \n");
     }
@@ -358,23 +376,27 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t iMinorFrameIdx)
 
 }
 
-struct suChanInfo * psuChanInit(int16_t iChIdx)
+//struct suChanInfo * psuChanInit(int16_t iChIdx)
+int iChanInit(struct suChanInfo * psuChInfo, int16_t iChIdx,char * szOutPrefix)
 {
-    struct suChanInfo * psuChInfo;
+    //    struct suChanInfo * psuChInfo;
 
-    psuChInfo = malloc(sizeof(struct suChanInfo));
-
-    strncpy(   psuChInfo->szName, szStatSerialChanNames[iChIdx] ,256);    //Name of the channel, e.g., "Langmuir Probe Channel 1 MSB"
-    strncpy( psuChInfo->szAbbrev, szStatSerialChanAbbrev[iChIdx],256);    //Abbreviation for channel, e.g., "LP01MSB"
-    strncpy(   psuChInfo->szUser, szStatUser[iChIdx],            256);    //Who is the user? E.g., Dartmouth, U Iowa
-    psuChInfo->uWord            = uStatWord[iChIdx];			    //Beginning word in the frame
-    psuChInfo->uWdInt           = uStatWdInt[iChIdx];			    //Word interval
-    psuChInfo->uNumWordsInFrame = 0;					    //How many of these to expect per frame? Most are just one.
-    psuChInfo->uMinorFrame      = uStatFrame[iChIdx];			    //Which minor frame is it in?
-    psuChInfo->uMinorFrInt      = uStatFrInt[iChIdx];			    //How often does it show up?
+    strncpy(   psuChInfo->szName, szStatSerialChanNames[iChIdx] ,DEF_STR_SIZE);    //Name of the channel, e.g., "Langmuir Probe Channel 1 MSB"
+    strncpy( psuChInfo->szAbbrev, szStatSerialChanAbbrev[iChIdx],DEF_STR_SIZE);    //Abbreviation for channel, e.g., "LP01MSB"
+    strncpy(   psuChInfo->szUser, szStatUser[iChIdx],            DEF_STR_SIZE);    //Who is the user? E.g., Dartmouth, U Iowa
+    psuChInfo->uWord            = uStatWord[iChIdx];				   //Beginning word in the frame
+    psuChInfo->uWdInt           = uStatWdInt[iChIdx];				   //Word interval
+    psuChInfo->uNumWordsInFrame = 0;					           //How many of these to expect per frame? Most are just one.
+    psuChInfo->uMinorFrame      = uStatFrame[iChIdx];				   //Which minor frame is it in?
+    psuChInfo->uMinorFrInt      = uStatFrInt[iChIdx];				   //How often does it show up?
     psuChInfo->ulSPS            = ulStatSPS[iChIdx];
 
-    return psuChInfo;
+    psuChInfo->uSample          = -1;
+
+    sprintf(psuChInfo->szOutFileName,"%s--%s.out",szOutPrefix,psuChInfo->szAbbrev);
+    psuChInfo->psuOutFile       = fopen(psuChInfo->szOutFileName,"wb");
+
+    return 0;
 }
 
 void vPrintChanInfo (struct suChanInfo * psuChInfo)
