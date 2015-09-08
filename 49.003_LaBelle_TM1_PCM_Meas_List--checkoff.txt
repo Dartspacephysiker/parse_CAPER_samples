@@ -1,0 +1,147 @@
+Format Label       Description							User     Wd   Wd Int   Fr   Fr Int   Actual SPS   
+
+Serial #1
+
+S1                 Correlator 1 FEEA Bagel 1 (!!!NOT SYMMETRIC!!!)              U_Iowa    45     S      1    1          64000
+                   Word Location: 45, 46, 47, 48, 49, 50, 53, 54			       	       	                
+											       	       	                
+S2                 Correlator 2 FEEA Bagel 2 (!!!NOT SYMMETRIC!!!)              U_Iowa    57     S      1    1          64000
+                   Word Location: 57, 58, 59, 60, 61, 62, 69, 70			       	       	                
+											       	       	                
+S3                 EEPAA (!!!NOT SYMMETRIC!!!)                                  U_Iowa    73     S      1    1          80000
+                   Word Location: 73, 74, 77, 78, 83, 84, 85, 89, 90, 93        	  
+											  
+S4+1 	       	   Langmuir Probe Channel 1 MSB                                 UiO       94    120     1    1          8000
+S4+2		   Langmuir Probe Channel 1 LSB					UiO       95    120     1    1	        8000
+S4+3		   Langmuir Probe Channel 2 MSB					UiO       96    120     1    1	        8000
+S4+4		   Langmuir Probe Channel 2 LSB					UiO       97    120     1    1	        8000
+S4+5		   Langmuir Probe Channel 3 MSB					UiO       98    120     1    1	        8000
+S4+6		   Langmuir Probe Channel 3 LSB					UiO       101   120     1    1	        8000
+S4+7		   Langmuir Probe Channel 4 MSB					UiO       102   120     1    1	        8000
+S4+8		   Langmuir Probe Channel 4 LSB					UiO       114   120     1    1	        8000
+											  
+Serial #2								  
+S5+1		   (Remote A/D # 1) VCO1 MSB                                    U_Iowa    29    120     1    4          2000
+S5+2   		   (Remote A/D # 1) VCO1 LSB					U_Iowa	  30    120     1    4		2000
+S6+1     	   (Remote A/D # 1) VCO2 MSB					U_Iowa	  29    120     2    4		2000
+S6+2   		   (Remote A/D # 1) VCO2 LSB					U_Iowa	  30    120     2    4		2000
+S7+1  		   (Remote A/D # 1) FixedLP MSB					U_Iowa	  29    120     3    8		1000
+S7+2   		   (Remote A/D # 1) FixedLP LSB					U_Iowa	  30    120     3    8		1000
+S8+1   		   (Remote A/D # 1) SweptLP MSB					U_Iowa	  29    120     4    8		1000
+S8+2    	   (Remote A/D # 1) SweptLP LSB					U_Iowa 	  30    120     4    8		1000
+											  
+Serial #3								  
+S9+1               (Remote A/D # 2) MAG X MSB                                   U_Iowa    33    120     1    8          1000
+S9+2               (Remote A/D # 2) MAG X LSB					U_Iowa	  34    120     1    8		1000
+S10+1              (Remote A/D # 2) MAG Y MSB					U_Iowa	  35    120     1    8		1000
+S10+2              (Remote A/D # 2) MAG Y LSB					U_Iowa	  36    120     1    8		1000
+S11+1              (Remote A/D # 2) MAG Z MSB					U_Iowa	  37    120     1    8		1000
+S11+2              (Remote A/D # 2) MAG Z LSB					U_Iowa	  38    120     1    8		1000
+S12+1              (Remote A/D # 2) NOT SAMPLED
+S12+2              (Remote A/D # 2) NOT SAMPLED
+
+Serial #4
+S13+1              (Remote A/D # 3) VLF‐A MSB                                   Dartmouth 3     12      1    1          80000
+S13+2              (Remote A/D # 3) VLF‐A LSB					Dartmouth 4	12 	1    1		80000
+S14+1              (Remote A/D # 3) VLF‐B MSB					Dartmouth 7	12 	1    1		80000
+S14+2              (Remote A/D # 3) VLF‐B LSB					Dartmouth 8	12 	1    1		80000
+S15+1              (Remote A/D # 3) VLF‐AGCA MSB				Dartmouth 5	120	1    1		8000 
+S15+2              (Remote A/D # 3) VLF‐AGCA LSB				Dartmouth 6	120	1    1		8000 
+S16+1              (Remote A/D # 3) VLF‐AGCB MSB				Dartmouth 9	120	1    1		8000 
+S16+2              (Remote A/D # 3) VLF‐AGCB LSB				Dartmouth 10 	120	1    1		8000 
+															     
+Serial #5														     
+S17+1              (Remote A/D # 4) VF‐ALO MSB					Dartmouth 13    120     1    1          8000 
+S17+2              (Remote A/D # 4) VF‐ALO LSB					Dartmouth 14	120	1    1		8000 
+S18+1              (Remote A/D # 4) VF‐AHI MSB					Dartmouth 17	120	1    1		8000 
+S18+2              (Remote A/D # 4) VF‐AHI LSB					Dartmouth 18	120	1    1		8000 
+S19+1              (Remote A/D # 4) VF‐BLO MSB					Dartmouth 21	120	1    1		8000 
+S19+2              (Remote A/D # 4) VF‐BLO LSB					Dartmouth 22	120	1    1		8000 
+S20+1              (Remote A/D # 4) VF‐BHI MSB					Dartmouth 23	120	1    1		8000 
+S20+2              (Remote A/D # 4) VF‐BHI LSB					Dartmouth 24	120	1    1		8000 
+											    	   	      		     
+Serial #6										    	   	      		     
+S21+1              (Remote A/D # 5) ELF‐ALO MSB					Dartmouth 29	120	7    8		1000 
+S21+2              (Remote A/D # 5) ELF‐ALO LSB					Dartmouth 30	120	7    8		1000 
+S22+1              (Remote A/D # 5) ELF‐AHI MSB					Dartmouth 29	120	8    8		1000 
+S22+2              (Remote A/D # 5) ELF‐AHI LSB					Dartmouth 30	120	8    8		1000 
+S23+1              (Remote A/D # 5) ELF‐BLO MSB					Dartmouth 33	120	2    8		1000 
+S23+2              (Remote A/D # 5) ELF‐BLO LSB					Dartmouth 34	120	2    8		1000 
+S24+1              (Remote A/D # 5) ELF‐BHI MSB					Dartmouth 33	120	3    8		1000 
+S24+2              (Remote A/D # 5) ELF‐BHI LSB					Dartmouth 34	120	3    8		1000 
+											    	   	      		     
+Serial #7										    	   	      		     
+S25+1              (Remote A/D # 6) SKIN‐LO MSB					Dartmouth 33	120	4    8		1000 
+S25+2              (Remote A/D # 6) SKIN‐LO LSB					Dartmouth 34	120	4    8		1000 
+S26+1              (Remote A/D # 6) SKIN‐HI MSB					Dartmouth 33	120	5    8		1000 
+S26+2              (Remote A/D # 6) SKIN‐HI LSB					Dartmouth 34	120	5    8		1000 
+S27+1              (Remote A/D # 6) HF‐AGC MSB					Dartmouth 1 	40 	1    1		24000
+S27+2              (Remote A/D # 6) HF‐AGC LSB					Dartmouth 2 	40 	1    1		24000
+S28+1              (Remote A/D # 6) NOT SAMPLED
+S28+2              (Remote A/D # 6) NOT SAMPLED
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
