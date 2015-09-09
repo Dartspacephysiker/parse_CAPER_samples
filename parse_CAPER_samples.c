@@ -75,7 +75,7 @@ int main( int argc, char * argv[] )
     int16_t      iChIdx;
     int16_t      iNChans;
 
-    int64_t      llMinorFrameIdx;
+    uint64_t     ullMinorFrameIdx;
     int64_t      llMinorFramesPerMajorFrame;
     uint64_t     ullBytesInMajorFrame;
     int64_t      llMajorFrameCount;
@@ -128,7 +128,7 @@ int main( int argc, char * argv[] )
     ppsuChInfo = (struct suChanInfo **) !NULL;
     iChIdx                  = 0;
     iNChans                 = N_TM1_CHANS;
-    llMinorFrameIdx = 0;
+    ullMinorFrameIdx = 0;
     llMinorFramesPerMajorFrame = DEF_MINOR_PER_MAJOR;
 
     ullInFilePos            = 0;
@@ -230,9 +230,9 @@ int main( int argc, char * argv[] )
     ppauMajorFrame = (uint16_t **) malloc(ullBytesInMajorFrame);
     temp = malloc(llMinorFramesPerMajorFrame * ullSampsPerMinorFrame * sizeof(uint16_t));
 
-    for (llMinorFrameIdx = 0; llMinorFrameIdx < llMinorFramesPerMajorFrame; llMinorFrameIdx++) 
+    for (ullMinorFrameIdx = 0; ullMinorFrameIdx < llMinorFramesPerMajorFrame; ullMinorFrameIdx++) 
 	{
-	ppauMajorFrame[llMinorFrameIdx] = temp + (llMinorFrameIdx * ullSampsPerMinorFrame);
+	ppauMajorFrame[ullMinorFrameIdx] = temp + (ullMinorFrameIdx * ullSampsPerMinorFrame);
 	}
     printf("Major Frame Size   :\t%" PRIu64 " bytes\n",ullBytesInMajorFrame);
 
@@ -300,8 +300,8 @@ int main( int argc, char * argv[] )
 	ulMinorFrameSampCount = 0;
 
 	//Determine which minor frame this is
-	llMinorFrameIdx = pauMinorFrame[SFID_CHAN_IDX-1] & 0x0000011111;  //The TM list counts from 1, not zero
-	printf("Minor frame: %" PRIi64 "\n",llMinorFrameIdx);
+	ullMinorFrameIdx = pauMinorFrame[SFID_CHAN_IDX] & 0b0000011111;  //The TM list counts from 1, not zero
+	printf("Minor frame: %" PRIX64 "\n",ullMinorFrameIdx);
 
 	//prepare all the samples, man
 	    //	while(ulMinorFrameSampCount < ullSampsPerMinorFrame)
@@ -312,7 +312,7 @@ int main( int argc, char * argv[] )
 	    //write this minor frame to the appropriate channel finle
 	for (iChIdx = 0; iChIdx < iNChans; iChIdx++)
 	    {
-	    if ( (llMinorFrameIdx % ppsuChInfo[iChIdx]->uMinorFrInt) == ( ppsuChInfo[iChIdx]->uMinorFrame % ppsuChInfo[iChIdx]->uMinorFrInt ) )
+	    if ( (ullMinorFrameIdx % ppsuChInfo[iChIdx]->uMinorFrInt) == ( ppsuChInfo[iChIdx]->uMinorFrame % ppsuChInfo[iChIdx]->uMinorFrInt ) )
 		{
 		int iTmpIdx;
 		for (iTmpIdx = ppsuChInfo[iChIdx]->uWord; iTmpIdx < ullSampsPerMinorFrame; iTmpIdx += ppsuChInfo[iChIdx]->uWdInt)
@@ -325,24 +325,24 @@ int main( int argc, char * argv[] )
 	//	    ulMinorFrameSampCount++;
 
 
-	int i = 0;
-	for (i = 0; i < ullSampsPerMinorFrame; i++)
-	    {
-		printf("Samp #%i:   0x%" PRIx16 "\n",i,pauMinorFrame[i]);
-	    }
+	/* int i = 0; */
+	/* for (i = 0; i < ullSampsPerMinorFrame; i++) */
+	/*     { */
+	/* 	printf("Samp #%i:   0x%" PRIx16 "\n",i,pauMinorFrame[i]); */
+	/*     } */
 
 	//did we get the whole major frame?
 	if (bVerbose) printf("Major frame #%" PRIu64 "\n", llMajorFrameCount);
 
-	for (llMinorFrameIdx = 0; llMinorFrameIdx < llMinorFramesPerMajorFrame; llMinorFrameIdx++)
+	for (ullMinorFrameIdx = 0; ullMinorFrameIdx < llMinorFramesPerMajorFrame; ullMinorFrameIdx++)
 	    {
 		//		ullBytesWritten += fwrite(&pauMinorFrame[Count],
 		//					  1,2,psuOutFile); 
 		
 		if (bVerbose) 
 		    {
-		    if (pauIsMinorFrameCollected[llMinorFrameIdx] == 0)
-			printf("Did not collect subframe %" PRIi64 "!",llMinorFrameIdx);
+		    if (pauIsMinorFrameCollected[ullMinorFrameIdx] == 0)
+			printf("Did not collect subframe %" PRIi64 "!",ullMinorFrameIdx);
 		    }
 	    }
 
@@ -414,7 +414,7 @@ void vUsage(void)
     printf("                                                                      \n");
     }
 
-void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t llMinorFrameIdx)
+void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t ullMinorFrameIdx)
 { 
     //    for
 
