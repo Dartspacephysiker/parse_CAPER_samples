@@ -3,7 +3,7 @@
 
 #define N_TM1_CHANS   59
 
-#define SFID_CHAN_IDX 52
+#define SFID_CHAN_IDX 25
 
 static char   * szStatSerialChanNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",    //Serial #1, 0-7
 					       "Langmuir Probe Channel 2 MSB ", "Langmuir Probe Channel 2 LSB ",
