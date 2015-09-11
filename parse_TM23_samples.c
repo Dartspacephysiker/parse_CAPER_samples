@@ -9,12 +9,13 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "TM1_majorframe.h"
+//#include "TM1_majorframe.h"
+#include "TM23_majorframe.h"
 
 #define DEF_N_SAMPBITS                   16 //in bits
 #define MAX_N_MINORFRAMES               256
-#define DEF_SAMPSPERMINORFRAME          120
-#define DEF_MINOR_PER_MAJOR              32
+#define DEF_SAMPSPERMINORFRAME          400
+#define DEF_MINOR_PER_MAJOR               4
 
 #define DEF_VERBOSE                       0 //please tell me
 
@@ -24,9 +25,9 @@
 //struct declarations
 struct suChanInfo
 {
-    char        szName[1024];          //Name of the channel, e.g., "Langmuir Probe Channel 1 MSB"
-    char        szAbbrev[1024];        //Abbreviation for channel, e.g., "LP01MSB"
-    char        szUser[1024];	      //Who is the user? E.g., Dartmouth, U Iowa
+    char        szName[DEF_STR_SIZE];          //Name of the channel, e.g., "Langmuir Probe Channel 1 MSB"
+    char        szAbbrev[DEF_STR_SIZE];        //Abbreviation for channel, e.g., "LP01MSB"
+    char        szUser[DEF_STR_SIZE];	      //Who is the user? E.g., Dartmouth, U Iowa
     uint16_t    uWord;		      //Beginning word in the frame
     uint16_t    uWdInt;		      //Word interval
     uint16_t    uSampsPerMinorFrame;     //How many of these to expect per frame? Most are just one.
@@ -37,7 +38,7 @@ struct suChanInfo
     uint16_t    uSample;
     uint64_t    ullSampCount;
 
-    char        szOutFileName[1024];
+    char        szOutFileName[DEF_STR_SIZE];
     FILE *      psuOutFile;
 };
 
@@ -61,7 +62,7 @@ int main( int argc, char * argv[] )
     FILE       * psuInFile;
     FILE       * psuOutFile;
     //    char         szOutPrefix[] = DEF_OUTPREFIX;
-    char         szOutPrefix[1024];
+    char         szOutPrefix[DEF_STR_SIZE];
 
     struct stat  suInFileStat;		       //input stuff
     uint64_t     ulSampBitLength;	       //Sample size (in bytes)
@@ -119,7 +120,7 @@ int main( int argc, char * argv[] )
 
     psuInFile = (FILE *) !NULL;
     psuOutFile = (FILE *) !NULL;
-    strncpy(szOutPrefix,DEF_OUTPREFIX,1024);
+    strncpy(szOutPrefix,DEF_OUTPREFIX,DEF_STR_SIZE);
 
     ulSampBitLength         = DEF_N_SAMPBITS;
     ullSampsPerMinorFrame   = DEF_SAMPSPERMINORFRAME;
@@ -300,7 +301,7 @@ int main( int argc, char * argv[] )
 	ulMinorFrameSampCount = 0;
 
 	//Determine which minor frame this is
-	ullMinorFrameIdx = (pauMinorFrame[SFID_CHAN_IDX] + 1) & 0b0000011111;  //The TM list counts from 1, not zero
+	ullMinorFrameIdx = pauMinorFrame[SFID_CHAN_IDX-1] & 0b0000011111;  //The TM list counts from 1, not zero
 	printf("Minor frame: %" PRIX64 "\n",ullMinorFrameIdx);
 
 	//prepare all the samples, man
@@ -324,12 +325,6 @@ int main( int argc, char * argv[] )
 	    }
 	//	    ulMinorFrameSampCount++;
 
-
-	/* int i = 0; */
-	/* for (i = 0; i < ullSampsPerMinorFrame; i++) */
-	/*     { */
-	/* 	printf("Samp #%i:   0x%" PRIx16 "\n",i,pauMinorFrame[i]); */
-	/*     } */
 
 	//did we get the whole major frame?
 	if (bVerbose) printf("Major frame #%" PRIu64 "\n", llMajorFrameCount);
@@ -396,7 +391,7 @@ int main( int argc, char * argv[] )
 void vUsage(void)
     {
     printf("\n");
-    printf("parse_CAPER_samples\n");
+    printf("parse_TM23_samples\n");
     printf("Convert a filed outputted by bust_nBit_into_16bit_file into separate channel files!\n");
     printf("\n");
     printf("Usage: parse_CAPER_samples <input file> <output file> [flags]   \n");
