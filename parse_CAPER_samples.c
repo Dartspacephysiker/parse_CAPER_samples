@@ -10,11 +10,14 @@
 #include <sys/stat.h>
 
 #include "TM1_majorframe.h"
+#include "TM23_majorframe.h"
 
 #define DEF_N_SAMPBITS                   16 //in bits
 #define MAX_N_MINORFRAMES               256
 #define DEF_SAMPSPERMINORFRAME          120
 #define DEF_MINOR_PER_MAJOR              32
+
+#define DEF_TM_LINK                       1
 
 #define DEF_VERBOSE                       0 //please tell me
 
@@ -37,16 +40,30 @@ struct suChanInfo
     uint16_t    uSample;
     uint64_t    ullSampCount;
 
+    uint16_t    uNAsymWRanges;
+    uint16_t ** ppauAsymWRanges;
+//    uint16_t  * uAsymWRanges[2];
+    uint16_t  * pauWtemp;
+    
+    uint16_t    uNAsymFRanges;
+    uint16_t ** ppauAsymFRanges;
+//    uint16_t  * uAsymFRanges[2];
+    uint16_t  * pauFtemp;
+
     char        szOutFileName[1024];
     FILE *      psuOutFile;
 };
 
 //function declarations
-int iChanInit(struct suChanInfo * psuChInfo, int16_t iChIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame);
+int iChanInit(struct suChanInfo * psuChInfo, int16_t iChIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink);
 
 void vUsage(void);
 void vPrintChanInfo (struct suChanInfo * psuChInfo);
 void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t iMinorFrameIdx);
+
+//global var declarations
+uint16_t uGlobAsymWRInd;
+uint16_t uGlobAsymFRInd;
 
 //struct suChanInfo * psuChanInit(int16_t iChIdx);
 
@@ -75,6 +92,8 @@ int main( int argc, char * argv[] )
     int16_t      iChIdx;
     int16_t      iNChans;
 
+    uint16_t     uSFIDIdx;
+
     uint64_t     ullMinorFrameIdx;
     int64_t      llMinorFramesPerMajorFrame;
     uint64_t     ullBytesInMajorFrame;
@@ -94,11 +113,17 @@ int main( int argc, char * argv[] )
     uint64_t     ullMinorFrameCount;
     int32_t      lSaveData;
 
+    uint16_t     uTMLink;
+
     int          iArgIdx;
 
     uint8_t      bVerbose;
 
     //*******************
+    //Initialize global vars
+    uGlobAsymWRInd = 0;
+    uGlobAsymFRInd = 0;
+
     //Initialize vars
     ulMinorFrameSampCount  = 0;
     ullMinorFrameCount     = 0;
@@ -127,7 +152,9 @@ int main( int argc, char * argv[] )
 
     ppsuChInfo = (struct suChanInfo **) !NULL;
     iChIdx                  = 0;
-    iNChans                 = N_TM1_CHANS;
+
+    uSFIDIdx                = 0;
+
     ullMinorFrameIdx = 0;
     llMinorFramesPerMajorFrame = DEF_MINOR_PER_MAJOR;
 
@@ -167,6 +194,16 @@ int main( int argc, char * argv[] )
 			sscanf(argv[iArgIdx],"%" PRIi64 ,&ullSampsPerMinorFrame);
 			break;
 
+		    case 'L' :                   /* TM Link # */
+			iArgIdx++;
+			if(iArgIdx >= argc)
+			    {
+			    vUsage();
+			    return EXIT_FAILURE;
+			    }
+			sscanf(argv[iArgIdx],"%" PRIu16 ,&uTMLink);
+			break;
+
 		    case 'P' :                  /* Verbosities */
 			iTmp = 0;
 			iArgIdx++;
@@ -202,6 +239,17 @@ int main( int argc, char * argv[] )
 	}
     printf(" \n");
 
+    if (uTMLink == 1 )
+	{
+	iNChans             = N_TM1_CHANS;
+        uSFIDIdx            = TM1_SFID_CHAN_IDX;
+	}
+    else
+	{
+	iNChans             = N_TM23_CHANS;
+        uSFIDIdx            = TM23_SFID_CHAN_IDX;
+	}
+
     //init chans
     //    psuChInfo = (struct suChanInfo *) malloc(sizeof(struct suChanInfo) * iNChans);
     ppsuChInfo = malloc(N_TM1_CHANS * sizeof(struct suChanInfo *));
@@ -217,7 +265,7 @@ int main( int argc, char * argv[] )
 	    return -1;
 	    }
 
-	    err = iChanInit(ppsuChInfo[iChIdx],iChIdx,szOutPrefix,ullSampsPerMinorFrame);
+            err = iChanInit(ppsuChInfo[iChIdx],iChIdx,szOutPrefix,ullSampsPerMinorFrame,uTMLink);
 	    if (bVerbose) vPrintChanInfo(ppsuChInfo[iChIdx]);
 	}
 
@@ -300,7 +348,7 @@ int main( int argc, char * argv[] )
 	ulMinorFrameSampCount = 0;
 
 	//Determine which minor frame this is
-	ullMinorFrameIdx = (pauMinorFrame[SFID_CHAN_IDX] + 1) & 0b0000011111;  //The TM list counts from 1, not zero
+	ullMinorFrameIdx = (pauMinorFrame[uSFIDIdx] + 1) & 0b0000011111;  //The TM list counts from 1, not zero
 	printf("Minor frame: %" PRIX64 "\n",ullMinorFrameIdx);
 
 	//prepare all the samples, man
@@ -406,6 +454,7 @@ void vUsage(void)
     printf("   INPUT FILE PARAMETERS                                              \n");
     printf("   -s SIZE      Size of samples                    (in bits)  [%i]    \n",DEF_N_SAMPBITS);
     printf("   -n           Number of samples per minor frame  (optional) [%i]    \n",DEF_SAMPSPERMINORFRAME);
+    printf("   -L           TM link number (can be 1-4)                   [%i]    \n",DEF_TM_LINK);
     printf("                                                                      \n");
     printf("                                                                      \n");
     printf("   OPTIONAL PARAMETERS                                                \n");
@@ -421,22 +470,148 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t ullMinorFrameIdx)
 }
 
 //struct suChanInfo * psuChanInit(int16_t iChIdx)
-int iChanInit(struct suChanInfo * psuChInfo, int16_t iChIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame)
+int iChanInit(struct suChanInfo * psuChInfo, int16_t iChIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink)
 {
     //    struct suChanInfo * psuChInfo;
+    uint16_t uNAsymWRanges;
+    uint16_t uNAsymFRanges;
 
-    strncpy(   psuChInfo->szName, szStatSerialChanNames[iChIdx] ,DEF_STR_SIZE);    //Name of the channel, e.g., "Langmuir Probe Channel 1 MSB"
-    strncpy( psuChInfo->szAbbrev, szStatSerialChanAbbrev[iChIdx],DEF_STR_SIZE);    //Abbreviation for channel, e.g., "LP01MSB"
-    strncpy(   psuChInfo->szUser, szStatUser[iChIdx],            DEF_STR_SIZE);    //Who is the user? E.g., Dartmouth, U Iowa
-    psuChInfo->uWord            = uStatWord[iChIdx] - 1;			   //Beginning word in the frame, -1 for counting from zero
-    psuChInfo->uWdInt           = uStatWdInt[iChIdx];				   //Word interval
-    psuChInfo->uSampsPerMinorFrame = ullSampsPerMinorFrame/psuChInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
-    psuChInfo->uMinorFrame      = uStatFrame[iChIdx];				   //Which minor frame is it in?
-    psuChInfo->uMinorFrInt      = uStatFrInt[iChIdx];				   //How often does it show up?
-    psuChInfo->ulSPS            = ulStatSPS[iChIdx];
+    uint64_t ullBytesInAsymWRanges;
+    uint64_t ullBytesInAsymFRanges;
 
-    psuChInfo->uSample          = -1;
-    psuChInfo->ullSampCount     = 0;
+    uint64_t ullAsymRangeIdx;
+
+    uint16_t uWRangeIdx;
+    uint16_t uFRangeIdx;
+
+    /* char     * szTM23SerialChanNames */
+    /* char     * szTM23SerialChanAbbrev[] */
+    /* char     * szTM23User[] */
+    /* uint16_t    uTM23Word[] */
+    /* uint16_t    uTM23WdInt[] */
+    /* uint16_t    uTM23Frame[] */
+    /* uint16_t    uTM23FrInt[] */
+    /* uint32_t    ulTM23SPS[] */
+    /* uint16_t    uTM23NAsymWRanges[] */
+    /* uint16_t    uTM23AsymWRanges[][] */
+    /* uint16_t    uTM23NAsymFRanges[] */
+    /* uint16_t    uTM23AsymFRanges[][] */
+
+    if ( uTMLink == 1)
+	{
+	strncpy(   psuChInfo->szName, szTM1SerialChanNames[iChIdx] ,DEF_STR_SIZE);    //Name of the channel, e.g., "Langmuir Probe Channel 1 MSB"
+        strncpy( psuChInfo->szAbbrev, szTM1SerialChanAbbrev[iChIdx],DEF_STR_SIZE);    //Abbreviation for channel, e.g., "LP01MSB"
+        strncpy(   psuChInfo->szUser, szTM1User[iChIdx],            DEF_STR_SIZE);    //Who is the user? E.g., Dartmouth, U Iowa
+        psuChInfo->uWord            = uTM1Word[iChIdx] - 1;			   //Beginning word in the frame, -1 for counting from zero
+        psuChInfo->uWdInt           = uTM1WdInt[iChIdx];				   //Word interval
+        psuChInfo->uSampsPerMinorFrame = ullSampsPerMinorFrame/psuChInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
+        psuChInfo->uMinorFrame      = uTM1Frame[iChIdx];				   //Which minor frame is it in?
+        psuChInfo->uMinorFrInt      = uTM1FrInt[iChIdx];				   //How often does it show up?
+        psuChInfo->ulSPS            = ulTM1SPS[iChIdx];
+        
+        psuChInfo->uSample          = -1;
+        psuChInfo->ullSampCount     = 0;
+        
+        uNAsymWRanges = uTM1NAsymWRanges[iChIdx];
+        uNAsymFRanges = uTM1NAsymFRanges[iChIdx];
+	}
+    else if ( ( uTMLink == 2 ) || ( uTMLink == 3 ) )
+	{
+	strncpy(   psuChInfo->szName, szTM23SerialChanNames[iChIdx] ,DEF_STR_SIZE);    //Name of the channel, e.g., "Langmuir Probe Channel 1 MSB"
+        strncpy( psuChInfo->szAbbrev, szTM23SerialChanAbbrev[iChIdx],DEF_STR_SIZE);    //Abbreviation for channel, e.g., "LP01MSB"
+        strncpy(   psuChInfo->szUser, szTM23User[iChIdx],            DEF_STR_SIZE);    //Who is the user? E.g., Dartmouth, U Iowa
+        psuChInfo->uWord            = uTM23Word[iChIdx] - 1;			   //Beginning word in the frame, -1 for counting from zero
+        psuChInfo->uWdInt           = uTM23WdInt[iChIdx];				   //Word interval
+        psuChInfo->uSampsPerMinorFrame = ullSampsPerMinorFrame/psuChInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
+        psuChInfo->uMinorFrame      = uTM23Frame[iChIdx];				   //Which minor frame is it in?
+        psuChInfo->uMinorFrInt      = uTM23FrInt[iChIdx];				   //How often does it show up?
+        psuChInfo->ulSPS            = ulTM23SPS[iChIdx];
+        
+        psuChInfo->uSample          = -1;
+        psuChInfo->ullSampCount     = 0;
+        
+        uNAsymWRanges = uTM23NAsymWRanges[iChIdx];
+        uNAsymFRanges = uTM23NAsymFRanges[iChIdx];
+	}
+
+	//handle asymmetric word ranges
+        if (uNAsymWRanges > 0)
+	    {
+	    psuChInfo->uNAsymWRanges   = uNAsymWRanges;
+	    psuChInfo->ppauAsymWRanges = (uint16_t **) malloc(uNAsymWRanges * sizeof(uint16_t *));
+	    
+	    ullBytesInAsymWRanges      = uNAsymWRanges * sizeof(uint16_t *) * 2;
+	    
+	    //initialize memory word ranges
+	    //		psuChInfo->ppauAsymWRanges = (uint16_t **) malloc(ullBytesInAsymWRanges);
+	    psuChInfo->pauWtemp = malloc(uNAsymWRanges * 2 * sizeof(uint16_t));
+	    for (ullAsymRangeIdx = 0; ullAsymRangeIdx < uNAsymWRanges; ullAsymRangeIdx++) 
+		{
+		psuChInfo->ppauAsymWRanges[ullAsymRangeIdx] = psuChInfo->pauWtemp + (ullAsymRangeIdx * 2);
+		}
+	    
+	    //Now assign the values
+	    for (uWRangeIdx = 0; uWRangeIdx < uNAsymWRanges; uWRangeIdx++)
+		{
+		if ( uTMLink == 1)
+		    {
+		    psuChInfo->ppauAsymWRanges[uWRangeIdx][0] = uTM1AsymWRanges[uGlobAsymWRInd][0];
+		    psuChInfo->ppauAsymWRanges[uWRangeIdx][1] = uTM1AsymWRanges[uGlobAsymWRInd][1];
+		    }
+		else if ( ( uTMLink == 2 ) || ( uTMLink == 3 ) )
+		    {
+		    psuChInfo->ppauAsymWRanges[uWRangeIdx][0] = uTM23AsymWRanges[uGlobAsymWRInd][0];
+		    psuChInfo->ppauAsymWRanges[uWRangeIdx][1] = uTM23AsymWRanges[uGlobAsymWRInd][1];
+		    }
+
+		uGlobAsymWRInd++;
+		}
+	    }
+        else
+	    {
+		psuChInfo->uNAsymWRanges   = 0;
+		psuChInfo->ppauAsymWRanges = NULL;
+		psuChInfo->pauWtemp        = NULL;
+	    }
+
+	//handle asymmetric frame ranges
+        if (uNAsymFRanges > 0)
+	    {
+            psuChInfo->uNAsymFRanges   = uNAsymFRanges;
+	    psuChInfo->ppauAsymFRanges = (uint16_t **) malloc(uNAsymFRanges * sizeof(uint16_t *));
+	    
+	    ullBytesInAsymFRanges      = uNAsymFRanges * sizeof(uint16_t *) * 2;
+	    
+	    //initialize memory word ranges
+	    //		psuChInfo->ppauAsymFRanges = (uint16_t **) malloc(ullBytesInAsymFRanges);
+	    psuChInfo->pauFtemp = malloc(uNAsymFRanges * 2 * sizeof(uint16_t));
+	    for (ullAsymRangeIdx = 0; ullAsymRangeIdx < uNAsymFRanges; ullAsymRangeIdx++) 
+		{
+		psuChInfo->ppauAsymFRanges[ullAsymRangeIdx] = psuChInfo->pauFtemp + (ullAsymRangeIdx * 2);
+		}
+		
+	    //Now assign the values
+	    for (uFRangeIdx = 0; uFRangeIdx < uNAsymFRanges; uFRangeIdx++)
+		{
+		if ( uTMLink == 1)
+		    {
+		    psuChInfo->ppauAsymFRanges[uFRangeIdx][0] = uTM1AsymFRanges[uGlobAsymFRInd][0];
+		    psuChInfo->ppauAsymFRanges[uFRangeIdx][1] = uTM1AsymFRanges[uGlobAsymFRInd][1];
+		    }
+		else if ( ( uTMLink == 2 ) || ( uTMLink == 3 ) )
+		    {
+		    psuChInfo->ppauAsymFRanges[uFRangeIdx][0] = uTM23AsymFRanges[uGlobAsymFRInd][0];
+		    psuChInfo->ppauAsymFRanges[uFRangeIdx][1] = uTM23AsymFRanges[uGlobAsymFRInd][1];
+		    }
+		uGlobAsymFRInd++;
+        	}
+	    }
+	else
+	    {
+		psuChInfo->uNAsymFRanges   = 0;
+		psuChInfo->ppauAsymFRanges = NULL;
+		psuChInfo->pauFtemp        = NULL;
+	    }
 
     sprintf(psuChInfo->szOutFileName,"%s--%s.out",szOutPrefix,psuChInfo->szAbbrev);
     psuChInfo->psuOutFile       = fopen(psuChInfo->szOutFileName,"wb");

@@ -1,0 +1,7 @@
+#No .out files
+*.out
+
+#No execs or objects
+parse_CAPER_samples
+parse_TM23_samples
+*.o

@@ -4,10 +4,10 @@
 #define N_TM1_CHANS   62
 
 //Location of subframe ID within minor frame, counting from 1
-#define SFID_CHAN_IDX 25
+#define TM1_SFID_CHAN_IDX 25
 
 /*Names of measurements, defined by NASA PCM doc*/
-static char   * szStatSerialChanNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",    //Serial #1, 0-7
+static char   * szTM1SerialChanNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",    //Serial #1, 0-7
 					       "Langmuir Probe Channel 2 MSB ", "Langmuir Probe Channel 2 LSB ",
 					       "Langmuir Probe Channel 3 MSB ", "Langmuir Probe Channel 3 LSB ",
 					       "Langmuir Probe Channel 4 MSB ", "Langmuir Probe Channel 4 LSB ",
@@ -51,7 +51,7 @@ static char   * szStatSerialChanNames[]  =    {"Langmuir Probe Channel 1 MSB ", 
                                                "EEPAA (!!!NOT SYMMETRIC!!!)  "};
 
 /*Abbreviation of measurements for outputting files*/
-static char   * szStatSerialChanAbbrev[] =    {"LP01MSB",      "LP01LSB",                                           //Serial #1, 0-7  
+static char   * szTM1SerialChanAbbrev[] =    {"LP01MSB",      "LP01LSB",                                           //Serial #1, 0-7  
 					       "LP02MSB",      "LP02LSB",					                      
 					       "LP03MSB",      "LP03LSB",					                      
 					       "LP04MSB",      "LP04LSB",					                      
@@ -95,7 +95,7 @@ static char   * szStatSerialChanAbbrev[] =    {"LP01MSB",      "LP01LSB",       
                                                "EEPAA"};
 
 /*User of measurement, as defined by NASA PCM doc*/
-static char   * szStatUser[]             =    {"UiO",       "UiO",                                                  //Serial #1, 0-7  
+static char   * szTM1User[]             =    {"UiO",       "UiO",                                                  //Serial #1, 0-7  
 					       "UiO",       "UiO",						                      
 					       "UiO",       "UiO",						                      
 					       "UiO",       "UiO",						                      
@@ -139,7 +139,7 @@ static char   * szStatUser[]             =    {"UiO",       "UiO",              
                                                "U_Iowa"};
 
 /*Location of first (and possibly only) word corresponding to measurement*/
-static uint16_t          uStatWord[]     =    {94,  95,                                                             //Serial #1, 0-7  
+static uint16_t          uTM1Word[]     =    {94,  95,                                                             //Serial #1, 0-7  
 					       96,  97,								                      
 					       98, 101,								                      
 					      102, 114,								                      
@@ -186,7 +186,7 @@ static uint16_t          uStatWord[]     =    {94,  95,                         
 /*When the interval is the size of the minor frame, the word only occurs once within the minor frame containing it*/
 /*When the interval is 0, it shows up in strange places (i.e., there are a range of words in the PCM minor frame containing it*/
 
-static uint16_t         uStatWdInt[]     = {120, 120,                                                               //Serial #1, 0-7  
+static uint16_t         uTM1WdInt[]     = {120, 120,                                                               //Serial #1, 0-7  
 					    120, 120,								                      
 					    120, 120,								                      
 					    120, 120,								                      
@@ -230,7 +230,7 @@ static uint16_t         uStatWdInt[]     = {120, 120,                           
 					      0};
 					    
 /*Interval of frames containing each word*/
-static uint16_t        uStatFrame[]      = {1, 1,                                                                   //Serial #1, 0-7  
+static uint16_t        uTM1Frame[]      = {1, 1,                                                                   //Serial #1, 0-7  
 					    1, 1,								                      
 					    1, 1,								                      
 					    1, 1,								                      
@@ -275,7 +275,7 @@ static uint16_t        uStatFrame[]      = {1, 1,                               
 
 
 /*Interval of frames containing each word*/
-static uint16_t        uStatFrInt[]      = {1, 1,                                                                   //Serial #1, 0-7  
+static uint16_t        uTM1FrInt[]      = {1, 1,                                                                   //Serial #1, 0-7  
 					    1, 1,								                      
 					    1, 1,								                      
 					    1, 1,								                      
@@ -319,7 +319,7 @@ static uint16_t        uStatFrInt[]      = {1, 1,                               
 					    1};
 
 /*Sampling rate of each measurement*/
-static uint32_t           ulStatSPS[]    = { 8000,  8000,                                                           //Serial #1, 0-7  
+static uint32_t           ulTM1SPS[]    = { 8000,  8000,                                                           //Serial #1, 0-7  
 					     8000,  8000,							                      
 					     8000,  8000,							                      
 					     8000,  8000,							                      
@@ -364,7 +364,7 @@ static uint32_t           ulStatSPS[]    = { 8000,  8000,                       
 
 /*Number of asym word ranges in minor frame for each measurement*/
 /*A range of zero means the measurement corresponds to a single word*/
-static uint16_t         uNAsymWRanges[][] =     {0, 0,                                                              //Serial #1, 0-7  
+static uint16_t      uTM1NAsymWRanges[]   =     {0, 0,                                                              //Serial #1, 0-7  
 					         0, 0,								                      
 					         0, 0,								                      
 					         0, 0,								                      
@@ -408,7 +408,7 @@ static uint16_t         uNAsymWRanges[][] =     {0, 0,                          
 					         5};
 
 /*Specification of the asym word ranges w/in a minor frame, inclusive*/
-static uint16_t         uAsymWRanges[][]  =     {{ 45, 50},   //Bagel 1
+static uint16_t      uTM1AsymWRanges[][2] =     {{ 45, 50},   //Bagel 1
 						 { 53, 54},
 
 						 { 57, 62},   //Bagel 2
@@ -421,7 +421,7 @@ static uint16_t         uAsymWRanges[][]  =     {{ 45, 50},   //Bagel 1
 						 { 93, 93}};
 
 /*Number of asym frame ranges in minor frame for this measurement*/
-static uint16_t         uNAsymFRanges[][] =     {0, 0,                                                              //Serial #1, 0-7  
+static uint16_t      uTM1NAsymFRanges[] =       {0, 0,                                                              //Serial #1, 0-7  
 					         0, 0,								                      
 					         0, 0,								                      
 					         0, 0,								                      
@@ -465,7 +465,7 @@ static uint16_t         uNAsymFRanges[][] =     {0, 0,                          
 					         0};
 
 /*Specification of the frame ranges w/in a minor frame, inclusive*/
-static uint16_t         uAsymFRanges[][]  =     {{}};
+static uint16_t      uTM1AsymFRanges[][2]  =     {{0,0}};
 
 
 #endif // #ifndef _TM1_MAJORFRAME
