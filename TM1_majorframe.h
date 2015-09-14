@@ -1,13 +1,13 @@
 #ifndef _TM1_MAJORFRAME
 #define _TM1_MAJORFRAME
 
-#define N_TM1_CHANS   62
+#define N_TM1_MEASUREMENTS   62
 
 //Location of subframe ID within minor frame, counting from 1
-#define TM1_SFID_CHAN_IDX 25
+#define TM1_SFID_IDX 25
 
 /*Names of measurements, defined by NASA PCM doc*/
-static char   * szTM1SerialChanNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",    //Serial #1, 0-7
+static char   * szTM1SerialMeasNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",    //Serial #1, 0-7
 					       "Langmuir Probe Channel 2 MSB ", "Langmuir Probe Channel 2 LSB ",
 					       "Langmuir Probe Channel 3 MSB ", "Langmuir Probe Channel 3 LSB ",
 					       "Langmuir Probe Channel 4 MSB ", "Langmuir Probe Channel 4 LSB ",
@@ -51,7 +51,7 @@ static char   * szTM1SerialChanNames[]  =    {"Langmuir Probe Channel 1 MSB ", "
                                                "EEPAA (!!!NOT SYMMETRIC!!!)  "};
 
 /*Abbreviation of measurements for outputting files*/
-static char   * szTM1SerialChanAbbrev[] =    {"LP01MSB",      "LP01LSB",                                           //Serial #1, 0-7  
+static char   * szTM1SerialMeasAbbrev[] =    {"LP01MSB",      "LP01LSB",                                           //Serial #1, 0-7  
 					       "LP02MSB",      "LP02LSB",					                      
 					       "LP03MSB",      "LP03LSB",					                      
 					       "LP04MSB",      "LP04LSB",					                      
@@ -199,7 +199,6 @@ static uint16_t         uTM1WdInt[]     = {120, 120,                            
 					    120, 120,								    //Serial #3, 16-21
 					    120, 120,								                      
 					    120, 120,								                      
-					    //-1,  -1,			                 			    		        
 														                      
 					     12,  12,								    //Serial #4, 22-29
 					     12,  12,								                      
@@ -219,15 +218,14 @@ static uint16_t         uTM1WdInt[]     = {120, 120,                            
 					    120, 120,								    //Serial #7, 46-51
 					    120, 120,								                      
 					     40,  40,								                      
-					    //-1, -1};			                 			    		        
 														                      
-					    120,//SFID								                      
+					    120,
 					    120, 120,                             				    //TM + SFID   52-58
 					    120, 120,
 					    120, 120,
 
-					      0,   0,
-					      0};
+					    120, 120,
+					    120};
 					    
 /*Interval of frames containing each word*/
 static uint16_t        uTM1Frame[]      = {1, 1,                                                                   //Serial #1, 0-7  
