@@ -65,13 +65,19 @@ static uint16_t     uTM23AsymWRanges[][2]  =    {{  2, 199},   //Just for RxDSP 
 					        {202, 398}};
 
 /*Number of asym frame ranges in minor frame for this measurement*/
-static uint16_t     uTM23NAsymFRanges[]    =    {0, 0,
-						 0, 1,
-						 0, 0,
-                                                 0};
+static uint16_t     uTM23NAsymFRanges[]    = {0, 0,
+					      0, 1,
+					      0, 0,
+					      0};
 
 /*Specification of the frame ranges w/in a minor frame, inclusive*/
-static uint16_t     uTM23AsymFRanges[][2]  =    {{  1, 3}};   //Just for MF2 words, inclusive of words
+static uint16_t     uTM23AsymFRanges[][2]  = {{  1, 3}};   //Just for MF2 words, inclusive of words
+
+static uint16_t        uTM23LSBWord[]   =    {  0, 0,							    //TM + SFID   52-58
+					        0, 0,
+					        0, 0,
+						0};
+
 
 #endif // #ifndef _TM23_MAJORFRAME
 

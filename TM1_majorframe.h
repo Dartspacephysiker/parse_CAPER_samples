@@ -3,11 +3,13 @@
 
 #define N_TM1_MEASUREMENTS   62
 
-//Location of subframe ID within minor frame, counting from 1
-#define TM1_SFID_IDX 25
+
+#define TM1_SFID_IDX         25    //Location of subframe ID within minor frame, counting from 1
+
+#define TM_SKIP_LSB         499    //Skip this channel if combination is done on the fly
 
 /*Names of measurements, defined by NASA PCM doc*/
-static char   * szTM1SerialMeasNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",    //Serial #1, 0-7
+static char   * szTM1SerialMeasNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",	    //Serial #1, 0-7
 					       "Langmuir Probe Channel 2 MSB ", "Langmuir Probe Channel 2 LSB ",
 					       "Langmuir Probe Channel 3 MSB ", "Langmuir Probe Channel 3 LSB ",
 					       "Langmuir Probe Channel 4 MSB ", "Langmuir Probe Channel 4 LSB ",
@@ -51,10 +53,10 @@ static char   * szTM1SerialMeasNames[]  =    {"Langmuir Probe Channel 1 MSB ", "
                                                "EEPAA (!!!NOT SYMMETRIC!!!)  "};
 
 /*Abbreviation of measurements for outputting files*/
-static char   * szTM1SerialMeasAbbrev[] =    {"LP01MSB",      "LP01LSB",                                           //Serial #1, 0-7  
-					       "LP02MSB",      "LP02LSB",					                      
-					       "LP03MSB",      "LP03LSB",					                      
-					       "LP04MSB",      "LP04LSB",					                      
+static char   * szTM1SerialMeasAbbrev[] =    { "LP01_MSB",      "LP01_LSB",					    //Serial #1, 0-7  
+					       "LP02_MSB",      "LP02_LSB",					                      
+					       "LP03_MSB",      "LP03_LSB",					                      
+					       "LP04_MSB",      "LP04_LSB",					                      
 														                      
 					       "VCO1_MSB",     "VCO1_LSB",					    //Serial #2, 8-15 
 					       "VCO2_MSB",     "VCO2_LSB",					                      
@@ -96,50 +98,50 @@ static char   * szTM1SerialMeasAbbrev[] =    {"LP01MSB",      "LP01LSB",        
 
 /*User of measurement, as defined by NASA PCM doc*/
 static char   * szTM1User[]             =    {"UiO",       "UiO",                                                  //Serial #1, 0-7  
-					       "UiO",       "UiO",						                      
-					       "UiO",       "UiO",						                      
-					       "UiO",       "UiO",						                      
+					      "UiO",       "UiO",						                      
+					      "UiO",       "UiO",						                      
+					      "UiO",       "UiO",						                      
+													                      
+					      "U_Iowa",    "U_Iowa",						    //Serial #2, 8-15 
+					      "U_Iowa",    "U_Iowa",						                      
+					      "U_Iowa",    "U_Iowa",						                      
+					      "U_Iowa",    "U_Iowa",						                      
+													                      
+					      "U_Iowa",    "U_Iowa",						    //Serial #3, 16-21
+					      "U_Iowa",    "U_Iowa",						                      
+					      "U_Iowa",    "U_Iowa",						                      
+					      //"N/A",       "N/A",             					              
 														                      
-					       "U_Iowa",    "U_Iowa",						    //Serial #2, 8-15 
-					       "U_Iowa",    "U_Iowa",						                      
-					       "U_Iowa",    "U_Iowa",						                      
-					       "U_Iowa",    "U_Iowa",						                      
+					      "Dartmouth", "Dartmouth",					    //Serial #4, 22-29
+					      "Dartmouth", "Dartmouth",					                      
+					      "Dartmouth", "Dartmouth",					                      
+					      "Dartmouth", "Dartmouth",					                      
 														                      
-					       "U_Iowa",    "U_Iowa",						    //Serial #3, 16-21
-					       "U_Iowa",    "U_Iowa",						                      
-					       "U_Iowa",    "U_Iowa",						                      
-					       //"N/A",       "N/A",             					              
+					      "Dartmouth", "Dartmouth",					    //Serial #5, 30-37
+					      "Dartmouth", "Dartmouth",					                      
+					      "Dartmouth", "Dartmouth",					                      
+					      "Dartmouth", "Dartmouth",					                      
 														                      
-					       "Dartmouth", "Dartmouth",					    //Serial #4, 22-29
-					       "Dartmouth", "Dartmouth",					                      
-					       "Dartmouth", "Dartmouth",					                      
-					       "Dartmouth", "Dartmouth",					                      
+					      "Dartmouth", "Dartmouth",					    //Serial #6, 38-45
+					      "Dartmouth", "Dartmouth",					                      
+					      "Dartmouth", "Dartmouth",					                      
+					      "Dartmouth", "Dartmouth",					                      
 														                      
-					       "Dartmouth", "Dartmouth",					    //Serial #5, 30-37
-					       "Dartmouth", "Dartmouth",					                      
-					       "Dartmouth", "Dartmouth",					                      
-					       "Dartmouth", "Dartmouth",					                      
+					      "Dartmouth", "Dartmouth",					    //Serial #7, 46-51
+					      "Dartmouth", "Dartmouth",					                      
+					      "Dartmouth", "Dartmouth",					                      
+					      //"N/A",       "N/A",             					              
 														                      
-					       "Dartmouth", "Dartmouth",					    //Serial #6, 38-45
-					       "Dartmouth", "Dartmouth",					                      
-					       "Dartmouth", "Dartmouth",					                      
-					       "Dartmouth", "Dartmouth",					                      
-														                      
-					       "Dartmouth", "Dartmouth",					    //Serial #7, 46-51
-					       "Dartmouth", "Dartmouth",					                      
-					       "Dartmouth", "Dartmouth",					                      
-					       //"N/A",       "N/A",             					              
-														                      
-					       "TM",//SFID							                      
-					       "TM",        "TM",						    //TM + SFID   52-58
-					       "TM",        "TM",
-					       "TM",        "TM",
+					      "TM",//SFID							                      
+					      "TM",        "TM",						    //TM + SFID   52-58
+					      "TM",        "TM",
+					      "TM",        "TM",
 
-                                               "U_Iowa",    "U_Iowa",
-                                               "U_Iowa"};
+                                              "U_Iowa",    "U_Iowa",
+                                              "U_Iowa"};
 
 /*Location of first (and possibly only) word corresponding to measurement*/
-static uint16_t          uTM1Word[]     =    {94,  95,                                                             //Serial #1, 0-7  
+static uint16_t          uTM1Word[]     =    { 94,  95,                                                             //Serial #1, 0-7  
 					       96,  97,								                      
 					       98, 101,								                      
 					      102, 114,								                      
@@ -186,284 +188,326 @@ static uint16_t          uTM1Word[]     =    {94,  95,                          
 /*When the interval is the size of the minor frame, the word only occurs once within the minor frame containing it*/
 /*When the interval is 0, it shows up in strange places (i.e., there are a range of words in the PCM minor frame containing it*/
 
-static uint16_t         uTM1WdInt[]     = {120, 120,                                                               //Serial #1, 0-7  
-					    120, 120,								                      
-					    120, 120,								                      
-					    120, 120,								                      
+static uint16_t         uTM1WdInt[]     =      {120, 120,							    //Serial #1, 0-7  
+						120, 120,								                      
+						120, 120,								                      
+						120, 120,								                      
 														                      
-					    120, 120,								    //Serial #2, 8-15 
-					    120, 120,								                      
-					    120, 120,								                      
-					    120, 120,								                      
+						120, 120,							    //Serial #2, 8-15 
+						120, 120,								                      
+						120, 120,								                      
+						120, 120,								                      
 														                      
-					    120, 120,								    //Serial #3, 16-21
-					    120, 120,								                      
-					    120, 120,								                      
+						120, 120,							    //Serial #3, 16-21
+						120, 120,								                      
+						120, 120,								                      
 														                      
-					     12,  12,								    //Serial #4, 22-29
-					     12,  12,								                      
-					    120, 120,								                      
-					    120, 120,								                      
+						 12,  12,							    //Serial #4, 22-29
+						 12,  12,								                      
+					        120, 120,								                      
+					        120, 120,								                      
 														                      
-					    120, 120,								    //Serial #5, 30-37
-					    120, 120,								                      
-					    120, 120,								                      
-					    120, 120,								                      
+						120, 120,							    //Serial #5, 30-37
+						120, 120,								                      
+						120, 120,								                      
+						120, 120,								                      
 														                      
-					    120, 120,								    //Serial #6, 38-45
-					    120, 120,								                      
-					    120, 120,								                      
-					    120, 120,								                      
+						120, 120,							    //Serial #6, 38-45
+						120, 120,								                      
+						120, 120,								                      
+						120, 120,								                      
 														                      
-					    120, 120,								    //Serial #7, 46-51
-					    120, 120,								                      
-					     40,  40,								                      
-														                      
-					    120,
-					    120, 120,                             				    //TM + SFID   52-58
-					    120, 120,
-					    120, 120,
+						120, 120,							    //Serial #7, 46-51
+						120, 120,								                      
+						 40,  40,								                      
+						
+						120,
+						120, 120,                             				    //TM + SFID   52-58
+						120, 120,
+						120, 120,
 
-					    120, 120,
-					    120};
+						120, 120,
+						120};
 					    
 /*Interval of frames containing each word*/
-static uint16_t        uTM1Frame[]      = {1, 1,                                                                   //Serial #1, 0-7  
-					    1, 1,								                      
-					    1, 1,								                      
-					    1, 1,								                      
+static uint16_t        uTM1Frame[]      =    {1, 1,                                                                   //Serial #1, 0-7  
+					      1, 1,								                      
+					      1, 1,								                      
+					      1, 1,								                      
 														                      
-					    1, 1,								    //Serial #2, 8-15 
-					    2, 2,								                      
-					    3, 3,								                      
-					    4, 4,								                      
-														                      
-					    1, 1,								    //Serial #3, 16-21
-					    1, 1,								                      
-					    1, 1,								                      
-					    //0, 0,			                 			    		        
-														                      
-					    1, 1,								    //Serial #4, 22-29
-					    1, 1,								                      
-					    1, 1,								                      
-					    1, 1,								                      
-														                      
-					    1, 1,								    //Serial #5, 30-37
-					    1, 1,								                      
-					    1, 1,								                      
-					    1, 1,								                      
-														                      
-					    7, 7,								    //Serial #6, 38-45
-					    8, 8,								                      
-					    2, 2,								                      
-					    3, 3,								                      
-														                      
-					    4, 4,								    //Serial #7, 46-51
-					    5, 5,								                      
-					    1, 1,								                      
-					    //0, 0};			                 			    		        
-					    									                      
-					    1,   //SFID								                      
-					    1, 1,								    //TM + SFID   52-58
-					    1, 1,
-					    1, 1,
-
-					    1, 1,
-					    1};
+					      1, 1,								    //Serial #2, 8-15 
+					      2, 2,								                      
+					      3, 3,								                      
+					      4, 4,								                      
+					      
+					      1, 1,								    //Serial #3, 16-21
+					      1, 1,								                      
+					      1, 1,								                      
+					      //0, 0,			                 			    		        
+					      
+					      1, 1,								    //Serial #4, 22-29
+					      1, 1,								                      
+					      1, 1,								                      
+					      1, 1,								                      
+					      
+					      1, 1,								    //Serial #5, 30-37
+					      1, 1,								                      
+					      1, 1,								                      
+					      1, 1,								                      
+					      
+					      7, 7,								    //Serial #6, 38-45
+					      8, 8,								                      
+					      2, 2,								                      
+					      3, 3,								                      
+					      
+					      4, 4,								    //Serial #7, 46-51
+					      5, 5,								                      
+					      1, 1,								                      
+					      //0, 0};			                 			    		        
+					      
+					      1,   //SFID								                      
+					      1, 1,								    //TM + SFID   52-58
+					      1, 1,
+					      1, 1,
+					      
+					      1, 1,
+					      1};
 
 
 /*Interval of frames containing each word*/
-static uint16_t        uTM1FrInt[]      = {1, 1,                                                                   //Serial #1, 0-7  
-					    1, 1,								                      
-					    1, 1,								                      
-					    1, 1,								                      
-														                      
-					    4, 4,								    //Serial #2, 8-15 
-					    4, 4,								                      
-					    8, 8,								                      
-					    8, 8,								                      
-														                      
-					    8, 8,								    //Serial #3, 16-21
-					    8, 8,								                      
-					    8, 8,								                      
-					    //0, 0,			                 			    		        
-														                      
-					    1, 1,								    //Serial #4, 22-29
-					    1, 1,								                      
-					    1, 1,								                      
-					    1, 1,								                      
-														                      
-					    1, 1,								    //Serial #5, 30-37
-					    1, 1,								                      
-					    1, 1,								                      
-					    1, 1,								                      
-														                      
-					    8, 8,								    //Serial #6, 38-45
-					    8, 8,								                      
-					    8, 8,								                      
-					    8, 8,								                      
-														                      
-					    8, 8,								    //Serial #7, 46-51
-					    8, 8,								                      
-					    1, 1,								                      
-					    //0, 0};			                 			    		        
-														                      
-					    1,   //SFID				                 		    		        
-					    1, 1,								    //TM + SFID   52-58
-					    1, 1,
-					    1, 1,
-
-					    1, 1,
-					    1};
+static uint16_t        uTM1FrInt[]      =    {1, 1,                                                                   //Serial #1, 0-7  
+					      1, 1,								                      
+					      1, 1,								                      
+					      1, 1,								                      
+					      
+					      4, 4,								    //Serial #2, 8-15 
+					      4, 4,								                      
+					      8, 8,								                      
+					      8, 8,								                      
+					      
+					      8, 8,								    //Serial #3, 16-21
+					      8, 8,								                      
+					      8, 8,								                      
+					      //0, 0,			                 			    		        
+					      
+					      1, 1,								    //Serial #4, 22-29
+					      1, 1,								                      
+					      1, 1,								                      
+					      1, 1,								                      
+					      
+					      1, 1,								    //Serial #5, 30-37
+					      1, 1,								                      
+					      1, 1,								                      
+					      1, 1,								                      
+					      
+					      8, 8,								    //Serial #6, 38-45
+					      8, 8,								                      
+					      8, 8,								                      
+					      8, 8,								                      
+					      
+					      8, 8,								    //Serial #7, 46-51
+					      8, 8,								                      
+					      1, 1,								                      
+					      //0, 0};			                 			    		        
+					      
+					      1,   //SFID				                 		    		        
+					      1, 1,								    //TM + SFID   52-58
+					      1, 1,
+					      1, 1,
+					      
+					      1, 1,
+					      1};
 
 /*Sampling rate of each measurement*/
-static uint32_t           ulTM1SPS[]    = { 8000,  8000,                                                           //Serial #1, 0-7  
-					     8000,  8000,							                      
-					     8000,  8000,							                      
-					     8000,  8000,							                      
-						    								                      
-					     2000,  2000,							    //Serial #2, 8-15 
-					     2000,  2000,							                      
-					     1000,  1000,							                      
-					     1000,  1000,							                      
-						    								                      
-					     1000,  1000,							    //Serial #3, 16-21
-					     1000,  1000,							                      
-					     1000,  1000,							                      
-					     //0,     0,							                      
+static uint32_t           ulTM1SPS[]    =    { 8000,  8000,                                                           //Serial #1, 0-7  
+					       8000,  8000,							                      
+					       8000,  8000,							                      
+					       8000,  8000,							                      
+					       
+					       2000,  2000,							    //Serial #2, 8-15 
+					       2000,  2000,							                      
+					       1000,  1000,							                      
+					       1000,  1000,							                      
+					       
+					       1000,  1000,							    //Serial #3, 16-21
+					       1000,  1000,							                      
+					       1000,  1000,							                      
+					       //0,     0,							                      
+					       
+					      80000, 80000,							    //Serial #4, 22-29
+					      80000, 80000,							                      
+					       8000,  8000,							                      
+					       8000,  8000,							                      
+					       
+					       8000,  8000,							    //Serial #5, 30-37
+					       8000,  8000,							                      
+					       8000,  8000,							                      
+					       8000,  8000,							                      
+					       
+					       1000,  1000,							    //Serial #6, 38-45
+					       1000,  1000,							                      
+					       1000,  1000,							                      
+					       1000,  1000,							                      
+					       
+					       1000,  1000,							    //Serial #7, 46-51
+					       1000,  1000,							                      
+					      24000, 24000,							                      
+					       //0,     0,							                      
 														                      
-					    80000, 80000,							    //Serial #4, 22-29
-					    80000, 80000,							                      
-					     8000,  8000,							                      
-					     8000,  8000,							                      
-														                      
-					     8000,  8000,							    //Serial #5, 30-37
-					     8000,  8000,							                      
-					     8000,  8000,							                      
-					     8000,  8000,							                      
-														                      
-					     1000,  1000,							    //Serial #6, 38-45
-					     1000,  1000,							                      
-					     1000,  1000,							                      
-					     1000,  1000,							                      
-														                      
-					     1000,  1000,							    //Serial #7, 46-51
-					     1000,  1000,							                      
-					    24000, 24000,							                      
-					     //0,     0,							                      
-														                      
-					     8000,								                      
-					     8000,  8000,							    //TM + SFID   52-58
-					     8000,  8000,
-					     8000,  8000,
-
-					    64000, 64000,
-					    80000};
+					       8000,								                      
+					       8000,  8000,							    //TM + SFID   52-58
+					       8000,  8000,
+					       8000,  8000,
+					       
+					      64000, 64000,
+					      80000};
 
 /*Number of asym word ranges in minor frame for each measurement*/
 /*A range of zero means the measurement corresponds to a single word*/
-static uint16_t      uTM1NAsymWRanges[]   =     {0, 0,                                                              //Serial #1, 0-7  
-					         0, 0,								                      
-					         0, 0,								                      
-					         0, 0,								                      
-					         									                      
-					         0, 0,								    //Serial #2, 8-15 
-					         0, 0,								                      
-					         0, 0,								                      
-					         0, 0,								                      
-					         									                      
-					         0, 0,								    //Serial #3, 16-21
-					         0, 0,								                      
-					         0, 0,								                      
-					         //0, 0,			                 			    		        
-					         									                      
-					         0, 0,								    //Serial #4, 22-29
-					         0, 0,								                      
-					         0, 0,								                      
-					         0, 0,								                      
-					         									                      
-					         0, 0,								    //Serial #5, 30-37
-					         0, 0,								                      
-					         0, 0,								                      
-					         0, 0,								                      
-					         									                      
-					         0, 0,								    //Serial #6, 38-45
-					         0, 0,								                      
-					         0, 0,								                      
-					         0, 0,								                      
-					         									                      
-					         0, 0,								    //Serial #7, 46-51
-					         0, 0,								                      
-					         0, 0,								                      
-					         //0, 0};			                 			    		        
-					         									                      
-					         0,   //SFID				                 		    		        
-					         0, 0,								    //TM + SFID   52-58
-					         0, 0,
-					         0, 0,
-
-					         2, 2,
-					         5};
+static uint16_t      uTM1NAsymWRanges[] =      {0, 0,                                                              //Serial #1, 0-7  
+						0, 0,								                      
+						0, 0,								                      
+						0, 0,								                      
+					        
+						0, 0,								    //Serial #2, 8-15 
+						0, 0,								                      
+						0, 0,								                      
+						0, 0,								                      
+					        
+						0, 0,								    //Serial #3, 16-21
+						0, 0,								                      
+						0, 0,								                      
+						//0, 0,			                 			    		        
+					        
+						0, 0,								    //Serial #4, 22-29
+						0, 0,								                      
+						0, 0,								                      
+						0, 0,								                      
+					        
+						0, 0,								    //Serial #5, 30-37
+						0, 0,								                      
+						0, 0,								                      
+						0, 0,								                      
+					        
+						0, 0,								    //Serial #6, 38-45
+						0, 0,								                      
+						0, 0,								                      
+						0, 0,								                      
+					        
+						0, 0,								    //Serial #7, 46-51
+						0, 0,								                      
+						0, 0,								                      
+						//0, 0};			                 			    		        
+					        
+						0,   //SFID				                 		    		        
+						0, 0,								    //TM + SFID   52-58
+						0, 0,
+						0, 0,
+						
+						2, 2,
+						5};
 
 /*Specification of the asym word ranges w/in a minor frame, inclusive*/
-static uint16_t      uTM1AsymWRanges[][2] =     {{ 45, 50},   //Bagel 1
-						 { 53, 54},
+static uint16_t      uTM1AsymWRanges[][2] =  {{45, 50},								    //Bagel 1
+					      {53, 54},
 
-						 { 57, 62},   //Bagel 2
-						 { 69, 70},
+					      {57, 62},								    //Bagel 2
+					      {69, 70},								    /*  */
 
-						 { 73, 74},   //EEPAA
-						 { 77, 78},
-						 { 83, 85},
-						 { 89, 90},
-						 { 93, 93}};
+					      {73, 74},								    //EEPAA
+					      {77, 78},								    /*  */
+					      {83, 85},
+					      {89, 90},
+					      {93, 93}};
 
 /*Number of asym frame ranges in minor frame for this measurement*/
-static uint16_t      uTM1NAsymFRanges[] =       {0, 0,                                                              //Serial #1, 0-7  
-					         0, 0,								                      
-					         0, 0,								                      
-					         0, 0,								                      
-					         									                      
-					         0, 0,								    //Serial #2, 8-15 
-					         0, 0,								                      
-					         0, 0,								                      
-					         0, 0,								                      
-					         									                      
-					         0, 0,								    //Serial #3, 16-21
-					         0, 0,								                      
-					         0, 0,								                      
-					         //0, 0,			                 			    		        
-					         									                      
-					         0, 0,								    //Serial #4, 22-29
-					         0, 0,								                      
-					         0, 0,								                      
-					         0, 0,								                      
-					         									                      
-					         0, 0,								    //Serial #5, 30-37
-					         0, 0,								                      
-					         0, 0,								                      
-					         0, 0,								                      
-					         									                      
-					         0, 0,								    //Serial #6, 38-45
-					         0, 0,								                      
-					         0, 0,								                      
-					         0, 0,								                      
-					         									                      
-					         0, 0,								    //Serial #7, 46-51
-					         0, 0,								                      
-					         0, 0,								                      
-					         //0, 0};			                 			    		        
-					         									                      
-					         0,   //SFID				                 		    		        
-					         0, 0,								    //TM + SFID   52-58
-					         0, 0,
-					         0, 0,
-
-					         0, 0,
-					         0};
+static uint16_t      uTM1NAsymFRanges[] =    {0, 0,                                                              //Serial #1, 0-7  
+					      0, 0,								                      
+					      0, 0,								                      
+					      0, 0,								                      
+					      
+					      0, 0,								    //Serial #2, 8-15 
+					      0, 0,								                      
+					      0, 0,								                      
+					      0, 0,								                      
+					      
+					      0, 0,								    //Serial #3, 16-21
+					      0, 0,								                      
+					      0, 0,								                      
+					      //0, 0,			                 			    		        
+					      
+					      0, 0,								    //Serial #4, 22-29
+					      0, 0,								                      
+					      0, 0,								                      
+					      0, 0,								                      
+					      
+					      0, 0,								    //Serial #5, 30-37
+					      0, 0,								                      
+					      0, 0,								                      
+					      0, 0,								                      
+					      
+					      0, 0,								    //Serial #6, 38-45
+					      0, 0,								                      
+					      0, 0,								                      
+					      0, 0,								                      
+					      
+					      0, 0,								    //Serial #7, 46-51
+					      0, 0,								                      
+					      0, 0,								                      
+					      //0, 0};			                 			    		        
+					      
+					      0,   //SFID				                 		    		        
+					      0, 0,								    //TM + SFID   52-58
+					      0, 0,
+					      0, 0,
+					      
+					      0, 0,
+					      0};
 
 /*Specification of the frame ranges w/in a minor frame, inclusive*/
-static uint16_t      uTM1AsymFRanges[][2]  =     {{0,0}};
+static uint16_t      uTM1AsymFRanges[][2]  = {{0,0}};
+
+static uint16_t         uTM1LSBWord[]   =    { 95, TM_SKIP_LSB,						    //Serial #1, 0-7  
+					       97, TM_SKIP_LSB,								                      
+					      101, TM_SKIP_LSB,								                      
+					      114, TM_SKIP_LSB,								                      
+														                      
+					       30, TM_SKIP_LSB,						    //Serial #2, 8-15 
+					       30, TM_SKIP_LSB,								                      
+					       30, TM_SKIP_LSB,								                      
+					       30, TM_SKIP_LSB,								                      
+														                      
+					       34, TM_SKIP_LSB,						    //Serial #3, 16-21
+					       36, TM_SKIP_LSB,								                      
+					       38, TM_SKIP_LSB,								                      
+														                      
+					        4, TM_SKIP_LSB,						    //Serial #4, 22-29
+					        8, TM_SKIP_LSB,								                      
+					        6, TM_SKIP_LSB,								                      
+					       10, TM_SKIP_LSB,								                      
+														                      
+					       14, TM_SKIP_LSB,						    //Serial #5, 30-37
+					       18, TM_SKIP_LSB,								                      
+					       22, TM_SKIP_LSB,								                      
+					       24, TM_SKIP_LSB,								                      
+					       
+					       30, TM_SKIP_LSB,						    //Serial #6, 38-45
+					       30, TM_SKIP_LSB,								                      
+					       34, TM_SKIP_LSB,								                      
+					       34, TM_SKIP_LSB,								                      
+														                      
+					       34, TM_SKIP_LSB,						    //Serial #7, 46-51
+					       34, TM_SKIP_LSB,								                      
+					        2, TM_SKIP_LSB,								                      
+					       
+					        0,
+					        0, 0,							    //TM + SFID   52-58
+					        0, 0,
+					        0, 0,
+
+					        0, 0,
+					           0};
+
 
 
 #endif // #ifndef _TM1_MAJORFRAME

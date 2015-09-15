@@ -19,9 +19,10 @@
 
 #define DEF_TM_LINK                       1
 
+#define DEF_OUTPREFIX  "parsed_TM1-samples"
+#define DEF_COMBINE_TM1                   0 //combine TM1 channels on the fly
 #define DEF_VERBOSE                       0 //please tell me
 
-#define DEF_OUTPREFIX  "parsed_TM1-samples"
 #define DEF_STR_SIZE                   1024
 
 //struct declarations
@@ -50,17 +51,21 @@ struct suMeasurementInfo
 //    uint16_t  * uAsymFRanges[2];
     uint16_t  * pauFtemp;
 
+    uint16_t    uLSBWord;
+
     char        szOutFileName[DEF_STR_SIZE];
     FILE *      psuOutFile;
 };
 
 //function declarations
-int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink);
+int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink, uint8_t bCombineTM1Meas );
 int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
 
-void vUsage(void);
 void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo);
 void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t iMinorFrameIdx);
+
+uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample, uint16_t uMSBShift, uint16_t uLSBShift, uint16_t uJustification, uint8_t bMSBIsFirst);
+void vUsage(void);
 
 //global var declarations
 uint16_t uGlobAsymWRInd;
@@ -81,7 +86,7 @@ int main( int argc, char * argv[] )
     char         szOutPrefix[DEF_STR_SIZE];
 
     struct stat  suInFileStat;		       //input stuff
-    uint64_t     ulSampBitLength;	       //Sample size (in bytes)
+    uint64_t     ullSampBitLength;	       //Sample size (in bytes)
     uint64_t     ullSampsPerMinorFrame;	       //Number of samples to grab at each periodic interval
     //    uint64_t     ullNBytesPerMinorFrame;	       //Number of bits in MinorFrame
 
@@ -117,6 +122,7 @@ int main( int argc, char * argv[] )
 
     int          iArgIdx;
 
+    uint8_t      bCombineTM1Meas;
     uint8_t      bVerbose;
 
     //*******************
@@ -131,6 +137,7 @@ int main( int argc, char * argv[] )
 
     iArgIdx                = 0;
 
+    bCombineTM1Meas        = DEF_COMBINE_TM1;
     bVerbose               = DEF_VERBOSE;
 
     if (argc < 2)
@@ -146,7 +153,7 @@ int main( int argc, char * argv[] )
     psuOutFile = (FILE *) !NULL;
     strncpy(szOutPrefix,DEF_OUTPREFIX,DEF_STR_SIZE);
 
-    ulSampBitLength         = DEF_N_SAMPBITS;
+    ullSampBitLength         = DEF_N_SAMPBITS;
     ullSampsPerMinorFrame   = DEF_SAMPSPERMINORFRAME;
     ullBytesPerMinorFrame  = ullSampsPerMinorFrame * sizeof(uint16_t);
 
@@ -181,7 +188,7 @@ int main( int argc, char * argv[] )
 			    vUsage();
 			    return EXIT_FAILURE;
 			    }
-			sscanf(argv[iArgIdx],"%" PRIi64 ,&ulSampBitLength);
+			sscanf(argv[iArgIdx],"%" PRIu64 ,&ullSampBitLength);
 			break;
 
 		    case 'n' :                   /* # Samples */
@@ -191,7 +198,7 @@ int main( int argc, char * argv[] )
 			    vUsage();
 			    return EXIT_FAILURE;
 			    }
-			sscanf(argv[iArgIdx],"%" PRIi64 ,&ullSampsPerMinorFrame);
+			sscanf(argv[iArgIdx],"%" PRIu64 ,&ullSampsPerMinorFrame);
 			break;
 
 		    case 'L' :                   /* TM Link # */
@@ -204,15 +211,13 @@ int main( int argc, char * argv[] )
 			sscanf(argv[iArgIdx],"%" PRIu16 ,&uTMLink);
 			break;
 
-		    case 'P' :                  /* Verbosities */
-			iTmp = 0;
+		    case 'P' :                  /* Prefix for output files */
 			iArgIdx++;
-			//			while( (iArgIdx) != '\0')
-			//			    {
-			//			    szOutPrefix[iTmp++] = *argv[iArgIdx];
 			strncpy(szOutPrefix, argv[iArgIdx],DEF_STR_SIZE);
-			    //			    printf("%s\n",argv[iArgIdx]);
-			//			    }
+			break;
+
+		    case 'C' :                  /* Combine TM1 MSB/LSB measurements */
+			bCombineTM1Meas = !bCombineTM1Meas;
 			break;
 
 		    case 'v' :                  /* Verbosities */
@@ -232,7 +237,7 @@ int main( int argc, char * argv[] )
 	    } /* end command line arg switch */
 	} /* end for all arguments */
 
-    if ( ulSampBitLength < 1 || ulSampBitLength > 16 )
+    if ( ullSampBitLength < 1 || ullSampBitLength > 16 )
 	{
 	fprintf(stderr,"Invalid sample size provided! Exiting...\n");
 	return EXIT_FAILURE;
@@ -243,6 +248,9 @@ int main( int argc, char * argv[] )
 	{
 	iNMeasurements      = N_TM1_MEASUREMENTS;
         uSFIDIdx            = TM1_SFID_IDX;
+	
+	if ( bCombineTM1Meas ) printf("Combining MSB/LSB measurements on TM1!\n");
+
 	}
     else
 	{
@@ -269,8 +277,8 @@ int main( int argc, char * argv[] )
 	    return -1;
 	    }
 
-            err = iMeasurementInit(ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix,ullSampsPerMinorFrame,uTMLink);
-	    if (bVerbose) vPrintMeasurementInfo(ppsuMeasInfo[iMeasIdx]);
+	err = iMeasurementInit(ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix,ullSampsPerMinorFrame,uTMLink, bCombineTM1Meas);
+	if (bVerbose) vPrintMeasurementInfo(ppsuMeasInfo[iMeasIdx]);
 	}
 
 
@@ -290,7 +298,6 @@ int main( int argc, char * argv[] )
 	ppauMajorFrame[ullMinorFrameIdx] = temp + (ullMinorFrameIdx * ullSampsPerMinorFrame);
 	}
     printf("Major Frame Size   :\t%" PRIu64 " bytes\n",ullBytesPerMajorFrame);
-
 
     int Count;
 
@@ -332,7 +339,7 @@ int main( int argc, char * argv[] )
 	}
 
     //To the beginning!
-    printf("\nConverting %" PRIu64 "-bit to 16-bit samples...\n", ulSampBitLength);
+    printf("\nConverting %" PRIu64 "-bit to 16-bit samples...\n", ullSampBitLength);
 
     //Loop over whole file
     do
@@ -380,13 +387,36 @@ int main( int argc, char * argv[] )
 		    
 		if ( (ullMinorFrameIdx % ppsuMeasInfo[iMeasIdx]->uMinorFrInt) == ( ppsuMeasInfo[iMeasIdx]->uMinorFrame % ppsuMeasInfo[iMeasIdx]->uMinorFrInt ) )
 		    {
-			
-		    for (iTmpIdx = ppsuMeasInfo[iMeasIdx]->uWord; iTmpIdx < ullSampsPerMinorFrame; iTmpIdx += ppsuMeasInfo[iMeasIdx]->uWdInt)
+		    if ( ( uTMLink == 1) && ( bCombineTM1Meas ) )
 			{
-			ullWordsWritten += fwrite(&pauMinorFrame[iTmpIdx],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
-			ppsuMeasInfo[iMeasIdx]->ullSampCount++;
-			ulMinorFrameSampCount++;
+			int iLSBIdx;
+			uint16_t uCombinedSample;
+			iLSBIdx = ppsuMeasInfo[iMeasIdx]->uLSBWord;
+			if( iLSBIdx != TM_SKIP_LSB )
+			    {
+			    for (iTmpIdx = ppsuMeasInfo[iMeasIdx]->uWord; iTmpIdx < ullSampsPerMinorFrame; iTmpIdx += ppsuMeasInfo[iMeasIdx]->uWdInt)
+				{
+				if ( iLSBIdx == 0 )
+				    uCombinedSample = pauMinorFrame[iTmpIdx];
+				else
+				    uCombinedSample = ( ( pauMinorFrame[iTmpIdx] && 0x3FF ) << 10 ) | ( pauMinorFrame[iLSBIdx] >> 4 );
+
+				ullWordsWritten += fwrite(&uCombinedSample,2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile) * 2;
+				ulMinorFrameSampCount += 2;
+				iLSBIdx += ppsuMeasInfo[iMeasIdx]->uWdInt;
+				}
+			    }
 			}
+		    else
+			{
+			for (iTmpIdx = ppsuMeasInfo[iMeasIdx]->uWord; iTmpIdx < ullSampsPerMinorFrame; iTmpIdx += ppsuMeasInfo[iMeasIdx]->uWdInt)
+			    {
+			    ullWordsWritten += fwrite(&pauMinorFrame[iTmpIdx],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
+			    ppsuMeasInfo[iMeasIdx]->ullSampCount++;
+			    ulMinorFrameSampCount++;
+			    }
+			}
+
 		    }
 		}
 	    // Otherwise, if we have asymmetric word ranges but no asymmetric frame ranges ...
@@ -503,35 +533,13 @@ int main( int argc, char * argv[] )
     return EXIT_SUCCESS;
     }
 
-void vUsage(void)
-    {
-    printf("\n");
-    printf("parse_CAPER_samples\n");
-    printf("Convert a filed outputted by bust_nBit_into_16bit_file into separate measurement files!\n");
-    printf("\n");
-    printf("Usage: parse_CAPER_samples <input file> <output file> [flags]   \n");
-    printf("                                                                      \n");
-    printf("   <filename>   Input/output file names                               \n");
-    printf("                                                                      \n");
-    printf("   INPUT FILE PARAMETERS                                              \n");
-    printf("   -s SIZE      Size of samples                    (in bits)  [%i]    \n",DEF_N_SAMPBITS);
-    printf("   -n           Number of samples per minor frame  (optional) [%i]    \n",DEF_SAMPSPERMINORFRAME);
-    printf("   -L           TM link number (can be 1-4)                   [%i]    \n",DEF_TM_LINK);
-    printf("                                                                      \n");
-    printf("                                                                      \n");
-    printf("   OPTIONAL PARAMETERS                                                \n");
-    printf("   -P           Output file prefix                            [%s]    \n",DEF_OUTPREFIX);
-    printf("   -v           Verbose                                       [%i]    \n",DEF_VERBOSE);
-    printf("                                                                      \n");
-    }
-
 void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t ullMinorFrameIdx)
 { 
     //    for
 
 }
 
-int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink)
+ int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink, uint8_t bCombineTM1Meas )
 {
     uint16_t uNAsymWRanges;
     uint16_t uNAsymFRanges;
@@ -544,12 +552,31 @@ int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,ch
     uint16_t uWRangeIdx;
     uint16_t uFRangeIdx;
 
+    size_t   szTempLen;
+    size_t   szAbbrevLen;
+
     if ( uTMLink == 1)
 	{
-	strncpy(   psuMeasInfo->szName, szTM1SerialMeasNames[iMeasIdx] ,DEF_STR_SIZE);    //Name of measurement, e.g., "Langmuir Probe Measurement 1 MSB"
-        strncpy( psuMeasInfo->szAbbrev, szTM1SerialMeasAbbrev[iMeasIdx],DEF_STR_SIZE);    //Abbreviation for measurement, e.g., "LP01MSB"
-        strncpy(   psuMeasInfo->szUser, szTM1User[iMeasIdx],            DEF_STR_SIZE);    //Who is the user? E.g., Dartmouth, U Iowa
-        psuMeasInfo->uWord            = uTM1Word[iMeasIdx] - 1;			   //Beginning word in the frame, -1 for counting from zero
+
+	szTempLen = 0;
+	while ( szTM1SerialMeasNames[iMeasIdx][szTempLen] != '\0' )
+	    szTempLen++;
+	strncpy(psuMeasInfo->szName, szTM1SerialMeasNames[iMeasIdx],	                   //Name of measurement, e.g., "Langmuir Probe Measurement 1 MSB"
+		szTempLen );    
+
+	szAbbrevLen = 0;
+	while ( szTM1SerialMeasAbbrev[iMeasIdx][szAbbrevLen] != '\0' )
+		szAbbrevLen++;
+	strncpy(psuMeasInfo->szAbbrev, szTM1SerialMeasAbbrev[iMeasIdx],			   //Abbreviation for measurement, e.g., "LP01MSB"
+		szAbbrevLen );
+
+	szTempLen = 0;
+	while ( szTM1User[iMeasIdx][szTempLen] != '\0' )
+		szTempLen++;
+        strncpy(psuMeasInfo->szUser, szTM1User[iMeasIdx],				   //Who is the user? E.g., Dartmouth, U Iowa
+		szTempLen );
+
+        psuMeasInfo->uWord            = uTM1Word[iMeasIdx] - 1;		                   //Beginning word in the frame, -1 for counting from zero
         psuMeasInfo->uWdInt           = uTM1WdInt[iMeasIdx];				   //Word interval
         psuMeasInfo->uSampsPerMinorFrame = ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
         psuMeasInfo->uMinorFrame      = uTM1Frame[iMeasIdx];				   //Which minor frame is it in?
@@ -559,14 +586,22 @@ int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,ch
         psuMeasInfo->uSample          = -1;
         psuMeasInfo->ullSampCount     = 0;
         
+	psuMeasInfo->uLSBWord         = uTM1LSBWord[iMeasIdx];
+	if ( bCombineTM1Meas && ( psuMeasInfo->uLSBWord > 0 ) && ( psuMeasInfo->uLSBWord != TM_SKIP_LSB ) )
+	    psuMeasInfo->szAbbrev[szAbbrevLen-4] = '\0';
+
+
         uNAsymWRanges = uTM1NAsymWRanges[iMeasIdx];
         uNAsymFRanges = uTM1NAsymFRanges[iMeasIdx];
 	}
     else if ( ( uTMLink == 2 ) || ( uTMLink == 3 ) )
 	{
-	strncpy(   psuMeasInfo->szName, szTM23SerialMeasNames[iMeasIdx] ,DEF_STR_SIZE);    //Name of measurement, e.g., "Langmuir Probe Measurement 1 MSB"
-        strncpy( psuMeasInfo->szAbbrev, szTM23SerialMeasAbbrev[iMeasIdx],DEF_STR_SIZE);    //Abbreviation for measurement, e.g., "LP01MSB"
-        strncpy(   psuMeasInfo->szUser, szTM23User[iMeasIdx],            DEF_STR_SIZE);    //Who is the user? E.g., Dartmouth, U Iowa
+	strncpy(psuMeasInfo->szName, szTM23SerialMeasNames[iMeasIdx],	                   //Name of measurement, e.g., "Langmuir Probe Measurement 1 MSB"
+		strlen(szTM23SerialMeasNames[iMeasIdx]) );    
+	strncpy(psuMeasInfo->szAbbrev, szTM23SerialMeasAbbrev[iMeasIdx],		   //Abbreviation for measurement, e.g., "LP01MSB"
+		strlen(szTM23SerialMeasAbbrev[iMeasIdx]) );
+        strncpy(psuMeasInfo->szUser, szTM23User[iMeasIdx],				   //Who is the user? E.g., Dartmouth, U Iowa
+		strlen(szTM23User[iMeasIdx]) );
         psuMeasInfo->uWord            = uTM23Word[iMeasIdx] - 1;			   //Beginning word in the frame, -1 for counting from zero
         psuMeasInfo->uWdInt           = uTM23WdInt[iMeasIdx];				   //Word interval
         psuMeasInfo->uSampsPerMinorFrame = ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
@@ -577,6 +612,8 @@ int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,ch
         psuMeasInfo->uSample          = -1;
         psuMeasInfo->ullSampCount     = 0;
         
+	psuMeasInfo->uLSBWord         = uTM23LSBWord[iMeasIdx];
+
         uNAsymWRanges = uTM23NAsymWRanges[iMeasIdx];
         uNAsymFRanges = uTM23NAsymFRanges[iMeasIdx];
 	}
@@ -660,8 +697,13 @@ int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,ch
 	psuMeasInfo->pauFtemp        = NULL;
 	}
     
-    sprintf(psuMeasInfo->szOutFileName,"%s--%s.out",szOutPrefix,psuMeasInfo->szAbbrev);
-    psuMeasInfo->psuOutFile       = fopen(psuMeasInfo->szOutFileName,"wb");
+    if ( ( uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB ) || !bCombineTM1Meas ) )
+	{
+	sprintf(psuMeasInfo->szOutFileName,"%s--%s.out",szOutPrefix,psuMeasInfo->szAbbrev);
+	psuMeasInfo->psuOutFile       = fopen(psuMeasInfo->szOutFileName,"wb");
+	}
+    else
+	psuMeasInfo->psuOutFile       = NULL;
 
     return 0;
 }
@@ -705,3 +747,38 @@ void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo)
     printf("# Asym word ranges     :   %" PRIu16 "\n",psuMeasInfo->uNAsymWRanges);
     printf("# Asym frame ranges    :   %" PRIu16 "\n",psuMeasInfo->uNAsymFRanges);
 }
+
+/*For combining samples. Clearly unfinished*/
+uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample, 
+				uint16_t uMSBShift, uint16_t uLSBShift, 
+				uint16_t uJustification, uint8_t bMSBIsFirst)
+{
+    uint16_t uCombinedSample;
+
+    uCombinedSample = ( uMSBSample << uMSBShift );
+
+    return uCombinedSample;
+}
+
+void vUsage(void)
+    {
+    printf("\n");
+    printf("parse_CAPER_samples\n");
+    printf("Convert a filed outputted by bust_nBit_into_16bit_file into separate measurement files!\n");
+    printf("\n");
+    printf("Usage: parse_CAPER_samples <input file> <output file> [flags]   \n");
+    printf("                                                                      \n");
+    printf("   <filename>   Input/output file names                               \n");
+    printf("                                                                      \n");
+    printf("   INPUT FILE PARAMETERS                                              \n");
+    printf("   -s SIZE      Size of samples                    (in bits)  [%i]    \n",DEF_N_SAMPBITS);
+    printf("   -n           Number of samples per minor frame  (optional) [%i]    \n",DEF_SAMPSPERMINORFRAME);
+    printf("   -L           TM link number (can be 1-4)                   [%i]    \n",DEF_TM_LINK);
+    printf("                                                                      \n");
+    printf("                                                                      \n");
+    printf("   OPTIONAL PARAMETERS                                                \n");
+    printf("   -P           Output file prefix                            [%s]    \n",DEF_OUTPREFIX);
+    printf("   -C           Combine MSB/LSB channels on the fly(TM1 Only!)[%i]    \n",DEF_COMBINE_TM1);
+    printf("   -v           Verbose                                       [%i]    \n",DEF_VERBOSE);
+    printf("                                                                      \n");
+    }
