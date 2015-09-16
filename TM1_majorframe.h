@@ -1,12 +1,15 @@
 #ifndef _TM1_MAJORFRAME
 #define _TM1_MAJORFRAME
 
-#define N_TM1_MEASUREMENTS   62
+#define N_TM1_MEASUREMENTS         66    //Total number of measurementnels in this header
+			          
+#define TM1_SFID_IDX               25    //Location of subframe ID within minor frame, counting from 1
+			          
+#define TM_SKIP_LSB               499    //Skip this channel if combination is done on the fly
+#define TM_NO_LSB                 498    //Don't try to combine this channel
+#define TM_UPPER6_MSB_LOWER10_LSB 109
 
-
-#define TM1_SFID_IDX         25    //Location of subframe ID within minor frame, counting from 1
-
-#define TM_SKIP_LSB         499    //Skip this channel if combination is done on the fly
+#define TM1_BPS               9600000    //Link BPS
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM1SerialMeasNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",	    //Serial #1, 0-7
@@ -48,6 +51,9 @@ static char   * szTM1SerialMeasNames[]  =    {"Langmuir Probe Channel 1 MSB ", "
 					       "Major Frame Counter 1        ", "Major Frame Counter 2        ",    //TM + SFID  52-58
 					       "Major Frame Counter 3        ", "Frame Sync 1                 ",
 					       "Frame Sync 2                 ", "Frame Sync 3                 ",
+
+					       "GPS 1PPS msb                 ", "GPS 1PPS lsb                 ", 
+					       "ACS 1PPS msb                 ", "ACS 1PPS lsb                 ", 
 
                                                "Correlator 1 FEEA Bagel 1 N/S", "Correlator 2 FEEA Bagel 2 N/S",
                                                "EEPAA (!!!NOT SYMMETRIC!!!)  "};
@@ -93,21 +99,24 @@ static char   * szTM1SerialMeasAbbrev[] =    { "LP01_MSB",      "LP01_LSB",					
 					       "MF3",          "FS1",
 					       "FS2",          "FS3",
 
+					       "GPS_1PPS_msb", "GPS_1PPS_lsb", 
+					       "ACS_1PPS_msb", "ACS_1PPS_lsb", 
+
                                                "FEEA_Bagel1",  "FEEA_Bagel2",
                                                "EEPAA"};
 
 /*User of measurement, as defined by NASA PCM doc*/
-static char   * szTM1User[]             =    {"UiO",       "UiO",                                                  //Serial #1, 0-7  
+static char   * szTM1User[]             =    {"UiO",       "UiO",					    //Serial #1, 0-7  
 					      "UiO",       "UiO",						                      
 					      "UiO",       "UiO",						                      
 					      "UiO",       "UiO",						                      
 													                      
-					      "U_Iowa",    "U_Iowa",						    //Serial #2, 8-15 
+					      "U_Iowa",    "U_Iowa",					    //Serial #2, 8-15 
 					      "U_Iowa",    "U_Iowa",						                      
 					      "U_Iowa",    "U_Iowa",						                      
 					      "U_Iowa",    "U_Iowa",						                      
 													                      
-					      "U_Iowa",    "U_Iowa",						    //Serial #3, 16-21
+					      "U_Iowa",    "U_Iowa",					    //Serial #3, 16-21
 					      "U_Iowa",    "U_Iowa",						                      
 					      "U_Iowa",    "U_Iowa",						                      
 					      //"N/A",       "N/A",             					              
@@ -133,9 +142,12 @@ static char   * szTM1User[]             =    {"UiO",       "UiO",               
 					      //"N/A",       "N/A",             					              
 														                      
 					      "TM",//SFID							                      
-					      "TM",        "TM",						    //TM + SFID   52-58
+					      "TM",        "TM",					    //TM + SFID   52-58
 					      "TM",        "TM",
 					      "TM",        "TM",
+
+					      "TM",        "TM", 
+					      "ACS",       "ACS", 
 
                                               "U_Iowa",    "U_Iowa",
                                               "U_Iowa"};
@@ -180,6 +192,9 @@ static uint16_t          uTM1Word[]     =    { 94,  95,                         
 					       65,  66,                 //TM					    //TM + SFID   52-58
 					      113, 118,
 					      119, 120,
+
+					      110, 109,
+					      110, 109,
 
 					       45,  57,
 					       73};
@@ -227,6 +242,9 @@ static uint16_t         uTM1WdInt[]     =      {120, 120,							    //Serial #1,
 						120, 120,
 
 						120, 120,
+						120, 120,
+
+						120, 120,
 						120};
 					    
 /*Interval of frames containing each word*/
@@ -269,6 +287,9 @@ static uint16_t        uTM1Frame[]      =    {1, 1,                             
 					      1, 1,								    //TM + SFID   52-58
 					      1, 1,
 					      1, 1,
+					      
+					     29,29,
+					     30,30,
 					      
 					      1, 1,
 					      1};
@@ -315,6 +336,9 @@ static uint16_t        uTM1FrInt[]      =    {1, 1,                             
 					      1, 1,
 					      1, 1,
 					      
+					     32,32,
+					     32,32,
+					      
 					      1, 1,
 					      1};
 
@@ -359,6 +383,9 @@ static uint32_t           ulTM1SPS[]    =    { 8000,  8000,                     
 					       8000,  8000,
 					       8000,  8000,
 					       
+					        250,   250,
+					        250,   250,
+					       
 					      64000, 64000,
 					      80000};
 
@@ -401,6 +428,9 @@ static uint16_t      uTM1NAsymWRanges[] =      {0, 0,                           
 					        
 						0,   //SFID				                 		    		        
 						0, 0,								    //TM + SFID   52-58
+						0, 0,
+						0, 0,
+						
 						0, 0,
 						0, 0,
 						
@@ -462,6 +492,9 @@ static uint16_t      uTM1NAsymFRanges[] =    {0, 0,                             
 					      0, 0,
 					      
 					      0, 0,
+					      0, 0,
+					      
+					      0, 0,
 					      0};
 
 /*Specification of the frame ranges w/in a minor frame, inclusive*/
@@ -500,13 +533,16 @@ static uint16_t         uTM1LSBWord[]   =    { 95, TM_SKIP_LSB,						    //Seria
 					       34, TM_SKIP_LSB,								                      
 					        2, TM_SKIP_LSB,								                      
 					       
-					        0,
-					        0, 0,							    //TM + SFID   52-58
-					        0, 0,
-					        0, 0,
+					TM_NO_LSB,
+				        TM_NO_LSB,   TM_NO_LSB,						    //TM + SFID   52-58
+			                TM_NO_LSB,   TM_NO_LSB,
+			     	        TM_NO_LSB,   TM_NO_LSB,
 
-					        0, 0,
-					           0};
+					      109, TM_SKIP_LSB,
+					      109, TM_SKIP_LSB,
+
+				        TM_NO_LSB, TM_NO_LSB,
+					TM_NO_LSB};
 
 
 

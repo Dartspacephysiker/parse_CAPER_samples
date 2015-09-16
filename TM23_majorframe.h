@@ -1,11 +1,11 @@
 #ifndef _TM23_MAJORFRAME
 #define _TM23_MAJORFRAME
 
-//Total number of measurementnels in this header
-#define N_TM23_MEASUREMENTS   7
+#define N_TM23_MEASUREMENTS   7     //Total number of measurementnels in this header
 
-//Location of subframe ID within minor frame, counting from 1
-#define TM23_SFID_IDX 1
+#define TM23_SFID_IDX         1     //Location of subframe ID within minor frame, counting from 1
+
+#define TM23_BPS        9600000     //Link BPS
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM23SerialMeasNames[]    =    {"Subframe ID                 ", "GPS 1PPS                                   ",

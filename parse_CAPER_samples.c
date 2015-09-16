@@ -379,7 +379,7 @@ int main( int argc, char * argv[] )
 	int iCurrAsymFRange;
 	for (iMeasIdx = 0; iMeasIdx < iNMeasurements; iMeasIdx++)
 	    {
-	    int iTmpIdx;
+	    int iWdIdx;
 
 	    // If there are no asymmetric word or frame ranges, just write the sample at the specified word and any others within minor frame
 	    if ( ( ppsuMeasInfo[iMeasIdx]->uNAsymWRanges == 0 ) && ( ppsuMeasInfo[iMeasIdx]->uNAsymFRanges == 0 ) )
@@ -387,31 +387,39 @@ int main( int argc, char * argv[] )
 		    
 		if ( (ullMinorFrameIdx % ppsuMeasInfo[iMeasIdx]->uMinorFrInt) == ( ppsuMeasInfo[iMeasIdx]->uMinorFrame % ppsuMeasInfo[iMeasIdx]->uMinorFrInt ) )
 		    {
-		    if ( ( uTMLink == 1) && ( bCombineTM1Meas ) )
+		    if ( ( uTMLink == 1 ) && ( bCombineTM1Meas ) )
 			{
-			int iLSBIdx;
+			int iLSBWdIdx;
 			uint16_t uCombinedSample;
-			iLSBIdx = ppsuMeasInfo[iMeasIdx]->uLSBWord;
-			if( iLSBIdx != TM_SKIP_LSB )
+			iLSBWdIdx = ppsuMeasInfo[iMeasIdx]->uLSBWord;
+			if( iLSBWdIdx != ( TM_SKIP_LSB - 1 ) )
 			    {
-			    for (iTmpIdx = ppsuMeasInfo[iMeasIdx]->uWord; iTmpIdx < ullSampsPerMinorFrame; iTmpIdx += ppsuMeasInfo[iMeasIdx]->uWdInt)
+			    for (iWdIdx = ppsuMeasInfo[iMeasIdx]->uWord; iWdIdx < ullSampsPerMinorFrame; iWdIdx += ppsuMeasInfo[iMeasIdx]->uWdInt)
 				{
-				if ( iLSBIdx == 0 )
-				    uCombinedSample = pauMinorFrame[iTmpIdx];
+				if ( iLSBWdIdx == TM_NO_LSB - 1 )
+				    {
+				    uCombinedSample = pauMinorFrame[iWdIdx];
+				    }
+				else if ( iLSBWdIdx == TM_UPPER6_MSB_LOWER10_LSB - 1) //GPS and ACS are weird
+				    {
+				    uCombinedSample = ( ( pauMinorFrame[iWdIdx] & 0x3FF ) << 10 ) | ( pauMinorFrame[iLSBWdIdx] );
+				    }
 				else
-				    uCombinedSample = ( ( pauMinorFrame[iTmpIdx] && 0x3FF ) << 10 ) | ( pauMinorFrame[iLSBIdx] >> 4 );
+				    {
+				    uCombinedSample = ( ( pauMinorFrame[iWdIdx] & 0x3FF ) <<  6 ) | ( pauMinorFrame[iLSBWdIdx] >> 4 );
+				    }
 
 				ullWordsWritten += fwrite(&uCombinedSample,2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile) * 2;
 				ulMinorFrameSampCount += 2;
-				iLSBIdx += ppsuMeasInfo[iMeasIdx]->uWdInt;
+				iLSBWdIdx += ppsuMeasInfo[iMeasIdx]->uWdInt;
 				}
 			    }
 			}
 		    else
 			{
-			for (iTmpIdx = ppsuMeasInfo[iMeasIdx]->uWord; iTmpIdx < ullSampsPerMinorFrame; iTmpIdx += ppsuMeasInfo[iMeasIdx]->uWdInt)
+			for (iWdIdx = ppsuMeasInfo[iMeasIdx]->uWord; iWdIdx < ullSampsPerMinorFrame; iWdIdx += ppsuMeasInfo[iMeasIdx]->uWdInt)
 			    {
-			    ullWordsWritten += fwrite(&pauMinorFrame[iTmpIdx],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
+			    ullWordsWritten += fwrite(&pauMinorFrame[iWdIdx],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
 			    ppsuMeasInfo[iMeasIdx]->ullSampCount++;
 			    ulMinorFrameSampCount++;
 			    }
@@ -430,9 +438,9 @@ int main( int argc, char * argv[] )
 		    /* iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uGlobAsymWRInd+uAsymIdx][1]; */
 		    iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uAsymIdx][0]; //these ranges are inclusive
 		    iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uAsymIdx][1];
-		    for ( iTmpIdx = iLowerLim; iTmpIdx <= iUpperLim; iTmpIdx++)
+		    for ( iWdIdx = iLowerLim; iWdIdx <= iUpperLim; iWdIdx++)
 			{
-			ullWordsWritten += fwrite(&pauMinorFrame[iTmpIdx],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
+			ullWordsWritten += fwrite(&pauMinorFrame[iWdIdx],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
 			ppsuMeasInfo[iMeasIdx]->ullSampCount++;
 			ulMinorFrameSampCount++;
 			}
@@ -450,9 +458,9 @@ int main( int argc, char * argv[] )
 		    /* iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uGlobAsymFRInd+uAsymIdx][1]; */
 		    iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uAsymIdx][0]; //these ranges are inclusive
 		    iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uAsymIdx][1];
-		    for ( iTmpIdx = iLowerLim; iTmpIdx <= iUpperLim; iTmpIdx++)
+		    for ( iWdIdx = iLowerLim; iWdIdx <= iUpperLim; iWdIdx++)
 			{
-			if ( iTmpIdx == ullMinorFrameIdx )
+			if ( iWdIdx == ullMinorFrameIdx )
 			    {
 			    ullWordsWritten += fwrite(&pauMinorFrame[ppsuMeasInfo[iMeasIdx]->uWord],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
 			    ppsuMeasInfo[iMeasIdx]->ullSampCount++;
@@ -586,8 +594,8 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t ullMinorFrameIdx)
         psuMeasInfo->uSample          = -1;
         psuMeasInfo->ullSampCount     = 0;
         
-	psuMeasInfo->uLSBWord         = uTM1LSBWord[iMeasIdx];
-	if ( bCombineTM1Meas && ( psuMeasInfo->uLSBWord > 0 ) && ( psuMeasInfo->uLSBWord != TM_SKIP_LSB ) )
+	psuMeasInfo->uLSBWord         = uTM1LSBWord[iMeasIdx] - 1;
+	if ( ( bCombineTM1Meas && ( psuMeasInfo->uLSBWord != TM_SKIP_LSB - 1 ) ) && ( psuMeasInfo->uLSBWord != TM_NO_LSB -1 ) )
 	    psuMeasInfo->szAbbrev[szAbbrevLen-4] = '\0';
 
 
@@ -612,7 +620,7 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t ullMinorFrameIdx)
         psuMeasInfo->uSample          = -1;
         psuMeasInfo->ullSampCount     = 0;
         
-	psuMeasInfo->uLSBWord         = uTM23LSBWord[iMeasIdx];
+	psuMeasInfo->uLSBWord         = uTM23LSBWord[iMeasIdx] - 1;
 
         uNAsymWRanges = uTM23NAsymWRanges[iMeasIdx];
         uNAsymFRanges = uTM23NAsymFRanges[iMeasIdx];
@@ -697,7 +705,7 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t ullMinorFrameIdx)
 	psuMeasInfo->pauFtemp        = NULL;
 	}
     
-    if ( ( uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB ) || !bCombineTM1Meas ) )
+    if ( ( uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineTM1Meas ) )
 	{
 	sprintf(psuMeasInfo->szOutFileName,"%s--%s.out",szOutPrefix,psuMeasInfo->szAbbrev);
 	psuMeasInfo->psuOutFile       = fopen(psuMeasInfo->szOutFileName,"wb");
