@@ -21,6 +21,8 @@
 
 #define DEF_OUTPREFIX  "parsed_TM1-samples"
 #define DEF_COMBINE_TM1                   0 //combine TM1 channels on the fly
+#define DEF_DO_CHECK_SFID_INCREMENT       0 //Check that SFID increments uniformly
+#define DEF_ASSEMBLE_COUNTER              0
 #define DEF_VERBOSE                       0 //please tell me
 
 #define DEF_STR_SIZE                   1024
@@ -58,13 +60,16 @@ struct suMeasurementInfo
 };
 
 //function declarations
-int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink, uint8_t bCombineTM1Meas );
+int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement );
 int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
 
 void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo);
 void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t iMinorFrameIdx);
 
-uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample, uint16_t uMSBShift, uint16_t uLSBShift, uint16_t uJustification, uint8_t bMSBIsFirst);
+//uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample, uint16_t uMSBShift, uint16_t uLSBShift, uint16_t uJustification, uint8_t bMSBIsFirst);
+
+uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFrameIdx, uint16_t uNumMFCounters, uint64_t ullSampBitLength);
+
 void vUsage(void);
 
 //global var declarations
@@ -79,10 +84,11 @@ int main( int argc, char * argv[] )
     //Declare vars
 
     char         szInFile[DEF_STR_SIZE];		       //input/output file stuff
-    char         szOutFile[DEF_STR_SIZE];
+    char         szUniqCounterFile[DEF_STR_SIZE];
 
     FILE       * psuInFile;
-    FILE       * psuOutFile;
+    FILE       * psuUniqCounterFile;
+    
     char         szOutPrefix[DEF_STR_SIZE];
 
     struct stat  suInFileStat;		       //input stuff
@@ -100,7 +106,8 @@ int main( int argc, char * argv[] )
     uint16_t     uSFIDIdx;
     uint16_t     uAsymIdx;
 
-    uint64_t     ullMinorFrameIdx;
+    int64_t      llMinorFrameIdx;
+    int64_t      llOldMinorFrameIdx;
     int64_t      llMinorFramesPerMajorFrame;
     uint64_t     ullBytesPerMajorFrame;
     int64_t      llMajorFrameCount;
@@ -117,12 +124,21 @@ int main( int argc, char * argv[] )
 
     uint32_t     ulMinorFrameSampCount;
     uint64_t     ullMinorFrameCount;
+    uint64_t     ullSkippedFrameCount;
 
     uint16_t     uTMLink;
 
     int          iArgIdx;
 
     uint8_t      bCombineTM1Meas;
+    uint8_t      bDoCheckSFIDIncrement;
+
+    uint8_t      bAssembleCounter;
+    uint16_t     uNumMFCounters;
+    uint16_t  *  pauMFCIndices;
+    uint64_t  *  paullMajorFrameVals;
+    uint64_t     ullCounterVal;
+
     uint8_t      bVerbose;
 
     //*******************
@@ -133,44 +149,54 @@ int main( int argc, char * argv[] )
     //Initialize vars
     ulMinorFrameSampCount  = 0;
     ullMinorFrameCount     = 0;
+    ullSkippedFrameCount   = 0;
     llMajorFrameCount      = 0;
 
     iArgIdx                = 0;
 
     bCombineTM1Meas        = DEF_COMBINE_TM1;
+    bDoCheckSFIDIncrement  = DEF_DO_CHECK_SFID_INCREMENT;
+
+    bAssembleCounter       = DEF_ASSEMBLE_COUNTER;
+    uNumMFCounters         = 0;
+    pauMFCIndices          = NULL;
+    paullMajorFrameVals    = NULL;
+    ullCounterVal          = 0;
+
     bVerbose               = DEF_VERBOSE;
 
-    if (argc < 2)
+    if (argc < 1)
 	{
 	vUsage();
 	return EXIT_SUCCESS;
 	}
 
     szInFile[0]  = '\0';
-    strcpy(szOutFile,"");		       // Default is stdout
+    strcpy(szUniqCounterFile,"");		       // Default is stdout
 
-    psuInFile = (FILE *) !NULL;
-    psuOutFile = (FILE *) !NULL;
+    psuInFile = (FILE *) NULL;
+    psuUniqCounterFile = (FILE *) NULL;
     strncpy(szOutPrefix,DEF_OUTPREFIX,DEF_STR_SIZE);
 
-    ullSampBitLength         = DEF_N_SAMPBITS;
-    ullSampsPerMinorFrame   = DEF_SAMPSPERMINORFRAME;
-    ullBytesPerMinorFrame  = ullSampsPerMinorFrame * sizeof(uint16_t);
+    ullSampBitLength           = DEF_N_SAMPBITS;
+    ullSampsPerMinorFrame      = DEF_SAMPSPERMINORFRAME;
+    ullBytesPerMinorFrame      = ullSampsPerMinorFrame * sizeof(uint16_t);
 
-    ppsuMeasInfo = (struct suMeasurementInfo **) !NULL;
-    iMeasIdx                  = 0;
+    ppsuMeasInfo = (struct suMeasurementInfo **) NULL;
+    iMeasIdx                   = 0;
 
-    uSFIDIdx                = 0;
+    uSFIDIdx                   = 0;
 
-    ullMinorFrameIdx = 0;
+    llMinorFrameIdx           = 0;
+    llOldMinorFrameIdx        = 0;
     llMinorFramesPerMajorFrame = DEF_MINOR_PER_MAJOR;
 
-    ullInFilePos            = 0;
-    ullWordsRead            = 0;
-    ullWordsWritten         = 0;
-    ullNSampsRead           = 0;
-    ullTotWordsRead         = 0;
-    ullTotWordsWritten      = 0;
+    ullInFilePos               = 0;
+    ullWordsRead               = 0;
+    ullWordsWritten            = 0;
+    ullNSampsRead              = 0;
+    ullTotWordsRead            = 0;
+    ullTotWordsWritten         = 0;
 
     for (iArgIdx=1; iArgIdx<argc; iArgIdx++)   //start with 1 to skip input file
 	{
@@ -220,8 +246,21 @@ int main( int argc, char * argv[] )
 			bCombineTM1Meas = !bCombineTM1Meas;
 			break;
 
+		    case 'c' :                  /* Check that SFID increments uniformly */
+			bDoCheckSFIDIncrement = !bDoCheckSFIDIncrement;
+			break;
+
+		    case 'A' :                  /* Check that SFID increments uniformly */
+			bAssembleCounter = !bAssembleCounter;
+			break;
+
 		    case 'v' :                  /* Verbosities */
 			bVerbose = 1;
+			break;
+
+		    case 'h' :                  /* Verbosities */
+			vUsage();
+			return EXIT_SUCCESS;
 			break;
 
 		    default :
@@ -231,7 +270,7 @@ int main( int argc, char * argv[] )
 
 	    default :
 		if (szInFile[0] == '\0') strcpy(szInFile, argv[iArgIdx]);
-		else                     strcpy(szOutFile,argv[iArgIdx]);
+		//		else                     strcpy(szUniqCounterFile,argv[iArgIdx]);
 		break;
 
 	    } /* end command line arg switch */
@@ -246,18 +285,44 @@ int main( int argc, char * argv[] )
 
     if (uTMLink == 1 )
 	{
+	printf("TM1 : SKIN/ELF/VF/VLF/AGC samples\n");
+
 	iNMeasurements      = N_TM1_MEASUREMENTS;
         uSFIDIdx            = TM1_SFID_IDX;
-	
+
+	uNumMFCounters      = TM1_NUM_MFCOUNTERS;
+	paullMajorFrameVals = (uint64_t *) malloc(uNumMFCounters * sizeof(uint64_t));
+	pauMFCIndices       = (uint16_t *) malloc(uNumMFCounters * sizeof(uint16_t));
+	for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
+	    {
+		pauMFCIndices[iArgIdx] = uTM1MFCIdx[iArgIdx];
+		printf("MFC Index: %" PRIu16 "\n",pauMFCIndices[iArgIdx]);
+	    }
+
+	ullSampBitLength    = TM1_WORD_BITLENGTH;
+
 	if ( bCombineTM1Meas ) printf("Combining MSB/LSB measurements on TM1!\n");
 
 	}
     else
 	{
+	printf("TM2/3: RxDSP samples\n");
+
 	iNMeasurements      = N_TM23_MEASUREMENTS;
         uSFIDIdx            = TM23_SFID_IDX;
-	ullSampsPerMinorFrame   = 400;
-	ullBytesPerMinorFrame  = ullSampsPerMinorFrame * sizeof(uint16_t);
+
+	uNumMFCounters      = TM23_NUM_MFCOUNTERS;
+	paullMajorFrameVals = (uint64_t *) malloc(uNumMFCounters * sizeof(uint64_t));
+	pauMFCIndices       = (uint16_t *) malloc(uNumMFCounters * sizeof(uint16_t));
+	for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
+	    {
+		pauMFCIndices[iArgIdx] = uTM23MFCIdx[iArgIdx];
+		printf("MFC Index: %" PRIu16 "\n",pauMFCIndices[iArgIdx]);
+	    }
+
+	ullSampBitLength           = TM23_WORD_BITLENGTH;
+	ullSampsPerMinorFrame      = 400;
+	ullBytesPerMinorFrame      = ullSampsPerMinorFrame * sizeof(uint16_t);
 	llMinorFramesPerMajorFrame = 4;
 
 	}
@@ -270,14 +335,14 @@ int main( int argc, char * argv[] )
         int err;
 	//	    psuMeasInfo[iMeasIdx] = psuMeasurementInit(iMeasIdx);
 	ppsuMeasInfo[iMeasIdx] = (struct suMeasurementInfo *) malloc(sizeof(struct suMeasurementInfo));
-	//	if (psuMeasInfo == (struct suMeasurementInfo *) !NULL)
-	if (ppsuMeasInfo[iMeasIdx] == (struct suMeasurementInfo *) !NULL)
+	//	if (psuMeasInfo == (struct suMeasurementInfo *) NULL)
+	if (ppsuMeasInfo[iMeasIdx] == (struct suMeasurementInfo *) NULL)
 	    {
 	    printf("Couldn't initialize measurement %" PRIi16 "!\n",iMeasIdx);
 	    return -1;
 	    }
 
-	err = iMeasurementInit(ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix,ullSampsPerMinorFrame,uTMLink, bCombineTM1Meas);
+	err = iMeasurementInit(ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix,ullSampsPerMinorFrame,uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement);
 	if (bVerbose) vPrintMeasurementInfo(ppsuMeasInfo[iMeasIdx]);
 	}
 
@@ -293,11 +358,11 @@ int main( int argc, char * argv[] )
     //    temp = malloc(llMinorFramesPerMajorFrame * ullSampsPerMinorFrame * sizeof(uint16_t));
     temp = malloc(ullBytesPerMajorFrame);
 
-    for (ullMinorFrameIdx = 0; ullMinorFrameIdx < llMinorFramesPerMajorFrame; ullMinorFrameIdx++) 
+    for (llMinorFrameIdx = 0; llMinorFrameIdx < llMinorFramesPerMajorFrame; llMinorFrameIdx++) 
 	{
-	ppauMajorFrame[ullMinorFrameIdx] = temp + (ullMinorFrameIdx * ullSampsPerMinorFrame);
+	ppauMajorFrame[llMinorFrameIdx] = temp + (llMinorFrameIdx * ullSampsPerMinorFrame);
 	}
-    printf("Major Frame Size   :\t%" PRIu64 " bytes\n",ullBytesPerMajorFrame);
+    if (bVerbose) printf("Major Frame Size   :\t%" PRIu64 " bytes\n",ullBytesPerMajorFrame);
 
     int Count;
 
@@ -314,34 +379,43 @@ int main( int argc, char * argv[] )
 	fprintf(stderr, "Error opening input file\n");
 	return EXIT_FAILURE;
 	}
-    printf("Input file: %s\n", szInFile);
+    printf("Input file: %s\n\n", szInFile);
 
     //Get input file stats
     ullInFilePos = fseek(psuInFile, 0, SEEK_SET); //go to zero, positively
     stat(szInFile, &suInFileStat);
 
-    // If output file specified then open it
-    if (strlen(szOutFile) != 0)
-	{
-	psuOutFile = fopen(szOutFile,"wb");
-	if (psuOutFile == NULL)
-	    {
-	    fprintf(stderr, "Error opening output file\n");
-	    return EXIT_FAILURE;
-	    }
+    // If making a unique counter, open a file
+    if (bAssembleCounter)
+    	{
+	sprintf(szUniqCounterFile,"%s--%s.txt",szOutPrefix,"unique_counter");
+    	psuUniqCounterFile = fopen(szUniqCounterFile,"w");
+    	if (psuUniqCounterFile == NULL)
+    	    {
+    	    fprintf(stderr, "Error opening file for unique counter\n");
+    	    return EXIT_FAILURE;
+    	    }
 
-	printf("Output file: %s\n", szOutFile);
-	}
-    else  // No output file name so use stdout
-	{
-	psuOutFile = stdout;
-	printf("Outputting to stdout\n");
-	}
+    	printf("Unique counter file: %s\n", szUniqCounterFile);
+    	}
+    /* else  // No output file name so use stdout */
+    /* 	{ */
+    /* 	psuUniqCounterFile = stdout; */
+    /* 	printf("Outputting to stdout\n"); */
+    /* 	} */
 
     //To the beginning!
-    printf("\nConverting %" PRIu64 "-bit to 16-bit samples...\n", ullSampBitLength);
+    //    printf("\nConverting %" PRIu64 "-bit to 16-bit samples...\n", ullSampBitLength);
+    if ( !bDoCheckSFIDIncrement ) 
+	printf("Parsing CAPER samples for TM%" PRIu16 "\n",uTMLink);
+    else  
+	printf("Checking SFID increment; no output...\n");
 
+
+    printf("\n");
     //Loop over whole file
+    llOldMinorFrameIdx = -1;
+    llMinorFrameIdx    = 0;
     do
     	{
     	ullWordsWritten = 0;
@@ -365,119 +439,167 @@ int main( int argc, char * argv[] )
 	/*     } */
 	
 	//Determine which minor frame this is
-	ullMinorFrameIdx = (pauMinorFrame[uSFIDIdx-1] + 1) & 0b0000011111;  //The TM list counts from 1, not zero
-	if (bVerbose) printf("Minor frame: %" PRIX64 "\n",ullMinorFrameIdx);
+	llOldMinorFrameIdx = llMinorFrameIdx;
+	llMinorFrameIdx = (pauMinorFrame[uSFIDIdx-1] + 1) & 0b0000011111;  //The TM list counts from 1, not zero
+	if (bVerbose ) printf("Minor frame: %" PRIX64 "\n",llMinorFrameIdx);
 
-	//prepare all the samples, man
-	//	while(ulMinorFrameSampCount < ullSampsPerMinorFrame)
-	//	    {
-	
-	//check the sync words
-	
-	//write this minor frame to the appropriate measurement file
-	int iCurrAsymWRange;
-	int iCurrAsymFRange;
-	for (iMeasIdx = 0; iMeasIdx < iNMeasurements; iMeasIdx++)
+	if (bDoCheckSFIDIncrement)
 	    {
-	    int iWdIdx;
-
-	    // If there are no asymmetric word or frame ranges, just write the sample at the specified word and any others within minor frame
-	    if ( ( ppsuMeasInfo[iMeasIdx]->uNAsymWRanges == 0 ) && ( ppsuMeasInfo[iMeasIdx]->uNAsymFRanges == 0 ) )
-		{
-		    
-		if ( (ullMinorFrameIdx % ppsuMeasInfo[iMeasIdx]->uMinorFrInt) == ( ppsuMeasInfo[iMeasIdx]->uMinorFrame % ppsuMeasInfo[iMeasIdx]->uMinorFrInt ) )
+		//if ( llOldMinorFrameIdx == llMinorFramesPerMajorFrame ) llOldMinorFrameIdx = 0;
+		llOldMinorFrameIdx %= llMinorFramesPerMajorFrame;
+		if ( ullMinorFrameCount > 0 && 
+		     ( ( ( llMinorFrameIdx - llOldMinorFrameIdx ) != 1 ) && ( ( llMinorFrameIdx - llOldMinorFrameIdx ) != 1 - llMinorFramesPerMajorFrame ) ) )
 		    {
-		    if ( ( uTMLink == 1 ) && ( bCombineTM1Meas ) )
+		    ullSkippedFrameCount++;
+		    printf("Minor frame skipped!\n");
+		    printf("Minor frame number     : %" PRIi64 "\n",llMinorFrameIdx);
+		    printf("Old minor frame number : %" PRIi64 "\n",llOldMinorFrameIdx);
+		    printf("Net minor frame count  : %" PRIu64 "\n",ullMinorFrameCount);
+		    printf("Number of mismatches   : %" PRIu64 "\n",ullSkippedFrameCount);
+		    printf("\n");
+		    }
+	    }
+	else
+	    {
+	    //write this minor frame to the appropriate measurement file
+	    int iCurrAsymWRange;
+	    int iCurrAsymFRange;
+	    for (iMeasIdx = 0; iMeasIdx < iNMeasurements; iMeasIdx++)
+		{
+		int iWdIdx;
+
+		// If there are no asymmetric word or frame ranges, just write the sample at the specified word and any others within minor frame
+		if ( ( ppsuMeasInfo[iMeasIdx]->uNAsymWRanges == 0 ) && ( ppsuMeasInfo[iMeasIdx]->uNAsymFRanges == 0 ) )
+		    {
+		    
+		    if ( (llMinorFrameIdx % ppsuMeasInfo[iMeasIdx]->uMinorFrInt) == ( ppsuMeasInfo[iMeasIdx]->uMinorFrame % ppsuMeasInfo[iMeasIdx]->uMinorFrInt ) )
 			{
-			int iLSBWdIdx;
-			uint16_t uCombinedSample;
-			iLSBWdIdx = ppsuMeasInfo[iMeasIdx]->uLSBWord;
-			if( iLSBWdIdx != ( TM_SKIP_LSB - 1 ) )
+			if ( ( uTMLink == 1 ) && ( bCombineTM1Meas ) )
+			    {
+			    int iLSBWdIdx;
+			    uint16_t uCombinedSample;
+			    iLSBWdIdx = ppsuMeasInfo[iMeasIdx]->uLSBWord;
+			    if( iLSBWdIdx != ( TM_SKIP_LSB - 1 ) )
+				{
+				for (iWdIdx = ppsuMeasInfo[iMeasIdx]->uWord; iWdIdx < ullSampsPerMinorFrame; iWdIdx += ppsuMeasInfo[iMeasIdx]->uWdInt)
+				    {
+				    if ( iLSBWdIdx == TM_NO_LSB - 1 )
+					{
+					uCombinedSample = pauMinorFrame[iWdIdx];
+					if ( bAssembleCounter )
+					    {
+					    for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
+						{
+						if ( iMeasIdx == pauMFCIndices[iArgIdx] )
+						    {
+						    paullMajorFrameVals[iArgIdx] = uCombinedSample;
+						    break;
+						    }
+						}
+					    }
+					}
+				    else if ( iLSBWdIdx == TM_UPPER6_MSB_LOWER10_LSB - 1) //GPS and ACS are weird
+					{
+					uCombinedSample = ( ( pauMinorFrame[iWdIdx] & 0x3FF ) << 10 ) | ( pauMinorFrame[iLSBWdIdx] );
+					}
+				    else
+					{
+					uCombinedSample = ( ( pauMinorFrame[iWdIdx] & 0x3FF ) <<  6 ) | ( pauMinorFrame[iLSBWdIdx] >> 4 );
+					}
+					
+				    ullWordsWritten += fwrite(&uCombinedSample,2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile) * 2;
+				    ulMinorFrameSampCount += 2;
+				    iLSBWdIdx += ppsuMeasInfo[iMeasIdx]->uWdInt;
+				    }
+				}
+			    }
+			else
 			    {
 			    for (iWdIdx = ppsuMeasInfo[iMeasIdx]->uWord; iWdIdx < ullSampsPerMinorFrame; iWdIdx += ppsuMeasInfo[iMeasIdx]->uWdInt)
 				{
-				if ( iLSBWdIdx == TM_NO_LSB - 1 )
+				ullWordsWritten += fwrite(&pauMinorFrame[iWdIdx],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
+				ppsuMeasInfo[iMeasIdx]->ullSampCount++;
+				ulMinorFrameSampCount++;
+				if ( bAssembleCounter )
 				    {
-				    uCombinedSample = pauMinorFrame[iWdIdx];
+				    for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
+					{
+					if ( iMeasIdx == pauMFCIndices[iArgIdx] )
+					    {
+					    paullMajorFrameVals[iArgIdx] = pauMinorFrame[iWdIdx];
+					    break;
+					    }
+					}
 				    }
-				else if ( iLSBWdIdx == TM_UPPER6_MSB_LOWER10_LSB - 1) //GPS and ACS are weird
-				    {
-				    uCombinedSample = ( ( pauMinorFrame[iWdIdx] & 0x3FF ) << 10 ) | ( pauMinorFrame[iLSBWdIdx] );
-				    }
-				else
-				    {
-				    uCombinedSample = ( ( pauMinorFrame[iWdIdx] & 0x3FF ) <<  6 ) | ( pauMinorFrame[iLSBWdIdx] >> 4 );
-				    }
-
-				ullWordsWritten += fwrite(&uCombinedSample,2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile) * 2;
-				ulMinorFrameSampCount += 2;
-				iLSBWdIdx += ppsuMeasInfo[iMeasIdx]->uWdInt;
 				}
 			    }
+			
 			}
-		    else
+		    }
+		// Otherwise, if we have asymmetric word ranges but no asymmetric frame ranges ...
+		else if ( ( ppsuMeasInfo[iMeasIdx]->uNAsymWRanges > 0 ) && ( ppsuMeasInfo[iMeasIdx]->uNAsymFRanges == 0 ) )
+		    {
+		    int iLowerLim;
+		    int iUpperLim;
+		    for (uAsymIdx = 0; uAsymIdx < ppsuMeasInfo[iMeasIdx]->uNAsymWRanges; uAsymIdx++)
 			{
-			for (iWdIdx = ppsuMeasInfo[iMeasIdx]->uWord; iWdIdx < ullSampsPerMinorFrame; iWdIdx += ppsuMeasInfo[iMeasIdx]->uWdInt)
+			/* iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uGlobAsymWRInd+uAsymIdx][0]; //these ranges are inclusive */
+			/* iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uGlobAsymWRInd+uAsymIdx][1]; */
+			iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uAsymIdx][0]; //these ranges are inclusive
+			iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uAsymIdx][1];
+			for ( iWdIdx = iLowerLim; iWdIdx <= iUpperLim; iWdIdx++)
 			    {
 			    ullWordsWritten += fwrite(&pauMinorFrame[iWdIdx],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
 			    ppsuMeasInfo[iMeasIdx]->ullSampCount++;
 			    ulMinorFrameSampCount++;
 			    }
 			}
-
+		    uGlobAsymWRInd += ppsuMeasInfo[iMeasIdx]->uNAsymWRanges;
 		    }
-		}
-	    // Otherwise, if we have asymmetric word ranges but no asymmetric frame ranges ...
-	    else if ( ( ppsuMeasInfo[iMeasIdx]->uNAsymWRanges > 0 ) && ( ppsuMeasInfo[iMeasIdx]->uNAsymFRanges == 0 ) )
-		{
-		int iLowerLim;
-		int iUpperLim;
-		for (uAsymIdx = 0; uAsymIdx < ppsuMeasInfo[iMeasIdx]->uNAsymWRanges; uAsymIdx++)
+		// Otherwise, if we have asymmetric frame ranges but no asymmetric word ranges ...
+		else if ( ( ppsuMeasInfo[iMeasIdx]->uNAsymWRanges == 0 ) && ( ppsuMeasInfo[iMeasIdx]->uNAsymFRanges > 0 ) )
 		    {
-		    /* iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uGlobAsymWRInd+uAsymIdx][0]; //these ranges are inclusive */
-		    /* iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uGlobAsymWRInd+uAsymIdx][1]; */
-		    iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uAsymIdx][0]; //these ranges are inclusive
-		    iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymWRanges[uAsymIdx][1];
-		    for ( iWdIdx = iLowerLim; iWdIdx <= iUpperLim; iWdIdx++)
+		    int iLowerLim;
+		    int iUpperLim;
+		    for (uAsymIdx = 0; uAsymIdx < ppsuMeasInfo[iMeasIdx]->uNAsymFRanges; uAsymIdx++)
 			{
-			ullWordsWritten += fwrite(&pauMinorFrame[iWdIdx],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
-			ppsuMeasInfo[iMeasIdx]->ullSampCount++;
-			ulMinorFrameSampCount++;
-			}
-		    }
-		uGlobAsymWRInd += ppsuMeasInfo[iMeasIdx]->uNAsymWRanges;
-		}
-	    // Otherwise, if we have asymmetric frame ranges but no asymmetric word ranges ...
-	    else if ( ( ppsuMeasInfo[iMeasIdx]->uNAsymWRanges == 0 ) && ( ppsuMeasInfo[iMeasIdx]->uNAsymFRanges > 0 ) )
-		{
-		int iLowerLim;
-		int iUpperLim;
-		for (uAsymIdx = 0; uAsymIdx < ppsuMeasInfo[iMeasIdx]->uNAsymFRanges; uAsymIdx++)
-		    {
-		    /* iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uGlobAsymFRInd+uAsymIdx][0]; //these ranges are inclusive */
-		    /* iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uGlobAsymFRInd+uAsymIdx][1]; */
-		    iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uAsymIdx][0]; //these ranges are inclusive
-		    iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uAsymIdx][1];
-		    for ( iWdIdx = iLowerLim; iWdIdx <= iUpperLim; iWdIdx++)
-			{
-			if ( iWdIdx == ullMinorFrameIdx )
+			/* iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uGlobAsymFRInd+uAsymIdx][0]; //these ranges are inclusive */
+			/* iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uGlobAsymFRInd+uAsymIdx][1]; */
+			iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uAsymIdx][0]; //these ranges are inclusive
+			iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uAsymIdx][1];
+			for ( iWdIdx = iLowerLim; iWdIdx <= iUpperLim; iWdIdx++)
 			    {
-			    ullWordsWritten += fwrite(&pauMinorFrame[ppsuMeasInfo[iMeasIdx]->uWord],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
-			    ppsuMeasInfo[iMeasIdx]->ullSampCount++;
-			    ulMinorFrameSampCount++;
+			    if ( iWdIdx == llMinorFrameIdx )
+				{
+				ullWordsWritten += fwrite(&pauMinorFrame[ppsuMeasInfo[iMeasIdx]->uWord],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
+				ppsuMeasInfo[iMeasIdx]->ullSampCount++;
+				ulMinorFrameSampCount++;
+				if ( bAssembleCounter )
+				    {
+				    for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
+					{
+					if ( iMeasIdx == pauMFCIndices[iArgIdx] )
+					    {
+					    paullMajorFrameVals[iArgIdx] = pauMinorFrame[iWdIdx];
+					    break;
+					    }
+					}
+				    }
+				}
 			    }
 			}
+		    uGlobAsymFRInd += ppsuMeasInfo[iMeasIdx]->uNAsymFRanges;
 		    }
-		uGlobAsymFRInd += ppsuMeasInfo[iMeasIdx]->uNAsymFRanges;
+		}
+	    
+	    //assemble unique counter, if requested
+	    if ( bAssembleCounter )
+		{
+		    ullCounterVal = ullAssembleCounterVal(paullMajorFrameVals,llMinorFrameIdx,uNumMFCounters,ullSampBitLength);
+		    fprintf(psuUniqCounterFile,"%" PRIu64 "\n",ullCounterVal);
 		}
 	    }
 
-
-	/* int i = 0; */
-	/* for (i = 0; i < ullSampsPerMinorFrame; i++) */
-	/*     { */
-	/* 	printf("Samp #%i:   0x%" PRIx16 "\n",i,pauMinorFrame[i]); */
-	/*     } */
 
 	//did we get the whole major frame?
 	ullMinorFrameCount++;
@@ -485,14 +607,14 @@ int main( int argc, char * argv[] )
 	if (bVerbose) printf("Major frame #%" PRIu64 "\n", llMajorFrameCount);
 
 
-	for (ullMinorFrameIdx = 0; ullMinorFrameIdx < llMinorFramesPerMajorFrame; ullMinorFrameIdx++)
-	    {
-	    if (bVerbose) 
-		{
-		if (pauIsMinorFrameCollected[ullMinorFrameIdx] == 0)
-		    printf("Did not collect subframe %" PRIi64 "!",ullMinorFrameIdx);
-		}
-	    }
+	/* for (llMinorFrameIdx = 0; llMinorFrameIdx < llMinorFramesPerMajorFrame; llMinorFrameIdx++) */
+	/*     { */
+	/*     if (bVerbose)  */
+	/* 	{ */
+	/* 	if (pauIsMinorFrameCollected[llMinorFrameIdx] == 0) */
+	/* 	    printf("Did not collect subframe %" PRIi64 "!",llMinorFrameIdx); */
+	/* 	} */
+	/*     } */
 
     	if (bVerbose) 
     	    {
@@ -508,17 +630,24 @@ int main( int argc, char * argv[] )
     	}  while( ( ullInFilePos = ftell(psuInFile) ) < suInFileStat.st_size  );
     
     //Summary
-    printf("Minor frame count:  %" PRIu64 "\n", ullMinorFrameCount);
-    printf("Major frame count:  %" PRIu64 "\n", llMajorFrameCount);
-    printf("\n");
-    //    if (bVerbose) 
-    printf("Wrote %" PRIu64 "./%" PRIu64 ". (Bytes / Total Bytes) \n", ullTotWordsWritten*2, (suInFileStat.st_size));
-    printf("Wrote %" PRIu64 "./%" PRIu64 ". (Bytes / Total Bytes) \n", ullTotWordsWritten*2, (suInFileStat.st_size));
-    printf("Output file size is %.2f%% of input file\n", (float)((float)( ullTotWordsWritten*2 )/(float)(suInFileStat.st_size))*100);
-
+    printf("Minor frame count           : %" PRIu64 "\n", ullMinorFrameCount);
+    printf("Major frame count           : %" PRIu64 "\n", llMajorFrameCount);
+    if (!bDoCheckSFIDIncrement) 
+	{
+	printf("\n");
+	printf("Wrote %" PRIu64 "./%" PRIu64 ". (Bytes / Total Bytes) \n", ullTotWordsWritten*2, (suInFileStat.st_size));
+	printf("Wrote %" PRIu64 "./%" PRIu64 ". (Bytes / Total Bytes) \n", ullTotWordsWritten*2, (suInFileStat.st_size));
+	printf("Output file size is %.2f%% of input file\n", (float)((float)( ullTotWordsWritten*2 )/(float)(suInFileStat.st_size))*100);
+	}
+    else
+	{
+	printf("Total number of frame skips : %" PRIu64 "\n",ullSkippedFrameCount);
+	if ( ullSkippedFrameCount == 0 )
+	    printf("\nShe's clean! No frame skips detected\n");
+	}
     //close files
     fclose(psuInFile);
-    fclose(psuOutFile);
+    if ( psuUniqCounterFile != NULL ) fclose(psuUniqCounterFile);
 
     //release the mem!
     for ( iMeasIdx = 0; iMeasIdx < iNMeasurements; iMeasIdx++)
@@ -541,13 +670,13 @@ int main( int argc, char * argv[] )
     return EXIT_SUCCESS;
     }
 
-void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t ullMinorFrameIdx)
+void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t llMinorFrameIdx)
 { 
     //    for
 
 }
 
- int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink, uint8_t bCombineTM1Meas )
+int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement )
 {
     uint16_t uNAsymWRanges;
     uint16_t uNAsymFRanges;
@@ -705,7 +834,7 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t ullMinorFrameIdx)
 	psuMeasInfo->pauFtemp        = NULL;
 	}
     
-    if ( ( uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineTM1Meas ) )
+    if ( ( ( uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineTM1Meas ) ) && !bDoCheckSFIDIncrement )
 	{
 	sprintf(psuMeasInfo->szOutFileName,"%s--%s.out",szOutPrefix,psuMeasInfo->szAbbrev);
 	psuMeasInfo->psuOutFile       = fopen(psuMeasInfo->szOutFileName,"wb");
@@ -768,13 +897,31 @@ uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample,
     return uCombinedSample;
 }
 
+uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFrameIdx, uint16_t uNumMFCounters, uint64_t ullSampBitLength)
+{
+    uint64_t ullCounterVal;
+    
+    int      iMFCIdx;
+
+    ullCounterVal = 0;
+    for ( iMFCIdx = 0; iMFCIdx < uNumMFCounters; iMFCIdx++ )
+	{
+	ullCounterVal = ullCounterVal | ( paullMajorFrameVals[iMFCIdx] << ullSampBitLength*iMFCIdx );
+	//printf("Major frame counter %i: %" PRIu64 "\n",iMFCIdx, paullMajorFrameVals[iMFCIdx]);
+	}
+    ullCounterVal += llMinorFrameIdx;
+
+    return ullCounterVal;
+}
+
+
 void vUsage(void)
     {
     printf("\n");
     printf("parse_CAPER_samples\n");
     printf("Convert a filed outputted by bust_nBit_into_16bit_file into separate measurement files!\n");
     printf("\n");
-    printf("Usage: parse_CAPER_samples <input file> <output file> [flags]   \n");
+    printf("Usage: parse_CAPER_samples <input file> [flags]   \n");
     printf("                                                                      \n");
     printf("   <filename>   Input/output file names                               \n");
     printf("                                                                      \n");
@@ -787,6 +934,11 @@ void vUsage(void)
     printf("   OPTIONAL PARAMETERS                                                \n");
     printf("   -P           Output file prefix                            [%s]    \n",DEF_OUTPREFIX);
     printf("   -C           Combine MSB/LSB channels on the fly(TM1 Only!)[%i]    \n",DEF_COMBINE_TM1);
+    printf("   -c           Check integrity of data by following SFID,    [%i]    \n",DEF_DO_CHECK_SFID_INCREMENT);
+    printf("                    don't write output                                \n");
+    printf("   -A           Assemble unique counter based on major/minor  [%i]    \n",DEF_ASSEMBLE_COUNTER);
+    printf("                    frames, and output to file                        \n");
     printf("   -v           Verbose                                       [%i]    \n",DEF_VERBOSE);
     printf("                                                                      \n");
+    printf("   -h           Help (this menu)                                      \n");
     }

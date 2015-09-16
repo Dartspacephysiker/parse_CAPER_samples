@@ -1,11 +1,15 @@
 #ifndef _TM23_MAJORFRAME
 #define _TM23_MAJORFRAME
 
-#define N_TM23_MEASUREMENTS   7     //Total number of measurementnels in this header
+#define N_TM23_MEASUREMENTS         7     //Total number of measurementnels in this header
 
-#define TM23_SFID_IDX         1     //Location of subframe ID within minor frame, counting from 1
+#define TM23_SFID_IDX               1     //Location of subframe ID within minor frame, counting from 1
 
-#define TM23_BPS        9600000     //Link BPS
+#define TM23_BPS              9600000     //Link BPS
+
+#define TM23_NUM_MFCOUNTERS         2
+
+#define TM23_WORD_BITLENGTH        16
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM23SerialMeasNames[]    =    {"Subframe ID                 ", "GPS 1PPS                                   ",
@@ -78,6 +82,7 @@ static uint16_t        uTM23LSBWord[]   =    {  0, 0,							    //TM + SFID   52
 					        0, 0,
 						0};
 
+static uint16_t         uTM23MFCIdx[]   =    {  2, 3};    //Major frame measurement indices, in reverse order to assemble master counter
 
 #endif // #ifndef _TM23_MAJORFRAME
 

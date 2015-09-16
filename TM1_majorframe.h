@@ -11,6 +11,10 @@
 
 #define TM1_BPS               9600000    //Link BPS
 
+#define TM1_NUM_MFCOUNTERS          3
+
+#define TM1_WORD_BITLENGTH         10
+
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM1SerialMeasNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",	    //Serial #1, 0-7
 					       "Langmuir Probe Channel 2 MSB ", "Langmuir Probe Channel 2 LSB ",
@@ -546,5 +550,7 @@ static uint16_t         uTM1LSBWord[]   =    { 95, TM_SKIP_LSB,						    //Seria
 
 
 
+static uint16_t         uTM1MFCIdx[]    =    {  53, 54,  //Major frame measurement indices, in reverse order to assemble master counter
+					        55};
 #endif // #ifndef _TM1_MAJORFRAME
 
