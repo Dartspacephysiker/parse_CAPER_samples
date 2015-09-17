@@ -80,7 +80,12 @@ static uint16_t     uTM23NAsymFRanges[]    = {0, 0,
 /*Specification of the frame ranges w/in a minor frame, inclusive*/
 static uint16_t     uTM23AsymFRanges[][2]  = {{  1, 3}};   //Just for MF2 words, inclusive of words
 
-static uint16_t        uTM23LSBWord[]   =    {  0, 0,							    //TM + SFID   52-58
+static uint16_t        uTM23LSBWord[]   =    {  0, 0,
+					        0, 0,
+					        0, 0,
+						0};
+
+static uint8_t abTM23TSCalcEnabled[]    =    {  0, 0,
 					        0, 0,
 					        0, 0,
 						0};

@@ -114,43 +114,43 @@ static char   * szTM1SerialMeasAbbrev[] =    { "LP01_MSB",      "LP01_LSB",					
                                                "EEPAA"};
 
 /*User of measurement, as defined by NASA PCM doc*/
-static char   * szTM1User[]             =    {"UiO",       "UiO",					    //Serial #1, 0-7  
+static char   * szTM1User[]             =    {"UiO",       "UiO",						    //Serial #1, 0-7  
 					      "UiO",       "UiO",						                      
 					      "UiO",       "UiO",						                      
 					      "UiO",       "UiO",						                      
 													                      
-					      "U_Iowa",    "U_Iowa",					    //Serial #2, 8-15 
+					      "U_Iowa",    "U_Iowa",						    //Serial #2, 8-15 
 					      "U_Iowa",    "U_Iowa",						                      
 					      "U_Iowa",    "U_Iowa",						                      
 					      "U_Iowa",    "U_Iowa",						                      
 													                      
-					      "U_Iowa",    "U_Iowa",					    //Serial #3, 16-21
+					      "U_Iowa",    "U_Iowa",						    //Serial #3, 16-21
 					      "U_Iowa",    "U_Iowa",						                      
 					      "U_Iowa",    "U_Iowa",						                      
 					      //"N/A",       "N/A",             					              
 														                      
-					      "Dartmouth", "Dartmouth",					    //Serial #4, 22-29
+					      "Dartmouth", "Dartmouth",						    //Serial #4, 22-29
 					      "Dartmouth", "Dartmouth",					                      
 					      "Dartmouth", "Dartmouth",					                      
 					      "Dartmouth", "Dartmouth",					                      
 														                      
-					      "Dartmouth", "Dartmouth",					    //Serial #5, 30-37
+					      "Dartmouth", "Dartmouth",						    //Serial #5, 30-37
 					      "Dartmouth", "Dartmouth",					                      
 					      "Dartmouth", "Dartmouth",					                      
 					      "Dartmouth", "Dartmouth",					                      
 														                      
-					      "Dartmouth", "Dartmouth",					    //Serial #6, 38-45
+					      "Dartmouth", "Dartmouth",						    //Serial #6, 38-45
 					      "Dartmouth", "Dartmouth",					                      
 					      "Dartmouth", "Dartmouth",					                      
 					      "Dartmouth", "Dartmouth",					                      
 														                      
-					      "Dartmouth", "Dartmouth",					    //Serial #7, 46-51
+					      "Dartmouth", "Dartmouth",						    //Serial #7, 46-51
 					      "Dartmouth", "Dartmouth",					                      
 					      "Dartmouth", "Dartmouth",					                      
 					      //"N/A",       "N/A",             					              
 														                      
 					      "TM",//SFID							                      
-					      "TM",        "TM",					    //TM + SFID   52-58
+					      "TM",        "TM",						    //TM + SFID   52-58
 					      "TM",        "TM",
 					      "TM",        "TM",
 
@@ -256,7 +256,7 @@ static uint16_t         uTM1WdInt[]     =      {120, 120,							    //Serial #1,
 						120};
 					    
 /*Interval of frames containing each word*/
-static uint16_t        uTM1Frame[]      =    {1, 1,                                                                   //Serial #1, 0-7  
+static uint16_t        uTM1Frame[]      =    {1, 1,								    //Serial #1, 0-7  
 					      1, 1,								                      
 					      1, 1,								                      
 					      1, 1,								                      
@@ -304,7 +304,7 @@ static uint16_t        uTM1Frame[]      =    {1, 1,                             
 
 
 /*Interval of frames containing each word*/
-static uint16_t        uTM1FrInt[]      =    {1, 1,                                                                   //Serial #1, 0-7  
+static uint16_t        uTM1FrInt[]      =    {1, 1,								    //Serial #1, 0-7  
 					      1, 1,								                      
 					      1, 1,								                      
 					      1, 1,								                      
@@ -351,7 +351,7 @@ static uint16_t        uTM1FrInt[]      =    {1, 1,                             
 					      1};
 
 /*Sampling rate of each measurement*/
-static uint32_t           ulTM1SPS[]    =    { 8000,  8000,                                                           //Serial #1, 0-7  
+static uint32_t           ulTM1SPS[]    =    { 8000,  8000,							    //Serial #1, 0-7  
 					       8000,  8000,							                      
 					       8000,  8000,							                      
 					       8000,  8000,							                      
@@ -399,7 +399,7 @@ static uint32_t           ulTM1SPS[]    =    { 8000,  8000,                     
 
 /*Number of asym word ranges in minor frame for each measurement*/
 /*A range of zero means the measurement corresponds to a single word*/
-static uint16_t      uTM1NAsymWRanges[] =      {0, 0,                                                              //Serial #1, 0-7  
+static uint16_t      uTM1NAsymWRanges[] =      {0, 0,								    //Serial #1, 0-7  
 						0, 0,								                      
 						0, 0,								                      
 						0, 0,								                      
@@ -459,7 +459,7 @@ static uint16_t      uTM1AsymWRanges[][2] =  {{45, 50},								    //Bagel 1
 					      {93, 93}};
 
 /*Number of asym frame ranges in minor frame for this measurement*/
-static uint16_t      uTM1NAsymFRanges[] =    {0, 0,                                                              //Serial #1, 0-7  
+static uint16_t      uTM1NAsymFRanges[] =    {0, 0,								    //Serial #1, 0-7  
 					      0, 0,								                      
 					      0, 0,								                      
 					      0, 0,								                      
@@ -508,41 +508,41 @@ static uint16_t      uTM1NAsymFRanges[] =    {0, 0,                             
 /*Specification of the frame ranges w/in a minor frame, inclusive*/
 static uint16_t      uTM1AsymFRanges[][2]  = {{0,0}};
 
-static uint16_t         uTM1LSBWord[]   =    { 95, TM_SKIP_LSB,						    //Serial #1, 0-7  
+static uint16_t         uTM1LSBWord[]   =    { 95, TM_SKIP_LSB,							    //Serial #1, 0-7  
 					       97, TM_SKIP_LSB,								                      
 					      101, TM_SKIP_LSB,								                      
 					      114, TM_SKIP_LSB,								                      
 														                      
-					       30, TM_SKIP_LSB,						    //Serial #2, 8-15 
+					       30, TM_SKIP_LSB,							    //Serial #2, 8-15 
 					       30, TM_SKIP_LSB,								                      
 					       30, TM_SKIP_LSB,								                      
 					       30, TM_SKIP_LSB,								                      
 														                      
-					       34, TM_SKIP_LSB,						    //Serial #3, 16-21
+					       34, TM_SKIP_LSB,							    //Serial #3, 16-21
 					       36, TM_SKIP_LSB,								                      
 					       38, TM_SKIP_LSB,								                      
 														                      
-					        4, TM_SKIP_LSB,						    //Serial #4, 22-29
+					        4, TM_SKIP_LSB,							    //Serial #4, 22-29
 					        8, TM_SKIP_LSB,								                      
 					        6, TM_SKIP_LSB,								                      
 					       10, TM_SKIP_LSB,								                      
 														                      
-					       14, TM_SKIP_LSB,						    //Serial #5, 30-37
+					       14, TM_SKIP_LSB,							    //Serial #5, 30-37
 					       18, TM_SKIP_LSB,								                      
 					       22, TM_SKIP_LSB,								                      
 					       24, TM_SKIP_LSB,								                      
 					       
-					       30, TM_SKIP_LSB,						    //Serial #6, 38-45
+					       30, TM_SKIP_LSB,							    //Serial #6, 38-45
 					       30, TM_SKIP_LSB,								                      
 					       34, TM_SKIP_LSB,								                      
 					       34, TM_SKIP_LSB,								                      
 														                      
-					       34, TM_SKIP_LSB,						    //Serial #7, 46-51
+					       34, TM_SKIP_LSB,							    //Serial #7, 46-51
 					       34, TM_SKIP_LSB,								                      
 					        2, TM_SKIP_LSB,								                      
 					       
 					TM_NO_LSB,
-				        TM_NO_LSB,   TM_NO_LSB,						    //TM + SFID   52-58
+				        TM_NO_LSB,   TM_NO_LSB,							    //TM + SFID   52-58
 			                TM_NO_LSB,   TM_NO_LSB,
 			     	        TM_NO_LSB,   TM_NO_LSB,
 
@@ -552,6 +552,53 @@ static uint16_t         uTM1LSBWord[]   =    { 95, TM_SKIP_LSB,						    //Seria
 				        TM_NO_LSB, TM_NO_LSB,
 					TM_NO_LSB};
 
+
+
+static uint8_t abTM1TSCalcEnabled[]     =    {0, 0,								    //Serial #1, 0-7  
+					      0, 0,								                      
+					      0, 0,								                      
+					      0, 0,								                      
+					      
+					      0, 0,								    //Serial #2, 8-15 
+					      0, 0,								                      
+					      0, 0,								                      
+					      0, 0,								                      
+					      
+					      0, 0,								    //Serial #3, 16-21
+					      0, 0,								                      
+					      0, 0,								                      
+					      //0, 0,			                 			    		        
+					      
+					      1, 0,								    //Serial #4, 22-29
+					      1, 0,								                      
+					      0, 0,								                      
+					      0, 0,								                      
+					      
+					      0, 0,								    //Serial #5, 30-37
+					      0, 0,								                      
+					      0, 0,								                      
+					      0, 0,								                      
+					      
+					      0, 0,								    //Serial #6, 38-45
+					      0, 0,								                      
+					      0, 0,								                      
+					      0, 0,								                      
+					      
+					      0, 0,								    //Serial #7, 46-51
+					      0, 0,								                      
+					      0, 0,								                      
+					      //0, 0};			                 			    		        
+					      
+					      0,   //SFID				                 		    		        
+					      0, 0,								    //TM + SFID   52-58
+					      0, 0,
+					      0, 0,
+					      
+					      0, 0,
+					      0, 0,
+					      
+					      0, 0,
+					      0}; 
 
 
 static uint16_t    auTM1MFCMeasIdx[]    =    {  53, 54,  //Major frame measurement indices (indexing from zero in the arrays above)
