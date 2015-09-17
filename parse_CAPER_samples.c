@@ -12,7 +12,7 @@
 #include "TM1_majorframe.h"
 #include "TM23_majorframe.h"
 
-#define DEF_N_SAMPBITS                   16 //in bits
+//#define DEF_N_SAMPBITS                   16 //in bits
 #define MAX_N_MINORFRAMES               256
 #define DEF_SAMPSPERMINORFRAME          120
 #define DEF_MINOR_PER_MAJOR              32
@@ -180,7 +180,8 @@ int main( int argc, char * argv[] )
     psuUniqCounterFile = (FILE *) NULL;
     strncpy(szOutPrefix,DEF_OUTPREFIX,DEF_STR_SIZE);
 
-    ullSampBitLength           = DEF_N_SAMPBITS;
+    //    ullSampBitLength           = DEF_N_SAMPBITS;
+    ullSampBitLength           = 0;
     ullSampsPerMinorFrame      = DEF_SAMPSPERMINORFRAME;
     ullBytesPerMinorFrame      = ullSampsPerMinorFrame * sizeof(uint16_t);
 
@@ -209,15 +210,15 @@ int main( int argc, char * argv[] )
 	    case '-' :
 		switch (argv[iArgIdx][1])
 		    {
-		    case 's' :                   /* Sample size */
-			iArgIdx++;
-			if(iArgIdx >= argc)
-			    {
-			    vUsage();
-			    return EXIT_FAILURE;
-			    }
-			sscanf(argv[iArgIdx],"%" PRIu64 ,&ullSampBitLength);
-			break;
+		    /* case 's' :                   /\* Sample size *\/ */
+		    /* 	iArgIdx++; */
+		    /* 	if(iArgIdx >= argc) */
+		    /* 	    { */
+		    /* 	    vUsage(); */
+		    /* 	    return EXIT_FAILURE; */
+		    /* 	    } */
+		    /* 	sscanf(argv[iArgIdx],"%" PRIu64 ,&ullSampBitLength); */
+		    /* 	break; */
 
 		    case 'n' :                   /* # Samples */
 			iArgIdx++;
@@ -924,7 +925,7 @@ void vUsage(void)
     printf("   <filename>   Input/output file names                               \n");
     printf("                                                                      \n");
     printf("   INPUT FILE PARAMETERS                                              \n");
-    printf("   -s SIZE      Size of samples                    (in bits)  [%i]    \n",DEF_N_SAMPBITS);
+    //    printf("   -s SIZE      Size of samples                    (in bits)  [%i]    \n",DEF_N_SAMPBITS);
     printf("   -n           Number of samples per minor frame  (optional) [%i]    \n",DEF_SAMPSPERMINORFRAME);
     printf("   -L           TM link number (can be 1-4)                   [%i]    \n",DEF_TM_LINK);
     printf("                                                                      \n");
@@ -933,7 +934,7 @@ void vUsage(void)
     printf("   -P           Output file prefix                            [%s]    \n",DEF_OUTPREFIX);
     printf("   -C           Combine MSB/LSB channels on the fly(TM1 Only!)[%i]    \n",DEF_COMBINE_TM1);
     printf("   -c           Check integrity of data by following SFID,    [%i]    \n",DEF_DO_CHECK_SFID_INCREMENT);
-    printf("                    don't write output                                \n");
+    printf("                    (no parsed output is produced)                    \n");
     printf("   -A           Assemble unique counter based on major/minor  [%i]    \n",DEF_ASSEMBLE_COUNTER);
     printf("                    frames, and output to file                        \n");
     printf("   -v           Verbose                                       [%i]    \n",DEF_VERBOSE);

@@ -83,7 +83,7 @@ static uint16_t        uTM23LSBWord[]   =    {  0, 0,							    //TM + SFID   52
 					        0, 0,
 						0};
 
-static uint16_t         uTM23MFCIdx[]   =    {  2, 3};    //Major frame measurement indices, in reverse order to assemble master counter
+static uint16_t         uTM23MFCIdx[]   =    {  2, 3};    ///Major frame measurement indices (indexing from zero in the arrays above)
 
 #endif // #ifndef _TM23_MAJORFRAME
 

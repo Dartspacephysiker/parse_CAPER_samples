@@ -551,7 +551,7 @@ static uint16_t         uTM1LSBWord[]   =    { 95, TM_SKIP_LSB,						    //Seria
 
 
 
-static uint16_t         uTM1MFCIdx[]    =    {  53, 54,  //Major frame measurement indices, in reverse order to assemble master counter
+static uint16_t         uTM1MFCIdx[]    =    {  53, 54,  //Major frame measurement indices (indexing from zero in the arrays above)
 					        55};
 #endif // #ifndef _TM1_MAJORFRAME
 
