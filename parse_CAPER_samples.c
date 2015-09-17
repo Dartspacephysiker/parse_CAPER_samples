@@ -298,7 +298,7 @@ int main( int argc, char * argv[] )
 	for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
 	    {
 		pauMFCIndices[iArgIdx] = uTM1MFCIdx[iArgIdx];
-		printf("MFC Index: %" PRIu16 "\n",pauMFCIndices[iArgIdx]);
+		//		printf("MFC Index: %" PRIu16 "\n",pauMFCIndices[iArgIdx]);
 	    }
 
 	ullSampBitLength    = TM1_WORD_BITLENGTH;
@@ -320,7 +320,7 @@ int main( int argc, char * argv[] )
 	for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
 	    {
 		pauMFCIndices[iArgIdx] = uTM23MFCIdx[iArgIdx];
-		printf("MFC Index: %" PRIu16 "\n",pauMFCIndices[iArgIdx]);
+		//		printf("MFC Index: %" PRIu16 "\n",pauMFCIndices[iArgIdx]);
 	    }
 
 	ullSampBitLength           = TM23_WORD_BITLENGTH;
@@ -419,8 +419,8 @@ int main( int argc, char * argv[] )
 
     printf("\n");
     //Loop over whole file
-    llOldMinorFrameIdx = -1;
-    llMinorFrameIdx    = 0;
+    llOldMinorFrameIdx = 0;
+    llMinorFrameIdx    = 1;
     do
     	{
     	ullWordsWritten = 0;
@@ -436,16 +436,9 @@ int main( int argc, char * argv[] )
     	    break;
     	    }
 
-	//set all samples to -1, reset counters
-	//CURRENTLY NOT USED, MAYBE WITH GOOD REASON
-	/* for (iMeasIdx = 0; iMeasIdx < iNMeasurements; iMeasIdx++) */
-	/*     { */
-	/*     ppsuMeasInfo[iMeasIdx]->uSample = -1; */
-	/*     } */
-	
 	//Determine which minor frame this is
 	llOldMinorFrameIdx = llMinorFrameIdx;
-	llMinorFrameIdx = (pauMinorFrame[uSFIDIdx-1] + 1) & 0b0000011111;  //The TM list counts from 1, not zero
+	llMinorFrameIdx = (pauMinorFrame[uSFIDIdx-1] + 1) & 0b0000111111;  //The TM list counts from 1, not zero
 	if (bVerbose ) printf("Minor frame: %" PRIX64 "\n",llMinorFrameIdx);
 
 	if (bDoCheckSFIDIncrement)
@@ -472,7 +465,7 @@ int main( int argc, char * argv[] )
 	    for (iMeasIdx = 0; iMeasIdx < iNMeasurements; iMeasIdx++)
 		{
 		int iWdIdx;
-
+		int iFrIdx;
 		// If there are no asymmetric word or frame ranges, just write the sample at the specified word and any others within minor frame
 		if ( ( ppsuMeasInfo[iMeasIdx]->uNAsymWRanges == 0 ) && ( ppsuMeasInfo[iMeasIdx]->uNAsymFRanges == 0 ) )
 		    {
@@ -572,9 +565,9 @@ int main( int argc, char * argv[] )
 			/* iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uGlobAsymFRInd+uAsymIdx][1]; */
 			iLowerLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uAsymIdx][0]; //these ranges are inclusive
 			iUpperLim = ppsuMeasInfo[iMeasIdx]->ppauAsymFRanges[uAsymIdx][1];
-			for ( iWdIdx = iLowerLim; iWdIdx <= iUpperLim; iWdIdx++)
+			for ( iFrIdx = iLowerLim; iFrIdx <= iUpperLim; iFrIdx++)
 			    {
-			    if ( iWdIdx == llMinorFrameIdx )
+			    if ( iFrIdx == llMinorFrameIdx )
 				{
 				ullWordsWritten += fwrite(&pauMinorFrame[ppsuMeasInfo[iMeasIdx]->uWord],2,1,ppsuMeasInfo[iMeasIdx]->psuOutFile);
 				ppsuMeasInfo[iMeasIdx]->ullSampCount++;
@@ -585,7 +578,7 @@ int main( int argc, char * argv[] )
 					{
 					if ( iMeasIdx == pauMFCIndices[iArgIdx] )
 					    {
-					    paullMajorFrameVals[iArgIdx] = pauMinorFrame[iWdIdx];
+					    paullMajorFrameVals[iArgIdx] = pauMinorFrame[ppsuMeasInfo[iMeasIdx]->uWord];
 					    break;
 					    }
 					}
@@ -914,7 +907,7 @@ uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFr
 	    ullCounterVal = ullCounterVal | ( paullMajorFrameVals[iMFCIdx] << ullSampBitLength*iMFCIdx ); //	    ullCounterVal = ullCounterVal | ( paullMajorFrameVals[iMFCIdx] << ullSampBitLength*(uNumMFCounters-iMFCIdx-1) );
 	//printf("Major frame counter %i: %" PRIu64 "\n",iMFCIdx, paullMajorFrameVals[iMFCIdx]);
 	}
-    ullCounterVal = (ullCounterVal << uMinorFrameBitShift) | llMinorFrameIdx;
+    ullCounterVal = (ullCounterVal << uMinorFrameBitShift) | (llMinorFrameIdx - 1);
 
     return ullCounterVal;
 }
