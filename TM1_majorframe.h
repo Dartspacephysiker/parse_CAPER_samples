@@ -14,6 +14,7 @@
 #define TM1_NUM_MFCOUNTERS          3
 
 #define TM1_WORD_BITLENGTH         10
+#define TM1_MINORFRAME_BITSHIFT     5    //up to 32 minor frames
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM1SerialMeasNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",	    //Serial #1, 0-7

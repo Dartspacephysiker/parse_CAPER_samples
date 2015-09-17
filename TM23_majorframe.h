@@ -10,6 +10,7 @@
 #define TM23_NUM_MFCOUNTERS         2
 
 #define TM23_WORD_BITLENGTH        16
+#define TM23_MINORFRAME_BITSHIFT    2    //up to 4 minor frames
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM23SerialMeasNames[]    =    {"Subframe ID                 ", "GPS 1PPS                                   ",

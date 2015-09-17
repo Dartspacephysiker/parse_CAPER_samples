@@ -64,11 +64,11 @@ int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,ch
 int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
 
 void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo);
-void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t iMinorFrameIdx);
+void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx);
 
 //uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample, uint16_t uMSBShift, uint16_t uLSBShift, uint16_t uJustification, uint8_t bMSBIsFirst);
 
-uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFrameIdx, uint16_t uNumMFCounters, uint64_t ullSampBitLength);
+uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFrameIdx, uint16_t uNumMFCounters, uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift);
 
 void vUsage(void);
 
@@ -138,6 +138,7 @@ int main( int argc, char * argv[] )
     uint16_t  *  pauMFCIndices;
     uint64_t  *  paullMajorFrameVals;
     uint64_t     ullCounterVal;
+    uint16_t     uMinorFrameBitShift;
 
     uint8_t      bVerbose;
 
@@ -162,6 +163,7 @@ int main( int argc, char * argv[] )
     pauMFCIndices          = NULL;
     paullMajorFrameVals    = NULL;
     ullCounterVal          = 0;
+    uMinorFrameBitShift    = 0;
 
     bVerbose               = DEF_VERBOSE;
 
@@ -187,8 +189,8 @@ int main( int argc, char * argv[] )
 
     uSFIDIdx                   = 0;
 
-    llMinorFrameIdx           = 0;
-    llOldMinorFrameIdx        = 0;
+    llMinorFrameIdx            = 0;
+    llOldMinorFrameIdx         = 0;
     llMinorFramesPerMajorFrame = DEF_MINOR_PER_MAJOR;
 
     ullInFilePos               = 0;
@@ -300,6 +302,7 @@ int main( int argc, char * argv[] )
 	    }
 
 	ullSampBitLength    = TM1_WORD_BITLENGTH;
+	uMinorFrameBitShift = TM1_MINORFRAME_BITSHIFT;
 
 	if ( bCombineTM1Meas ) printf("Combining MSB/LSB measurements on TM1!\n");
 
@@ -308,12 +311,12 @@ int main( int argc, char * argv[] )
 	{
 	printf("TM2/3: RxDSP samples\n");
 
-	iNMeasurements      = N_TM23_MEASUREMENTS;
-        uSFIDIdx            = TM23_SFID_IDX;
+	iNMeasurements             = N_TM23_MEASUREMENTS;
+        uSFIDIdx                   = TM23_SFID_IDX;
 
-	uNumMFCounters      = TM23_NUM_MFCOUNTERS;
-	paullMajorFrameVals = (uint64_t *) malloc(uNumMFCounters * sizeof(uint64_t));
-	pauMFCIndices       = (uint16_t *) malloc(uNumMFCounters * sizeof(uint16_t));
+	uNumMFCounters             = TM23_NUM_MFCOUNTERS;
+	paullMajorFrameVals        = (uint64_t *) malloc(uNumMFCounters * sizeof(uint64_t));
+	pauMFCIndices              = (uint16_t *) malloc(uNumMFCounters * sizeof(uint16_t));
 	for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
 	    {
 		pauMFCIndices[iArgIdx] = uTM23MFCIdx[iArgIdx];
@@ -321,6 +324,8 @@ int main( int argc, char * argv[] )
 	    }
 
 	ullSampBitLength           = TM23_WORD_BITLENGTH;
+	uMinorFrameBitShift        = TM23_MINORFRAME_BITSHIFT;
+
 	ullSampsPerMinorFrame      = 400;
 	ullBytesPerMinorFrame      = ullSampsPerMinorFrame * sizeof(uint16_t);
 	llMinorFramesPerMajorFrame = 4;
@@ -595,7 +600,7 @@ int main( int argc, char * argv[] )
 	    //assemble unique counter, if requested
 	    if ( bAssembleCounter )
 		{
-		    ullCounterVal = ullAssembleCounterVal(paullMajorFrameVals,llMinorFrameIdx,uNumMFCounters,ullSampBitLength);
+		    ullCounterVal = ullAssembleCounterVal(paullMajorFrameVals,llMinorFrameIdx,uNumMFCounters,ullSampBitLength, uMinorFrameBitShift);
 		    fprintf(psuUniqCounterFile,"%" PRIu64 "\n",ullCounterVal);
 		}
 	    }
@@ -670,7 +675,7 @@ int main( int argc, char * argv[] )
     return EXIT_SUCCESS;
     }
 
-void vPrintSubFrame (uint16_t * pauMajorFrame, int16_t llMinorFrameIdx)
+void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx)
 { 
     //    for
 
@@ -897,7 +902,7 @@ uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample,
     return uCombinedSample;
 }
 
-uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFrameIdx, uint16_t uNumMFCounters, uint64_t ullSampBitLength)
+uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFrameIdx, uint16_t uNumMFCounters, uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift)
 {
     uint64_t ullCounterVal;
     
@@ -906,10 +911,10 @@ uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFr
     ullCounterVal = 0;
     for ( iMFCIdx = 0; iMFCIdx < uNumMFCounters; iMFCIdx++ )
 	{
-	ullCounterVal = ullCounterVal | ( paullMajorFrameVals[iMFCIdx] << ullSampBitLength*iMFCIdx );
+	    ullCounterVal = ullCounterVal | ( paullMajorFrameVals[iMFCIdx] << ullSampBitLength*iMFCIdx ); //	    ullCounterVal = ullCounterVal | ( paullMajorFrameVals[iMFCIdx] << ullSampBitLength*(uNumMFCounters-iMFCIdx-1) );
 	//printf("Major frame counter %i: %" PRIu64 "\n",iMFCIdx, paullMajorFrameVals[iMFCIdx]);
 	}
-    ullCounterVal += llMinorFrameIdx;
+    ullCounterVal = (ullCounterVal << uMinorFrameBitShift) | llMinorFrameIdx;
 
     return ullCounterVal;
 }
