@@ -22,7 +22,8 @@
 #define DEF_OUTPREFIX  "parsed_TM1-samples"
 #define DEF_COMBINE_TM1                   0 //combine TM1 channels on the fly
 #define DEF_DO_CHECK_SFID_INCREMENT       0 //Check that SFID increments uniformly
-#define DEF_ASSEMBLE_COUNTER              0
+#define DEF_ASSEMBLE_COUNTER              0 //Create and output unique counter produced by major and minor frame counters
+#define DEF_CALC_TSTAMPS                  0 //Create and output timestamps based on GPS 1 pps
 #define DEF_VERBOSE                       0 //please tell me
 
 #define DEF_STR_SIZE                   1024
@@ -57,10 +58,16 @@ struct suMeasurementInfo
 
     char        szOutFileName[DEF_STR_SIZE];
     FILE *      psuOutFile;
+
+    char        szTStampFileName[DEF_STR_SIZE];
+    FILE *      psuTStampFile;
 };
 
 //function declarations
-int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement );
+int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink, 
+		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bCalcTStamps );
+int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
+
 int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
 
 void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo);
@@ -113,7 +120,7 @@ int main( int argc, char * argv[] )
     int64_t      llMajorFrameCount;
     uint16_t  *  pauIsMinorFrameCollected;
     uint16_t **  ppauMajorFrame;
-    uint16_t  *  temp;
+    uint16_t  *  pauMajFTemp;
 
     uint64_t     ullInFilePos;
     uint64_t     ullWordsRead;
@@ -132,6 +139,7 @@ int main( int argc, char * argv[] )
 
     uint8_t      bCombineTM1Meas;
     uint8_t      bDoCheckSFIDIncrement;
+    uint8_t      bCalcTStamps;
 
     uint8_t      bAssembleCounter;
     uint16_t     uNumMFCounters;
@@ -139,6 +147,9 @@ int main( int argc, char * argv[] )
     uint64_t  *  paullMajorFrameVals;
     uint64_t     ullCounterVal;
     uint16_t     uMinorFrameBitShift;
+
+    uint16_t     uNGPSWords;
+    uint16_t  *  pauGPSMeasIdx; //GPS 1pps measurement indices (indexing from zero in the arrays above)
 
     uint8_t      bVerbose;
 
@@ -157,6 +168,7 @@ int main( int argc, char * argv[] )
 
     bCombineTM1Meas        = DEF_COMBINE_TM1;
     bDoCheckSFIDIncrement  = DEF_DO_CHECK_SFID_INCREMENT;
+    bCalcTStamps           = DEF_CALC_TSTAMPS;
 
     bAssembleCounter       = DEF_ASSEMBLE_COUNTER;
     uNumMFCounters         = 0;
@@ -164,6 +176,9 @@ int main( int argc, char * argv[] )
     paullMajorFrameVals    = NULL;
     ullCounterVal          = 0;
     uMinorFrameBitShift    = 0;
+
+    uNGPSWords             = 0;
+    pauGPSMeasIdx          = NULL;
 
     bVerbose               = DEF_VERBOSE;
 
@@ -253,8 +268,12 @@ int main( int argc, char * argv[] )
 			bDoCheckSFIDIncrement = !bDoCheckSFIDIncrement;
 			break;
 
-		    case 'A' :                  /* Check that SFID increments uniformly */
+		    case 'A' :                  /* Assemble and output unique counter */
 			bAssembleCounter = !bAssembleCounter;
+			break;
+
+		    case 'T' :                  /* Produce timestamps based on GPS pulse */
+			bCalcTStamps = !bCalcTStamps;
 			break;
 
 		    case 'v' :                  /* Verbosities */
@@ -290,20 +309,30 @@ int main( int argc, char * argv[] )
 	{
 	printf("TM1 : SKIN/ELF/VF/VLF/AGC samples\n");
 
-	iNMeasurements      = N_TM1_MEASUREMENTS;
-        uSFIDIdx            = TM1_SFID_IDX;
-
-	uNumMFCounters      = TM1_NUM_MFCOUNTERS;
-	paullMajorFrameVals = (uint64_t *) malloc(uNumMFCounters * sizeof(uint64_t));
-	pauMFCIndices       = (uint16_t *) malloc(uNumMFCounters * sizeof(uint16_t));
+	iNMeasurements                 = N_TM1_MEASUREMENTS;
+        uSFIDIdx                       = TM1_SFID_IDX;
+			               
+	uNumMFCounters                 = TM1_NUM_MFCOUNTERS;
+	paullMajorFrameVals            = (uint64_t *) malloc(uNumMFCounters * sizeof(uint64_t));
+	pauMFCIndices                  = (uint16_t *) malloc(uNumMFCounters * sizeof(uint16_t));
 	for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
 	    {
-		pauMFCIndices[iArgIdx] = uTM1MFCIdx[iArgIdx];
+	    pauMFCIndices[iArgIdx]     = auTM1MFCMeasIdx[iArgIdx];
 		//		printf("MFC Index: %" PRIu16 "\n",pauMFCIndices[iArgIdx]);
 	    }
 
-	ullSampBitLength    = TM1_WORD_BITLENGTH;
-	uMinorFrameBitShift = TM1_MINORFRAME_BITSHIFT;
+	ullSampBitLength               = TM1_WORD_BITLENGTH;
+	uMinorFrameBitShift            = TM1_MINORFRAME_BITSHIFT;
+			                 
+	if ( bCalcTStamps )      
+	    {		                 
+	    uNGPSWords                 = TM1_N_GPS_WORDS;
+	    pauGPSMeasIdx              = (uint16_t *) malloc(uNGPSWords * sizeof(uint16_t));
+	    for ( iArgIdx = 0; iArgIdx < uNGPSWords; iArgIdx++ )
+		{
+		pauGPSMeasIdx[iArgIdx] = auTM1GPSMeasIdx[iArgIdx];
+		}
+	    }
 
 	if ( bCombineTM1Meas ) printf("Combining MSB/LSB measurements on TM1!\n");
 
@@ -312,24 +341,34 @@ int main( int argc, char * argv[] )
 	{
 	printf("TM2/3: RxDSP samples\n");
 
-	iNMeasurements             = N_TM23_MEASUREMENTS;
-        uSFIDIdx                   = TM23_SFID_IDX;
-
-	uNumMFCounters             = TM23_NUM_MFCOUNTERS;
-	paullMajorFrameVals        = (uint64_t *) malloc(uNumMFCounters * sizeof(uint64_t));
-	pauMFCIndices              = (uint16_t *) malloc(uNumMFCounters * sizeof(uint16_t));
+	iNMeasurements                 = N_TM23_MEASUREMENTS;
+        uSFIDIdx                       = TM23_SFID_IDX;
+				       
+	uNumMFCounters                 = TM23_NUM_MFCOUNTERS;
+	paullMajorFrameVals            = (uint64_t *) malloc(uNumMFCounters * sizeof(uint64_t));
+	pauMFCIndices                  = (uint16_t *) malloc(uNumMFCounters * sizeof(uint16_t));
 	for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
-	    {
-		pauMFCIndices[iArgIdx] = uTM23MFCIdx[iArgIdx];
+	    {			       
+	    pauMFCIndices[iArgIdx]     = auTM23MFCMeasIdx[iArgIdx];
 		//		printf("MFC Index: %" PRIu16 "\n",pauMFCIndices[iArgIdx]);
+	    }			       
+				       
+	ullSampBitLength               = TM23_WORD_BITLENGTH;
+	uMinorFrameBitShift            = TM23_MINORFRAME_BITSHIFT;
+				       
+	if ( bCalcTStamps )      
+	    {		                 
+	    uNGPSWords                 = TM23_N_GPS_WORDS;
+	    pauGPSMeasIdx              = (uint16_t *) malloc(uNGPSWords * sizeof(uint16_t));
+	    for ( iArgIdx = 0; iArgIdx < uNGPSWords; iArgIdx++ )
+		{
+		pauGPSMeasIdx[iArgIdx] = auTM23GPSMeasIdx[iArgIdx];
+		}
 	    }
 
-	ullSampBitLength           = TM23_WORD_BITLENGTH;
-	uMinorFrameBitShift        = TM23_MINORFRAME_BITSHIFT;
-
-	ullSampsPerMinorFrame      = 400;
-	ullBytesPerMinorFrame      = ullSampsPerMinorFrame * sizeof(uint16_t);
-	llMinorFramesPerMajorFrame = 4;
+	ullSampsPerMinorFrame          = 400;
+	ullBytesPerMinorFrame          = ullSampsPerMinorFrame * sizeof(uint16_t);
+	llMinorFramesPerMajorFrame     = 4;
 
 	}
 
@@ -348,7 +387,8 @@ int main( int argc, char * argv[] )
 	    return -1;
 	    }
 
-	err = iMeasurementInit(ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix,ullSampsPerMinorFrame,uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement);
+	err = iMeasurementInit(ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix,ullSampsPerMinorFrame,uTMLink, 
+			       bCombineTM1Meas, bDoCheckSFIDIncrement, bCalcTStamps);
 	if (bVerbose) vPrintMeasurementInfo(ppsuMeasInfo[iMeasIdx]);
 	}
 
@@ -361,12 +401,12 @@ int main( int argc, char * argv[] )
 
     pauIsMinorFrameCollected = (uint16_t *) calloc(llMinorFramesPerMajorFrame,2);
     ppauMajorFrame = (uint16_t **) malloc(llMinorFramesPerMajorFrame * sizeof(uint16_t *));
-    //    temp = malloc(llMinorFramesPerMajorFrame * ullSampsPerMinorFrame * sizeof(uint16_t));
-    temp = malloc(ullBytesPerMajorFrame);
+    //    pauMajFTemp = malloc(llMinorFramesPerMajorFrame * ullSampsPerMinorFrame * sizeof(uint16_t));
+    pauMajFTemp = malloc(ullBytesPerMajorFrame);
 
     for (llMinorFrameIdx = 0; llMinorFrameIdx < llMinorFramesPerMajorFrame; llMinorFrameIdx++) 
 	{
-	ppauMajorFrame[llMinorFrameIdx] = temp + (llMinorFrameIdx * ullSampsPerMinorFrame);
+	ppauMajorFrame[llMinorFrameIdx] = pauMajFTemp + (llMinorFrameIdx * ullSampsPerMinorFrame);
 	}
     if (bVerbose) printf("Major Frame Size   :\t%" PRIu64 " bytes\n",ullBytesPerMajorFrame);
 
@@ -643,10 +683,15 @@ int main( int argc, char * argv[] )
 	printf("Total number of frame skips : %" PRIu64 "\n",ullSkippedFrameCount);
 	if ( ullSkippedFrameCount == 0 )
 	    printf("\nShe's clean! No frame skips detected\n");
+	else
+	    printf("\nFrame skips exist within this file.\n");
 	}
-    //close files
-    fclose(psuInFile);
-    if ( psuUniqCounterFile != NULL ) fclose(psuUniqCounterFile);
+    
+    fclose(psuInFile); //close input file
+
+    if ( psuUniqCounterFile         != NULL ) fclose(psuUniqCounterFile);
+
+    if ( pauGPSMeasIdx              != NULL ) free( pauGPSMeasIdx );
 
     //release the mem!
     for ( iMeasIdx = 0; iMeasIdx < iNMeasurements; iMeasIdx++)
@@ -659,12 +704,12 @@ int main( int argc, char * argv[] )
     free(ppsuMeasInfo);
 
     //junk mem for major frame
-    free(temp);
-    free(ppauMajorFrame);
+    if ( pauMajFTemp                != NULL ) free(pauMajFTemp);
+    if ( ppauMajorFrame             != NULL ) free(ppauMajorFrame);
 
     //junk minor frame stuff
-    free(pauMinorFrame);
-    free(pauIsMinorFrameCollected);
+    if ( pauMinorFrame              != NULL ) free(pauMinorFrame);
+    if ( pauIsMinorFrameCollected   != NULL ) free(pauIsMinorFrameCollected);
 
     return EXIT_SUCCESS;
     }
@@ -675,7 +720,8 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx)
 
 }
 
-int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement )
+int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, uint16_t uTMLink, 
+		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bCalcTStamps )
 {
     uint16_t uNAsymWRanges;
     uint16_t uNAsymFRanges;
@@ -841,6 +887,16 @@ int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,ch
     else
 	psuMeasInfo->psuOutFile       = NULL;
 
+    if ( bCalcTStamps )
+	{
+	sprintf(psuMeasInfo->szTStampFileName,"%s--%s--tstamps.txt",szOutPrefix,psuMeasInfo->szAbbrev);
+	psuMeasInfo->psuTStampFile    = fopen(psuMeasInfo->szTStampFileName,"w");
+	}
+    else
+	{
+	psuMeasInfo->psuTStampFile    = NULL;
+	}
+
     return 0;
 }
 
@@ -862,6 +918,9 @@ int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo)
 
     if ( psuMeasInfo->psuOutFile != NULL )
 	fclose(psuMeasInfo->psuOutFile);
+
+    if ( psuMeasInfo->psuTStampFile != NULL )
+	fclose(psuMeasInfo->psuTStampFile);
 
     free(psuMeasInfo);
 
@@ -937,6 +996,8 @@ void vUsage(void)
     printf("                    (no parsed output is produced)                    \n");
     printf("   -A           Assemble unique counter based on major/minor  [%i]    \n",DEF_ASSEMBLE_COUNTER);
     printf("                    frames, and output to file                        \n");
+    printf("   -T           Produce timestamps for each measurement based [%i]    \n",DEF_CALC_TSTAMPS);
+    printf("                    on GPS pulse data                                 \n");
     printf("   -v           Verbose                                       [%i]    \n",DEF_VERBOSE);
     printf("                                                                      \n");
     printf("   -h           Help (this menu)                                      \n");

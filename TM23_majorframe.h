@@ -12,6 +12,8 @@
 #define TM23_WORD_BITLENGTH        16
 #define TM23_MINORFRAME_BITSHIFT    2    //up to 4 minor frames
 
+#define TM23_N_GPS_WORDS            1
+
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM23SerialMeasNames[]    =    {"Subframe ID                 ", "GPS 1PPS                                   ",
 					         "Major Frame Counter 1       ", "Major Frame Counter 2 (!!!NOT SYMMETRIC!!!)",
@@ -83,7 +85,9 @@ static uint16_t        uTM23LSBWord[]   =    {  0, 0,							    //TM + SFID   52
 					        0, 0,
 						0};
 
-static uint16_t         uTM23MFCIdx[]   =    {  2, 3};    ///Major frame measurement indices (indexing from zero in the arrays above)
+static uint16_t    auTM23MFCMeasIdx[]   =    {  2, 3};    ///Major frame measurement indices (indexing from zero in the arrays above)
+
+static uint16_t    auTM23GPSMeasIdx[]   =    {  1}; //GPS 1pps measurement indices (indexing from zero in the arrays above)
 
 #endif // #ifndef _TM23_MAJORFRAME
 

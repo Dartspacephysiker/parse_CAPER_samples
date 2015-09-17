@@ -5,16 +5,19 @@
 			          
 #define TM1_SFID_IDX               25    //Location of subframe ID within minor frame, counting from 1
 			          
-#define TM_SKIP_LSB               499    //Skip this channel if combination is done on the fly
-#define TM_NO_LSB                 498    //Don't try to combine this channel
-#define TM_UPPER6_MSB_LOWER10_LSB 109
-
 #define TM1_BPS               9600000    //Link BPS
 
 #define TM1_NUM_MFCOUNTERS          3
 
 #define TM1_WORD_BITLENGTH         10
 #define TM1_MINORFRAME_BITSHIFT     5    //up to 32 minor frames
+
+#define TM1_N_GPS_WORDS             2
+
+//Static variables to accommodate combination of MSB/LSB channels for measurements that are separated
+#define TM_SKIP_LSB               499    //Skip this channel if combination is done on the fly
+#define TM_NO_LSB                 498    //Don't try to combine this channel
+#define TM_UPPER6_MSB_LOWER10_LSB 109
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM1SerialMeasNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",	    //Serial #1, 0-7
@@ -551,7 +554,10 @@ static uint16_t         uTM1LSBWord[]   =    { 95, TM_SKIP_LSB,						    //Seria
 
 
 
-static uint16_t         uTM1MFCIdx[]    =    {  53, 54,  //Major frame measurement indices (indexing from zero in the arrays above)
+static uint16_t    auTM1MFCMeasIdx[]    =    {  53, 54,  //Major frame measurement indices (indexing from zero in the arrays above)
 					        55};
+
+static uint16_t    auTM1GPSMeasIdx[]    =    {  59, 60}; //GPS 1pps measurement indices (indexing from zero in the arrays above)
+
 #endif // #ifndef _TM1_MAJORFRAME
 
