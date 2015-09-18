@@ -74,12 +74,12 @@ struct suMeasurementInfo
 };
 
 //function declarations
-int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, 
+int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t gullSampsPerMinorFrame, 
 		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
 int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
 
 uint16_t uParseMeasurementSamples(struct suMeasurementInfo * psuMeasInfo, int iMeasIdx, 
-				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, uint64_t ullSampsPerMinorFrame, uint32_t * pulMinorFrameSampCount, 
+				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, uint64_t gullSampsPerMinorFrame, uint32_t * pulMinorFrameSampCount, 
 				  uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
 				  uint64_t * pullWordsWritten,
 				  uint8_t bCombineTM1Meas, uint8_t bAssembleCounter, uint8_t bWriteSamplesToFile);
@@ -91,13 +91,14 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx);
 
 uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFrameIdx, uint16_t uNumMFCounters, uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint64_t * pullMFCVal);
 
-uint64_t ullGetFirstMFCVal(FILE * psuInFile, size_t szInFileSize, 
+uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize, 
 			   struct suMeasurementInfo ** ppsuMeasInfo, int16_t iNMeasurements,
-			   uint16_t * pauMinorFrame, uint64_t ullSampsPerMinorFrame, 
+			   uint16_t * pauMinorFrame, uint64_t gullSampsPerMinorFrame, 
 			   uint64_t * pullCounterVal, uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
-			   uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas,uint64_t * pllCurrentGPSWord);
+			   uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas, 
+				       uint64_t * pllCurrentGPSWord, uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS);
 
-void vCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, 
+int iCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, 
 			 uint16_t * pauMinorFrame,int64_t * pllCurrentGPSWord, uint8_t bCombineTM1Meas);
 
 int iWriteMeasurementTStamps(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx,
@@ -111,6 +112,7 @@ void vUsage(void);
 
 //global var declarations
 int64_t  gllMinorFramesPerMajorFrame;
+uint64_t gullSampsPerMinorFrame;	       //Number of samples to grab at each periodic interval
 uint16_t guAsymWRInd;
 uint16_t guAsymFRInd;
 uint16_t guSFIDIdx;
@@ -134,7 +136,7 @@ int main( int argc, char * argv[] )
 
     struct stat  suInFileStat;		       //input stuff
     uint64_t     ullSampBitLength;	       //Sample size (in bytes)
-    uint64_t     ullSampsPerMinorFrame;	       //Number of samples to grab at each periodic interval
+
     //    uint64_t     ullNBytesPerMinorFrame;	       //Number of bits in MinorFrame
 
     uint16_t   * pauMinorFrame;
@@ -246,8 +248,8 @@ int main( int argc, char * argv[] )
 
     //    ullSampBitLength           = DEF_N_SAMPBITS;
     //    ullSampBitLength           = 0;
-    ullSampsPerMinorFrame      = DEF_SAMPSPERMINORFRAME;
-    ullBytesPerMinorFrame      = ullSampsPerMinorFrame * sizeof(uint16_t);
+    gullSampsPerMinorFrame      = DEF_SAMPSPERMINORFRAME;
+    ullBytesPerMinorFrame      = gullSampsPerMinorFrame * sizeof(uint16_t);
 
     ppsuMeasInfo = (struct suMeasurementInfo **) NULL;
     iMeasIdx                   = 0;
@@ -287,7 +289,7 @@ int main( int argc, char * argv[] )
 			    vUsage();
 			    return EXIT_FAILURE;
 			    }
-			sscanf(argv[iArgIdx],"%" PRIu64 ,&ullSampsPerMinorFrame);
+			sscanf(argv[iArgIdx],"%" PRIu64 ,&gullSampsPerMinorFrame);
 			break;
 
 		    case 'L' :                   /* TM Link # */
@@ -306,21 +308,21 @@ int main( int argc, char * argv[] )
 			break;
 
 		    case 'C' :                  /* Combine TM1 MSB/LSB measurements */
-			bCombineTM1Meas       = !bCombineTM1Meas;
+			bCombineTM1Meas       = 1;
 			break;
 
 		    case 'c' :                  /* Check that SFID increments uniformly */
-			bDoCheckSFIDIncrement = !bDoCheckSFIDIncrement;
+			bDoCheckSFIDIncrement = 1;
 			break;
 
 		    case 'A' :                  /* Assemble and write unique counter */
-			bAssembleCounter      = !bAssembleCounter;
-			bWriteCounter         = !bWriteCounter;
+			bAssembleCounter      = 1;
+			bWriteCounter         = 1;
 			break;
 
 		    case 'T' :                  /* Produce timestamps based on GPS pulse */
-			bTStampMode           = !bTStampMode;
-			bAssembleCounter      = !bAssembleCounter; //Need counter for TStampMode
+			bTStampMode           = 1;
+			bAssembleCounter      = 1; //Need counter for TStampMode
 			break;
 
 		    case 'v' :                  /* Verbosities */
@@ -364,7 +366,7 @@ int main( int argc, char * argv[] )
 				         
 	ullSampBitLength                 = TM1_WORD_BITLENGTH;
 	uMinorFrameBitShift              = TM1_MINORFRAME_BITSHIFT;
-	gdWordPeriod                     = ullSampBitLength/TM1_BPS;
+	gdWordPeriod                     = (double) ullSampBitLength/ (double) TM1_BPS;
 			                   
 	if ( bTStampMode )               
 	    {		                   
@@ -398,7 +400,7 @@ int main( int argc, char * argv[] )
 				         
 	ullSampBitLength                 = TM23_WORD_BITLENGTH;
 	uMinorFrameBitShift              = TM23_MINORFRAME_BITSHIFT;
-	gdWordPeriod                     = ullSampBitLength/TM23_BPS;
+	gdWordPeriod                     = (double) ullSampBitLength/(double) TM23_BPS;
 				         
 	if ( bTStampMode )               
 	    {		                   
@@ -410,8 +412,8 @@ int main( int argc, char * argv[] )
 		}		         
 	    }			         
 				         
-	ullSampsPerMinorFrame            = 400;
-	ullBytesPerMinorFrame            = ullSampsPerMinorFrame * sizeof(uint16_t);
+	gullSampsPerMinorFrame            = 400;
+	ullBytesPerMinorFrame            = gullSampsPerMinorFrame * sizeof(uint16_t);
 	gllMinorFramesPerMajorFrame      = 4;
 
 	}
@@ -438,26 +440,26 @@ int main( int argc, char * argv[] )
 	    return -1;
 	    }
 
-	err = iMeasurementInit(ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix,ullSampsPerMinorFrame, 
+	err = iMeasurementInit(ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix,gullSampsPerMinorFrame, 
 			       bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
 	if (bVerbose) vPrintMeasurementInfo(ppsuMeasInfo[iMeasIdx]);
 	}
 
 
     //initialize major frame, binary array for keeping track of
-    ullBytesPerMinorFrame = ullSampsPerMinorFrame * sizeof(uint16_t);
+    ullBytesPerMinorFrame = gullSampsPerMinorFrame * sizeof(uint16_t);
     ullBytesPerMajorFrame = ullBytesPerMinorFrame * gllMinorFramesPerMajorFrame;
 
     pauMinorFrame = malloc(ullBytesPerMinorFrame);
 
     pauIsMinorFrameCollected = (uint16_t *) calloc(gllMinorFramesPerMajorFrame,2);
     ppauMajorFrame = (uint16_t **) malloc(gllMinorFramesPerMajorFrame * sizeof(uint16_t *));
-    //    pauMajFTemp = malloc(gllMinorFramesPerMajorFrame * ullSampsPerMinorFrame * sizeof(uint16_t));
+    //    pauMajFTemp = malloc(gllMinorFramesPerMajorFrame * gullSampsPerMinorFrame * sizeof(uint16_t));
     pauMajFTemp = malloc(ullBytesPerMajorFrame);
 
     for (llMinorFrameIdx = 0; llMinorFrameIdx < gllMinorFramesPerMajorFrame; llMinorFrameIdx++) 
 	{
-	ppauMajorFrame[llMinorFrameIdx] = pauMajFTemp + (llMinorFrameIdx * ullSampsPerMinorFrame);
+	ppauMajorFrame[llMinorFrameIdx] = pauMajFTemp + (llMinorFrameIdx * gullSampsPerMinorFrame);
 	}
     if (bVerbose) printf("Major Frame Size   :\t%" PRIu64 " bytes\n",ullBytesPerMajorFrame);
 
@@ -506,11 +508,12 @@ int main( int argc, char * argv[] )
     //Get first MFC value, if that's what we need to do
     //    if ( bTStampMode )
     //	{
-	    ullFirstMFCVal = ullGetFirstMFCVal(psuInFile,suInFileStat.st_size, 
+	    ullFirstMFCVal = ullGetFirstMFCVal_initGPSWord(psuInFile,suInFileStat.st_size, 
 					       ppsuMeasInfo, iNMeasurements,
-					       pauMinorFrame,ullSampsPerMinorFrame, 
+					       pauMinorFrame,gullSampsPerMinorFrame, 
 					       &ullCounterVal, paullMajorFrameVals, pauMFCIndices, uNumMFCounters,
-					       ullSampBitLength, uMinorFrameBitShift, bCombineTM1Meas, &llCurrentGPSWord);
+					       ullSampBitLength, uMinorFrameBitShift, bCombineTM1Meas,
+							   &llCurrentGPSWord, pauGPSMeasIdx[0], &llWordOffset_GPS);
 	    //break out if we couldn't get it
 	    if ( ullFirstMFCVal == -1 ) 
 		{
@@ -531,8 +534,8 @@ int main( int argc, char * argv[] )
 	guAsymWRInd        = 0;
 	guAsymFRInd        = 0;
 
-    	ullWordsRead = fread(pauMinorFrame, 2, ullSampsPerMinorFrame, psuInFile);     	//Get samples from infile
-    	if (ullWordsRead != ullSampsPerMinorFrame)
+    	ullWordsRead = fread(pauMinorFrame, 2, gullSampsPerMinorFrame, psuInFile);     	//Get samples from infile
+    	if (ullWordsRead != gullSampsPerMinorFrame)
     	    {
     	    fprintf(stderr,"Only read %" PRIu64 " bytes of %" PRIu64 " requested!\nEOF?\n",ullWordsRead*2,ullBytesPerMinorFrame);
     	    break;
@@ -560,21 +563,10 @@ int main( int argc, char * argv[] )
 	    }
 	else
 	    {
-	    if ( bTStampMode )
-		{
-		llWordOffset_MajorFrame = ullCurrentMFCVal * gllMinorFramesPerMajorFrame * ullSampsPerMinorFrame;
-		llWordOffset_MinorFrame = ( llMinorFrameIdx - 1 ) * gllMinorFramesPerMajorFrame;
-
-		//Check for new GPS word in this minor frame, then calculate GPS word offset
-		vCheckForNewGPSWord(ppsuMeasInfo[pauGPSMeasIdx[0]],llMinorFrameIdx,pauMinorFrame,&llCurrentGPSWord,bCombineTM1Meas);
-		llWordOffset_GPS = llWordOffset_MajorFrame + llCurrentGPSWord;
-		
-		}
-
 	    for (iMeasIdx = 0; iMeasIdx < iNMeasurements; iMeasIdx++)
 		{
 		    uParseMeasurementSamples(ppsuMeasInfo[iMeasIdx],iMeasIdx,
-							  pauMinorFrame,llMinorFrameIdx,ullSampsPerMinorFrame,&ulMinorFrameSampCount,
+							  pauMinorFrame,llMinorFrameIdx,gullSampsPerMinorFrame,&ulMinorFrameSampCount,
 							  paullMajorFrameVals,pauMFCIndices,uNumMFCounters,&ullWordsWritten,
 							  bCombineTM1Meas,bAssembleCounter,1);
 		}
@@ -589,6 +581,16 @@ int main( int argc, char * argv[] )
 
 	    if ( bTStampMode )
 	    	{
+		llWordOffset_MajorFrame = ( ullCurrentMFCVal * gllMinorFramesPerMajorFrame * gullSampsPerMinorFrame) - 1;
+		//		llWordOffset_MinorFrame = ( llMinorFrameIdx - 1 ) * gllMinorFramesPerMajorFrame;
+		llWordOffset_MinorFrame = ( llMinorFrameIdx - 1 ) * gullSampsPerMinorFrame;
+
+		//Check for new GPS word in this minor frame, then calculate GPS word offset
+		if ( iCheckForNewGPSWord(ppsuMeasInfo[pauGPSMeasIdx[0]],llMinorFrameIdx,pauMinorFrame,&llCurrentGPSWord,bCombineTM1Meas) )
+		    {
+			llWordOffset_GPS = llWordOffset_MajorFrame + llCurrentGPSWord;
+		    }
+		
 	    	for (iMeasIdx = 0; iMeasIdx < iNMeasurements; iMeasIdx++)
 	    	    {
 		    if ( ppsuMeasInfo[iMeasIdx]->bTSCalcEnabled && ( ppsuMeasInfo[iMeasIdx]->uOffsetBufCount > 0 ) )
@@ -668,7 +670,7 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx)
 
 }
 
-int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t ullSampsPerMinorFrame, 
+int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t gullSampsPerMinorFrame, 
 		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode )
 {
     uint16_t uNAsymWRanges;
@@ -714,7 +716,7 @@ int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,ch
         psuMeasInfo->uMinorFrInt         = uTM1FrInt[iMeasIdx];				   //How often does it show up?
         psuMeasInfo->ulSPS               = ulTM1SPS[iMeasIdx];
         			         
-        psuMeasInfo->uSampsPerMinorFrame = ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
+        psuMeasInfo->uSampsPerMinorFrame = gullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
 
 	psuMeasInfo->uLSBWord            = uTM1LSBWord[iMeasIdx] - 1;
 	if ( ( bCombineTM1Meas && ( psuMeasInfo->uLSBWord != TM_SKIP_LSB - 1 ) ) && ( psuMeasInfo->uLSBWord != TM_NO_LSB -1 ) )
@@ -746,7 +748,7 @@ int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,ch
 	//        psuMeasInfo->uSample             = -1;
         psuMeasInfo->ullSampCount        = 0;
         			         
-        psuMeasInfo->uSampsPerMinorFrame = ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
+        psuMeasInfo->uSampsPerMinorFrame = gullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
 
 	psuMeasInfo->uLSBWord            = uTM23LSBWord[iMeasIdx] - 1;
 
@@ -922,7 +924,7 @@ void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo)
 
 //write samples from this minor frame to the appropriate measurement files
 uint16_t uParseMeasurementSamples(struct suMeasurementInfo * psuMeasInfo, int iMeasIdx, 
-				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, uint64_t ullSampsPerMinorFrame, uint32_t * pulMinorFrameSampCount, 
+				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, uint64_t gullSampsPerMinorFrame, uint32_t * pulMinorFrameSampCount, 
 				  uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
 				  uint64_t * pullWordsWritten,
 				  uint8_t bCombineTM1Meas, uint8_t bAssembleCounter, uint8_t bWriteSamplesToFile)
@@ -944,7 +946,7 @@ uint16_t uParseMeasurementSamples(struct suMeasurementInfo * psuMeasInfo, int iM
 		iLSBWdIdx = psuMeasInfo->uLSBWord;
 		if( iLSBWdIdx != ( TM_SKIP_LSB - 1 ) )
 		    {
-		    for (iWdIdx = psuMeasInfo->uWord; iWdIdx < ullSampsPerMinorFrame; iWdIdx += psuMeasInfo->uWdInt)
+		    for (iWdIdx = psuMeasInfo->uWord; iWdIdx < gullSampsPerMinorFrame; iWdIdx += psuMeasInfo->uWdInt)
 			{
 			if ( iLSBWdIdx == TM_NO_LSB - 1 )
 			    {
@@ -975,11 +977,11 @@ uint16_t uParseMeasurementSamples(struct suMeasurementInfo * psuMeasInfo, int iM
 			    (*pullWordsWritten) += fwrite(&uCombinedSample,2,1,psuMeasInfo->psuOutFile) * 2;
 			    psuMeasInfo->ullSampCount++;
 			    (*pulMinorFrameSampCount) += 2;
-			    }
-			if ( psuMeasInfo->bTSCalcEnabled ) 
-			    {
-			    psuMeasInfo->pallWordOffsets[psuMeasInfo->uOffsetBufCount] = iWdIdx;
-			    psuMeasInfo->uOffsetBufCount++;
+			    if ( psuMeasInfo->bTSCalcEnabled ) 
+				{
+				psuMeasInfo->pallWordOffsets[psuMeasInfo->uOffsetBufCount] = iWdIdx;
+				psuMeasInfo->uOffsetBufCount++;
+				}
 			    }
 			iLSBWdIdx += psuMeasInfo->uWdInt;
 			}
@@ -987,18 +989,18 @@ uint16_t uParseMeasurementSamples(struct suMeasurementInfo * psuMeasInfo, int iM
 		}
 	    else
 		{
-		for (iWdIdx = psuMeasInfo->uWord; iWdIdx < ullSampsPerMinorFrame; iWdIdx += psuMeasInfo->uWdInt)
+		for (iWdIdx = psuMeasInfo->uWord; iWdIdx < gullSampsPerMinorFrame; iWdIdx += psuMeasInfo->uWdInt)
 		    {
 		    if ( bWriteSamplesToFile )
 			{
 			(*pullWordsWritten) += fwrite(&pauMinorFrame[iWdIdx],2,1,psuMeasInfo->psuOutFile);
 			psuMeasInfo->ullSampCount++;
 			(*pulMinorFrameSampCount)++;
-			}
-		    if ( psuMeasInfo->bTSCalcEnabled ) 
-			{
-			psuMeasInfo->pallWordOffsets[psuMeasInfo->uOffsetBufCount] = iWdIdx;
-			psuMeasInfo->uOffsetBufCount++;
+			if ( psuMeasInfo->bTSCalcEnabled ) 
+			    {
+			    psuMeasInfo->pallWordOffsets[psuMeasInfo->uOffsetBufCount] = iWdIdx;
+			    psuMeasInfo->uOffsetBufCount++;
+			    }
 			}
 		    if ( bAssembleCounter )
 			{
@@ -1032,11 +1034,11 @@ uint16_t uParseMeasurementSamples(struct suMeasurementInfo * psuMeasInfo, int iM
 		    (*pullWordsWritten) += fwrite(&pauMinorFrame[iWdIdx],2,1,psuMeasInfo->psuOutFile);
 		    psuMeasInfo->ullSampCount++;
 		    (*pulMinorFrameSampCount)++;
-		    }
-		if ( psuMeasInfo->bTSCalcEnabled ) 
-		    {
-		    psuMeasInfo->pallWordOffsets[psuMeasInfo->uOffsetBufCount] = iWdIdx;
-		    psuMeasInfo->uOffsetBufCount++;
+		    if ( psuMeasInfo->bTSCalcEnabled ) 
+			{
+			psuMeasInfo->pallWordOffsets[psuMeasInfo->uOffsetBufCount] = iWdIdx;
+			psuMeasInfo->uOffsetBufCount++;
+			}
 		    }
 		}
 	    }
@@ -1060,11 +1062,11 @@ uint16_t uParseMeasurementSamples(struct suMeasurementInfo * psuMeasInfo, int iM
 			(*pullWordsWritten) += fwrite(&pauMinorFrame[psuMeasInfo->uWord],2,1,psuMeasInfo->psuOutFile);
 			psuMeasInfo->ullSampCount++;
 			(*pulMinorFrameSampCount)++;
-			}
-		    if ( psuMeasInfo->bTSCalcEnabled ) 
-			{
-			psuMeasInfo->pallWordOffsets[psuMeasInfo->uOffsetBufCount] = iWdIdx;
-			psuMeasInfo->uOffsetBufCount++;
+			if ( psuMeasInfo->bTSCalcEnabled ) 
+			    {
+			    psuMeasInfo->pallWordOffsets[psuMeasInfo->uOffsetBufCount] = iWdIdx;
+			    psuMeasInfo->uOffsetBufCount++;
+			    }
 			}
 		    if ( bAssembleCounter )
 			{
@@ -1117,11 +1119,12 @@ uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFr
     return ullCounterVal;
 }
 
-uint64_t ullGetFirstMFCVal(FILE * psuInFile, size_t szInFileSize, 
-			   struct suMeasurementInfo ** ppsuMeasInfo, int16_t iNMeasurements,
-			   uint16_t * pauMinorFrame, uint64_t ullSampsPerMinorFrame, 
-			   uint64_t * pullCounterVal, uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
-			   uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas,uint64_t * pllCurrentGPSWord)
+uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize, 
+				       struct suMeasurementInfo ** ppsuMeasInfo, int16_t iNMeasurements,
+				       uint16_t * pauMinorFrame, uint64_t gullSampsPerMinorFrame, 
+				       uint64_t * pullCounterVal, uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
+				       uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas,
+				       uint64_t * pllCurrentGPSWord, uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS)
 {
     int iMeasIdx;
     int iArgIdx;
@@ -1136,6 +1139,11 @@ uint64_t ullGetFirstMFCVal(FILE * psuInFile, size_t szInFileSize,
 
     uint64_t             ullFirstMFCVal;
 
+    uint8_t              bGotFirstGPSWord;
+    int64_t              llFirstGPSWord;
+    uint64_t             ullGPSMFCVal;
+
+
     ullWordsWritten      = 0;
     ulMinorFrameSampCount= 0;
     llMinorFrameIdx      = 0;
@@ -1144,16 +1152,20 @@ uint64_t ullGetFirstMFCVal(FILE * psuInFile, size_t szInFileSize,
     ullTemp              = 0;
     uMFCValCount         = 0;
     bAllMFCValsCollected = 0;
+
+    bGotFirstGPSWord     = 0;
+    llFirstGPSWord       = 0;
+    ullGPSMFCVal         = 0;
 	
-    while ( !bAllMFCValsCollected && ( ( ullInFilePos = ftell(psuInFile) ) < szInFileSize ) )
+    while ( ( !bAllMFCValsCollected || !bGotFirstGPSWord ) && ( ( ullInFilePos = ftell(psuInFile) ) < szInFileSize ) )
 	{
 	guAsymWRInd = 0;
 	guAsymFRInd = 0;
 
-	ullTemp = fread(pauMinorFrame, 2, ullSampsPerMinorFrame, psuInFile);
-	if (ullTemp != ullSampsPerMinorFrame)
+	ullTemp = fread(pauMinorFrame, 2, gullSampsPerMinorFrame, psuInFile);
+	if (ullTemp != gullSampsPerMinorFrame)
 	    {
-	    fprintf(stderr,"Only read %" PRIu64 " bytes of %" PRIu64 " requested!\nEOF?\n",ullTemp*2,ullSampsPerMinorFrame*2);
+	    fprintf(stderr,"Only read %" PRIu64 " bytes of %" PRIu64 " requested!\nEOF?\n",ullTemp*2,gullSampsPerMinorFrame*2);
 	    return -1;
 	    }
 	
@@ -1162,36 +1174,55 @@ uint64_t ullGetFirstMFCVal(FILE * psuInFile, size_t szInFileSize,
 	for (iMeasIdx = 0; iMeasIdx < iNMeasurements; iMeasIdx++)
 	    {
 	    uParseMeasurementSamples(ppsuMeasInfo[iMeasIdx],iMeasIdx,
-				     pauMinorFrame,llMinorFrameIdx,ullSampsPerMinorFrame,&ulMinorFrameSampCount,
+				     pauMinorFrame,llMinorFrameIdx,gullSampsPerMinorFrame,&ulMinorFrameSampCount,
 				     paullMajorFrameVals,pauMFCIndices,uNumMFCounters,&ullWordsWritten,
 				     bCombineTM1Meas,1,0);
 	    }
 	
-	for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
-	    {			         
-	    if ( paullMajorFrameVals[iArgIdx] != -1 )
-		uMFCValCount++;
-	    }			         
+	if ( !bAllMFCValsCollected )
+	    {
+		for ( iArgIdx = 0; iArgIdx < uNumMFCounters; iArgIdx++ )
+		    {			         
+		    if ( paullMajorFrameVals[iArgIdx] != -1 )
+			uMFCValCount++;
+		    }		
+	    }
+	
 	
 	if ( uMFCValCount == uNumMFCounters )
+	    {
+	    (*pullCounterVal) = ullAssembleCounterVal(paullMajorFrameVals,llMinorFrameIdx,uNumMFCounters,ullSampBitLength, uMinorFrameBitShift, &ullFirstMFCVal);
 	    bAllMFCValsCollected = 1;
+	    uMFCValCount = 0;
+	    }
+
+	if ( !bGotFirstGPSWord )
+	    {
+	    if ( iCheckForNewGPSWord(ppsuMeasInfo[uGPSMeasIdx], llMinorFrameIdx, pauMinorFrame,pllCurrentGPSWord,bCombineTM1Meas) )
+		{
+		bGotFirstGPSWord = 1;
+		(*pullCounterVal) = ullAssembleCounterVal(paullMajorFrameVals,llMinorFrameIdx,uNumMFCounters,ullSampBitLength, uMinorFrameBitShift, &ullGPSMFCVal);
+		(*pllWordOffset_GPS) = gllMinorFramesPerMajorFrame * ullGPSMFCVal * gullSampsPerMinorFrame;
+		}
+	    }
 	}
 
-    if ( bAllMFCValsCollected == 1 )
+    if ( bAllMFCValsCollected && bGotFirstGPSWord )
 	{
 	//Now we pick up the first MFC Value and go back to the beginning of the file
-	(*pullCounterVal) = ullAssembleCounterVal(paullMajorFrameVals,llMinorFrameIdx,uNumMFCounters,ullSampBitLength, uMinorFrameBitShift, &ullFirstMFCVal);
+
 	rewind(psuInFile);
 	ullInFilePos = 0;
 	}
     else
 	{
+	printf("allmfc: %i, gotfirstgps: %i\n",bAllMFCValsCollected,bGotFirstGPSWord);
 	return -1;
 	}
     return ullFirstMFCVal;
 }
 
-void vCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, 
+int iCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, 
 			 uint16_t * pauMinorFrame,int64_t * pllCurrentGPSWord, uint8_t bCombineTM1Meas)
 {
     //    int iMeasIdx;
@@ -1215,7 +1246,7 @@ void vCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinor
 
 	    if( iLSBWdIdx != ( TM_SKIP_LSB - 1 ) )
 		{
-		//		    for ( iWdIdx = psuMeasInfo->uWord; iWdIdx < ullSampsPerMinorFrame; iWdIdx += psuMeasInfo->uWdInt )
+		//		    for ( iWdIdx = psuMeasInfo->uWord; iWdIdx < gullSampsPerMinorFrame; iWdIdx += psuMeasInfo->uWdInt )
 		//			{
 		if ( iLSBWdIdx == TM_NO_LSB - 1 )
 		    {
@@ -1239,10 +1270,14 @@ void vCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinor
 	    }
 	}
 
-    if ( ( llTestGPSWord != -1 ) && ( llTestGPSWord != (*pllCurrentGPSWord) ) )
+    //    printf("%lld\n",llTestGPSWord);
+
+    if ( ( llTestGPSWord > 0 ) && ( llTestGPSWord != (*pllCurrentGPSWord) ) )
 	{
 	(*pllCurrentGPSWord) = llTestGPSWord;
+	return 1;
 	}
+    return 0;
 }
 
 int iWriteMeasurementTStamps(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx,
@@ -1259,7 +1294,7 @@ int iWriteMeasurementTStamps(struct suMeasurementInfo * psuMeasInfo, int64_t llM
 	{
 	    llWordOffset_Measurement = (llBaseOffset + psuMeasInfo->pallWordOffsets[iArgIdx]) - llWordOffset_GPS;
 	    dTimeOffset_Measurement = llWordOffset_Measurement * gdWordPeriod;
-	    fprintf(psuMeasInfo->psuTStampFile,"%.6f\n",dTimeOffset_Measurement);
+	    fprintf(psuMeasInfo->psuTStampFile,"%.8f\n",dTimeOffset_Measurement);
 	}
 
     //reset the count of the offset buffer
@@ -1269,7 +1304,7 @@ int iWriteMeasurementTStamps(struct suMeasurementInfo * psuMeasInfo, int64_t llM
 
     /* if ( (llMinorFrameIdx % psuMeasInfo->uMinorFrInt) == ( psuMeasInfo->uMinorFrame % psuMeasInfo->uMinorFrInt ) ) */
     /* 	{ */
-    /* 	    for (iWdIdx = psuMeasInfo->uWord; iWdIdx < ullSampsPerMinorFrame; iWdIdx += psuMeasInfo->uWdInt) */
+    /* 	    for (iWdIdx = psuMeasInfo->uWord; iWdIdx < gullSampsPerMinorFrame; iWdIdx += psuMeasInfo->uWdInt) */
     /* 		{ */
     /* 		    dTimeOffset_Measurement = (llWordOffset_MajorFrame + llWordOffset_MinorFrame + iWdIdx) * gdWordPeriod; */
     /* 		} */
