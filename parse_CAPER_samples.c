@@ -504,8 +504,8 @@ int main( int argc, char * argv[] )
     printf("\n");
 
     //Get first MFC value, if that's what we need to do
-    if ( bTStampMode )
-	{
+    //    if ( bTStampMode )
+    //	{
 	    ullFirstMFCVal = ullGetFirstMFCVal(psuInFile,suInFileStat.st_size, 
 					       ppsuMeasInfo, iNMeasurements,
 					       pauMinorFrame,ullSampsPerMinorFrame, 
@@ -518,7 +518,7 @@ int main( int argc, char * argv[] )
 		printf("Exiting...");
 		return -1;
 		}
-	}
+	    //	}
 
     //Loop over whole file
     llOldMinorFrameIdx = 0;
@@ -605,16 +605,6 @@ int main( int argc, char * argv[] )
 	//	if (ullMinorFrameCount % gllMinorFramesPerMajorFrame == 0) llMajorFrameCount++;
 	if ( llMinorFrameIdx == gllMinorFramesPerMajorFrame ) llMajorFrameCount++; //NOTE: This assumes that we don't skip the last frame!
 	if ( bVerbose ) printf("Major frame #%" PRIu64 "\n", llMajorFrameCount);
-
-
-	/* for (llMinorFrameIdx = 0; llMinorFrameIdx < gllMinorFramesPerMajorFrame; llMinorFrameIdx++) */
-	/*     { */
-	/*     if (bVerbose)  */
-	/* 	{ */
-	/* 	if (pauIsMinorFrameCollected[llMinorFrameIdx] == 0) */
-	/* 	    printf("Did not collect subframe %" PRIi64 "!",llMinorFrameIdx); */
-	/* 	} */
-	/*     } */
 
     	if (bVerbose) 
     	    {

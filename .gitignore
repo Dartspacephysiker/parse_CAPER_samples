@@ -5,3 +5,6 @@
 parse_CAPER_samples
 parse_TM23_samples
 *.o
+
+#no unique counter files
+*unique_counter.txt
