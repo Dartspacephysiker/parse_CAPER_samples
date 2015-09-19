@@ -21,7 +21,7 @@
 #define TM_UPPER6_MSB_LOWER10_LSB 109
 
 //Static variable to indicate that there is no timestamp_searchword
-#define TM1_NO_TS_SEARCH     '\0'
+#define TM1_NO_TS_SEARCH       0x0000
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM1SerialMeasNames[]  =    { "Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",    //Serial #1, 0-7
@@ -604,7 +604,7 @@ static uint8_t abTM1TSCalcEnabled[]     =    {0, 0,								    //Serial #1, 0-7
 					      0, 0,
 					      0}; 
 
-static char   * szTM1TSSearchWords[]    =    { TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #1, 0-7
+static char   * aszTM1TSSearchWords[]   =    { TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #1, 0-7
 					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
 					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
 					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,

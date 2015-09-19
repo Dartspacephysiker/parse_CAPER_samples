@@ -6,7 +6,7 @@
 #define TM23_SFID_IDX               1     //Location of subframe ID within minor frame, counting from 1
 
 #define TM23_BPS              9600000     //Link BPS
-#define TM23_SAMPSPERMINORFRAME   120
+#define TM23_SAMPSPERMINORFRAME   400
 #define TM23_MINOR_PER_MAJOR        4
 #define TM23_NUM_MFCOUNTERS         2
 
@@ -16,7 +16,8 @@
 #define TM23_N_GPS_WORDS            1
 
 //Static variable to indicate that there is no timestamp_searchword
-#define TM23_NO_TS_SEARCH    '\0'
+//#define TM23_NO_TS_SEARCH    '\0'
+#define TM23_NO_TS_SEARCH      0x0000
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM23SerialMeasNames[]    =    {"Subframe ID                 ", "GPS 1PPS                                   ",
@@ -94,7 +95,7 @@ static uint8_t abTM23TSCalcEnabled[]    =    {  0, 0,
 					        0, 0,
 						1};
 
-static char   * szTM23TSSearchWords[]   =    { TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH,
+static char   * aszTM23TSSearchWords[]  =    { TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH,
 					       TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH, 
 					       TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH, 
                                                "aDtr"};

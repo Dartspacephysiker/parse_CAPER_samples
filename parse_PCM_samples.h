@@ -12,7 +12,8 @@
 
 #define DEF_STR_SIZE                   1024
 
-#define TM_NO_TS_SEARCH                '\0'
+//#define TM_NO_TS_SEARCH                '\0'
+#define TM_NO_TS_SEARCH              0x0000
 
 //#define MAX_N_MINORFRAMES               256
 //#define MAX_GPS_WORDS                     2
