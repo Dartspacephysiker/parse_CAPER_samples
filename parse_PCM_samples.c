@@ -14,115 +14,9 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "parse_PCM_samples.h"
 #include "TM1_majorframe.h"
 #include "TM23_majorframe.h"
-
-//#define DEF_N_SAMPBITS                   16 //in bits
-#define DEF_SAMPSPERMINORFRAME          120
-#define DEF_MINOR_PER_MAJOR              32
-
-#define DEF_TM_LINK                       1
-
-#define DEF_OUTPREFIX  "parsed_TM1-samples"
-#define DEF_COMBINE_TM1                   0    //combine TM1 channels on the fly
-#define DEF_DO_CHECK_SFID_INCREMENT       0    //Check that SFID increments uniformly
-#define DEF_ASSEMBLE_COUNTER              0    //Create and output unique counter produced by major and minor frame counters
-#define DEF_CALC_TSTAMPS                  0    //Create and output timestamps based on GPS 1 pps
-#define DEF_VERBOSE                       0    //please tell me
-
-#define DEF_STR_SIZE                   1024
-
-#define MAX_N_MINORFRAMES               256
-#define MAX_GPS_WORDS                     2
-
-//struct declarations
-struct suMeasurementInfo
-{
-    char        szName[DEF_STR_SIZE];          //Name of the measurement, e.g., "Langmuir Probe Measurement 1 MSB"
-    char        szAbbrev[DEF_STR_SIZE];        //Abbreviation for measurement, e.g., "LP01MSB"
-    char        szUser[DEF_STR_SIZE];	       //Who is the user? E.g., Dartmouth, U Iowa
-    uint16_t    uWord;			       //Beginning word in the frame
-    uint16_t    uWdInt;			       //Word interval
-    uint16_t    uSampsPerMinorFrame;	       //How many of these to expect per frame? Most are just one.
-    uint16_t    uMinorFrame;		       //Which minor frame is it in?
-    uint16_t    uMinorFrInt;		       //How often does it show up?
-    uint32_t    ulSPS;
-
-    int32_t   * palSample;
-    uint64_t    ullSampCount;
-
-    uint16_t    uNAsymWRanges;
-    uint16_t ** ppauAsymWRanges;
-//    uint16_t  * uAsymWRanges[2];
-    uint16_t  * pauWtemp;
-    
-    uint16_t    uNAsymFRanges;
-    uint16_t ** ppauAsymFRanges;
-//    uint16_t  * uAsymFRanges[2];
-    uint16_t  * pauFtemp;
-
-    uint16_t    uLSBWord;
-
-    char        szOutFile[DEF_STR_SIZE];
-    FILE *      psuOutFile;
-
-    uint8_t     bTSCalcEnabled;
-    uint64_t  * pallWordOffsets;
-    uint16_t    uOffsetBufCount;
-    char        szTStampFile[DEF_STR_SIZE];
-    FILE *      psuTStampFile;
-};
-
-//function declarations
-int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t gullSampsPerMinorFrame, 
-		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
-int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
-
-uint16_t uParseMeasurementSamples(struct suMeasurementInfo * psuMeasInfo, int iMeasIdx, 
-				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, uint64_t gullSampsPerMinorFrame, uint32_t * pulMinorFrameSampCount, 
-				  uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
-				  uint64_t * pullWordsWritten,
-				  uint8_t bCombineTM1Meas, uint8_t bAssembleCounter, uint8_t bWriteSamplesToFile);
-
-void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo);
-void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx);
-
-//uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample, uint16_t uMSBShift, uint16_t uLSBShift, uint16_t uJustification, uint8_t bMSBIsFirst);
-
-uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFrameIdx, uint16_t uNumMFCounters, uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint64_t * pullMFCVal);
-
-uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize, 
-				       struct suMeasurementInfo ** ppsuMeasInfo, int16_t iNMeasurements,
-				       uint16_t * pauMinorFrame, uint64_t gullSampsPerMinorFrame, 
-				       uint64_t * pullCounterVal, uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
-				       uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas, 
-				       uint64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount,
-				       uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS);
-
-int bCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
-			int64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount, 
-			uint8_t bCombineTM1Meas);
-
-int iWriteMeasurementTStamps(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx,
-			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame,
-			     int64_t llWordOffset_GPS, uint64_t ullGPSWordCount);
-
-int64_t llGetMinorFrameIdx(uint16_t * pauMinorFrame);
-
-int iBadSFIDIncrement(int64_t llMinorFrameIdx, int64_t llOldMinorFrameIdx);
-
-void vUsage(void);
-
-//global var declarations
-int64_t  gllMinorFramesPerMajorFrame;
-uint64_t gullSampsPerMinorFrame;	       //Number of samples to grab at each periodic interval
-uint16_t guAsymWRInd;
-uint16_t guAsymFRInd;
-uint16_t guSFIDIdx;
-uint16_t guTMLink;
-double   gdWordPeriod;
-
-//struct suMeasurementInfo * psuMeasurementInit(int16_t iMeasIdx);
 
 int main( int argc, char * argv[] )
 {
@@ -139,8 +33,6 @@ int main( int argc, char * argv[] )
 
     struct stat  suInFileStat;		       //input stuff
     uint64_t     ullSampBitLength;	       //Sample size (in bytes)
-
-    //    uint64_t     ullNBytesPerMinorFrame;	       //Number of bits in MinorFrame
 
     uint16_t   * pauMinorFrame;
     uint64_t     ullBytesPerMinorFrame;
@@ -253,8 +145,6 @@ int main( int argc, char * argv[] )
     psuUniqCounterFile = (FILE *) NULL;
     strncpy(szOutPrefix,DEF_OUTPREFIX,DEF_STR_SIZE);
 
-    //    ullSampBitLength           = DEF_N_SAMPBITS;
-    //    ullSampBitLength           = 0;
     gullSampsPerMinorFrame      = DEF_SAMPSPERMINORFRAME;
     ullBytesPerMinorFrame      = gullSampsPerMinorFrame * sizeof(uint16_t);
 
@@ -279,15 +169,6 @@ int main( int argc, char * argv[] )
 	    case '-' :
 		switch (argv[iArgIdx][1])
 		    {
-		    /* case 's' :                   /\* Sample size *\/ */
-		    /* 	iArgIdx++; */
-		    /* 	if(iArgIdx >= argc) */
-		    /* 	    { */
-		    /* 	    vUsage(); */
-		    /* 	    return EXIT_FAILURE; */
-		    /* 	    } */
-		    /* 	sscanf(argv[iArgIdx],"%" PRIu64 ,&ullSampBitLength); */
-		    /* 	break; */
 
 		    case 'n' :                   /* # Samples */
 			iArgIdx++;
@@ -507,29 +388,25 @@ int main( int argc, char * argv[] )
 
     //To the beginning!
     if ( !bDoCheckSFIDIncrement ) 
-	printf("Parsing CAPER samples for TM%" PRIu16 "\n",guTMLink);
+	printf("Parsing PCM samples for TM%" PRIu16 "\n",guTMLink);
     else  
 	printf("Checking SFID increment; no output will be produced...\n");
     printf("\n");
 
-    //Get first MFC value, if that's what we need to do
-    //    if ( bTStampMode )
-    //	{
-	    ullFirstMFCVal = ullGetFirstMFCVal_initGPSWord(psuInFile,suInFileStat.st_size, 
-					       ppsuMeasInfo, iNMeasurements,
-					       pauMinorFrame,gullSampsPerMinorFrame, 
-					       &ullCounterVal, paullMajorFrameVals, pauMFCIndices, uNumMFCounters,
-					       ullSampBitLength, uMinorFrameBitShift, bCombineTM1Meas,
-							   &llCurrentGPSWord,&ullGPSWordCount,&ullGPSWordStreakCount,
-							   pauGPSMeasIdx[0], &llWordOffset_GPS);
-	    //break out if we couldn't get it
-	    if ( ullFirstMFCVal == -1 ) 
-		{
-		printf("TStampMode: Unable to get a first major frame count! Is something wrong with your data?\n");
-		printf("Exiting...");
-		return -1;
-		}
-	    //	}
+    //Get first GPS word and MFCVal
+    if ( !bFoundFirstMFCValAndGPSWord(psuInFile,suInFileStat.st_size, 
+				      ppsuMeasInfo, iNMeasurements,
+				      pauMinorFrame,gullSampsPerMinorFrame, &ullCounterVal, 
+				      paullMajorFrameVals, pauMFCIndices, uNumMFCounters,
+				      &ullFirstMFCVal,
+				      ullSampBitLength, uMinorFrameBitShift, bCombineTM1Meas,
+				      &llCurrentGPSWord,&ullGPSWordCount,&ullGPSWordStreakCount,
+				      pauGPSMeasIdx[0], &llWordOffset_GPS) )
+	{
+	printf("TStampMode: Unable to get a first major frame count! Is something wrong with your data?\n");
+	printf("Exiting...");
+	return -1;
+	}
 
     //Loop over whole file
     llOldMinorFrameIdx = 0;
@@ -558,7 +435,7 @@ int main( int argc, char * argv[] )
 	    {
 	    llOldMinorFrameIdx %= gllMinorFramesPerMajorFrame;
 
-	    if ( ullMinorFrameCount > 0 && iBadSFIDIncrement(llMinorFrameIdx,llOldMinorFrameIdx) )
+	    if ( ullMinorFrameCount > 0 && bBadSFIDIncrement(llMinorFrameIdx,llOldMinorFrameIdx) )
 		{
 		ullSkippedFrameCount++;
 		printf("Minor frame skipped!\n");
@@ -1129,13 +1006,14 @@ uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFr
     return ullCounterVal;
 }
 
-uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize, 
-				       struct suMeasurementInfo ** ppsuMeasInfo, int16_t iNMeasurements,
-				       uint16_t * pauMinorFrame, uint64_t gullSampsPerMinorFrame, 
-				       uint64_t * pullCounterVal, uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
-				       uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas,
-				       uint64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount,
-				       uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS)
+uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize, 
+				     struct suMeasurementInfo ** ppsuMeasInfo, int16_t iNMeasurements,
+				     uint16_t * pauMinorFrame, uint64_t gullSampsPerMinorFrame, uint64_t * pullCounterVal, 
+				     uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
+				     uint64_t * pullFirstMFCVal,
+				     uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas,
+				     uint64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount,
+				     uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS)
 {
     int iMeasIdx;
     int iArgIdx;
@@ -1148,7 +1026,7 @@ uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize,
     uint16_t             uMFCValCount;
     uint8_t              bAllMFCValsCollected;
 
-    uint64_t             ullFirstMFCVal;
+    //    uint64_t             ullFirstMFCVal;
 
     uint8_t              bGotFirstGPSWord;
     int64_t              llFirstGPSWord;
@@ -1202,7 +1080,7 @@ uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize,
 	
 	if ( uMFCValCount == uNumMFCounters )
 	    {
-	    (*pullCounterVal) = ullAssembleCounterVal(paullMajorFrameVals,llMinorFrameIdx,uNumMFCounters,ullSampBitLength, uMinorFrameBitShift, &ullFirstMFCVal);
+	    (*pullCounterVal) = ullAssembleCounterVal(paullMajorFrameVals,llMinorFrameIdx,uNumMFCounters,ullSampBitLength, uMinorFrameBitShift, pullFirstMFCVal);
 	    bAllMFCValsCollected = 1;
 	    uMFCValCount = 0;
 	    }
@@ -1222,7 +1100,7 @@ uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize,
     if ( bAllMFCValsCollected && bGotFirstGPSWord )
 	{
 	//Get the proper GPS offset
-	(*pllWordOffset_GPS) = gllMinorFramesPerMajorFrame * (ullGPSMFCVal - ullFirstMFCVal) * gullSampsPerMinorFrame;  
+	(*pllWordOffset_GPS) = gllMinorFramesPerMajorFrame * (ullGPSMFCVal - *pullFirstMFCVal) * gullSampsPerMinorFrame;  
 
 	//Now we go back to the beginning of the file
 	rewind(psuInFile);
@@ -1231,9 +1109,10 @@ uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize,
     else
 	{
 	printf("allmfc: %i, gotfirstgps: %i\n",bAllMFCValsCollected,bGotFirstGPSWord);
-	return -1;
+	return 0;
 	}
-    return ullFirstMFCVal;
+    //    return ullFirstMFCVal;
+    return 1;
 }
 
 int bCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
@@ -1319,23 +1198,15 @@ int iWriteMeasurementTStamps(struct suMeasurementInfo * psuMeasInfo, int64_t llM
     psuMeasInfo->uOffsetBufCount = 0;
 
     return 0;
-
-    /* if ( (llMinorFrameIdx % psuMeasInfo->uMinorFrInt) == ( psuMeasInfo->uMinorFrame % psuMeasInfo->uMinorFrInt ) ) */
-    /* 	{ */
-    /* 	    for (iWdIdx = psuMeasInfo->uWord; iWdIdx < gullSampsPerMinorFrame; iWdIdx += psuMeasInfo->uWdInt) */
-    /* 		{ */
-    /* 		    dTimeOffset_Measurement = (llWordOffset_MajorFrame + llWordOffset_MinorFrame + iWdIdx) * gdWordPeriod; */
-    /* 		} */
-    /* 	} */
-    //    dTimeOffset_Measurement = llWordOffset_Measurement * gdWordPeriod;
-
 }
 
 int64_t llGetMinorFrameIdx(uint16_t * pauMinorFrame){
     return (pauMinorFrame[guSFIDIdx-1] + 1) & 0b0000111111;  //The TM list counts from 1, not zero
 }
 
-int iBadSFIDIncrement(int64_t llMinorFrameIdx, int64_t llOldMinorFrameIdx)
+
+
+uint8_t bBadSFIDIncrement(int64_t llMinorFrameIdx, int64_t llOldMinorFrameIdx)
 {
     return ( ( ( llMinorFrameIdx - llOldMinorFrameIdx ) != 1 ) && ( ( llMinorFrameIdx - llOldMinorFrameIdx ) != 1 - gllMinorFramesPerMajorFrame ) );
 }
@@ -1343,7 +1214,7 @@ int iBadSFIDIncrement(int64_t llMinorFrameIdx, int64_t llOldMinorFrameIdx)
 void vUsage(void)
 {
     printf("\n");
-    printf("parse_CAPER_samples\n");
+    printf("parse_PCM_samples\n");
     printf("Convert a filed outputted by bust_nBit_into_16bit_file into separate measurement files!\n");
     printf("\n");
     printf("Usage: parse_CAPER_samples [flags]                                         \n");
@@ -1362,8 +1233,8 @@ void vUsage(void)
     printf("                    (no parsed output is produced)                         \n");
     printf("   -A           Assemble unique counter based on major/minor       [%i]    \n",DEF_ASSEMBLE_COUNTER);
     printf("                    frames, and output to file                             \n");
-    printf("   -T           Produce timestamps for each measurement based      [%i]    \n",DEF_CALC_TSTAMPS);
-    printf("                    on GPS pulse data                                      \n");
+    printf("   -T           Produce timestamps based on GPS pulse data for     [%i]    \n",DEF_CALC_TSTAMPS);
+    printf("                    measurements specified in PCM header file              \n");
     printf("   -v           Verbose                                            [%i]    \n",DEF_VERBOSE);
     printf("                                                                           \n");
     printf("   -h           Help (this menu)                                           \n");
