@@ -20,17 +20,17 @@
 struct suPCMInfo
 {
 
-    uint16_t        guAsymWRInd;
-    uint16_t        guAsymFRInd;
-    int64_t         gllMinorFramesPerMajorFrame;
-    uint16_t        guSFIDIdx;
-    uint16_t        guTMLink;
-    double          gdWordPeriod;
+    uint16_t        uAsymWRInd;
+    uint16_t        uAsymFRInd;
+    int64_t         llMinorFramesPerMajorFrame;
+    uint16_t        uSFIDIdx;
+    uint16_t        uTMLink;
+    double          dWordPeriod;
 
     int16_t         iNMeasurements;
 
     uint64_t        ullSampBitLength;	       //Sample size (in bytes)
-    uint64_t        gullSampsPerMinorFrame;	       //Number of samples to grab at each periodic interval
+    uint64_t        ullSampsPerMinorFrame;	       //Number of samples to grab at each periodic interval
     uint64_t        ullBytesPerMinorFrame;
     uint32_t        ulMinorFrameSampCount;
     uint64_t        ullMinorFrameCount;
@@ -94,7 +94,7 @@ struct suMeasurementInfo
 };
 
 //function declarations
-int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t guTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
+int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
 
 int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, 
 		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
