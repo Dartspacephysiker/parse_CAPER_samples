@@ -6,7 +6,8 @@
 #define TM1_SFID_IDX               25    //Location of subframe ID within minor frame, counting from 1
 			          
 #define TM1_BPS               9600000    //Link BPS
-
+#define TM1_SAMPSPERMINORFRAME    120
+#define TM1_MINOR_PER_MAJOR        32
 #define TM1_NUM_MFCOUNTERS          3
 
 #define TM1_WORD_BITLENGTH         10
@@ -19,8 +20,11 @@
 #define TM_NO_LSB                 498    //Don't try to combine this channel
 #define TM_UPPER6_MSB_LOWER10_LSB 109
 
+//Static variable to indicate that there is no timestamp_searchword
+#define TM1_NO_TS_SEARCH     '\0'
+
 /*Names of measurements, defined by NASA PCM doc*/
-static char   * szTM1SerialMeasNames[]  =    {"Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",	    //Serial #1, 0-7
+static char   * szTM1SerialMeasNames[]  =    { "Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",    //Serial #1, 0-7
 					       "Langmuir Probe Channel 2 MSB ", "Langmuir Probe Channel 2 LSB ",
 					       "Langmuir Probe Channel 3 MSB ", "Langmuir Probe Channel 3 LSB ",
 					       "Langmuir Probe Channel 4 MSB ", "Langmuir Probe Channel 4 LSB ",
@@ -599,6 +603,52 @@ static uint8_t abTM1TSCalcEnabled[]     =    {0, 0,								    //Serial #1, 0-7
 					      
 					      0, 0,
 					      0}; 
+
+static char   * szTM1TSSearchWords[]    =    { TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #1, 0-7
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #2, 8-15
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #3, 16-21
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       //TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #4, 22-29
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #5, 30-37
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #6, 38-45
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #7, 46-51
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       //TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+
+					       TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //TM + SFID  52-58
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH, 
+					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH, 
+
+                                               TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+                                               TM1_NO_TS_SEARCH};
 
 
 static uint16_t    auTM1MFCMeasIdx[]    =    {  53, 54,  //Major frame measurement indices (indexing from zero in the arrays above)

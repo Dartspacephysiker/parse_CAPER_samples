@@ -2,9 +2,6 @@
 #define PARSE_PCM_SAMPLES
 
 //#define DEF_N_SAMPBITS                   16 //in bits
-#define DEF_SAMPSPERMINORFRAME          120
-#define DEF_MINOR_PER_MAJOR              32
-
 #define DEF_TM_LINK                       1
 
 #define DEF_OUTPREFIX  "parsed_TM1-samples"
@@ -16,10 +13,49 @@
 
 #define DEF_STR_SIZE                   1024
 
-#define MAX_N_MINORFRAMES               256
-#define MAX_GPS_WORDS                     2
+//#define MAX_N_MINORFRAMES               256
+//#define MAX_GPS_WORDS                     2
 
 //struct declarations
+struct suPCMInfo
+{
+
+    uint16_t        guAsymWRInd;
+    uint16_t        guAsymFRInd;
+    int64_t         gllMinorFramesPerMajorFrame;
+    uint16_t        guSFIDIdx;
+    uint16_t        guTMLink;
+    double          gdWordPeriod;
+
+    int16_t         iNMeasurements;
+
+    uint64_t        ullSampBitLength;	       //Sample size (in bytes)
+    uint64_t        gullSampsPerMinorFrame;	       //Number of samples to grab at each periodic interval
+    uint64_t        ullBytesPerMinorFrame;
+    uint32_t        ulMinorFrameSampCount;
+    uint64_t        ullMinorFrameCount;
+    uint64_t        ullSkippedFrameCount;
+    uint16_t        uMinorFrameBitShift;
+
+    uint64_t        ullBytesPerMajorFrame;
+    int64_t         llMajorFrameCount;
+    uint16_t        uNumMFCounters;
+    uint16_t  *     pauMFCIndices;
+    uint64_t  *     paullMajorFrameVals;
+    uint64_t        ullFirstMFCVal;
+    uint64_t        ullCurrentMFCVal;
+    uint64_t        ullGPSMFCVal;
+
+    uint64_t        ullCounterVal;
+
+    uint16_t        uNGPSWordsInPCM;
+    int64_t         llCurrentGPSWord;
+    uint64_t        ullGPSWordCount;
+    uint64_t        ullGPSWordStreakCount;         //How long this word has persisted (measures drift time within PCM stream)
+    uint16_t  *     pauGPSMeasIdx;		       //GPS 1pps measurement indices (indexing measurements in PCM header from zero )
+
+};
+
 struct suMeasurementInfo
 {
     char        szName[DEF_STR_SIZE];          //Name of the measurement, e.g., "Langmuir Probe Measurement 1 MSB"
@@ -58,61 +94,54 @@ struct suMeasurementInfo
 };
 
 //function declarations
-int iMeasurementInit(struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, uint64_t gullSampsPerMinorFrame, 
-		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
-int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
+int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t guTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
 
-uint16_t uParseMeasurementSamples(struct suMeasurementInfo * psuMeasInfo, int iMeasIdx, 
-				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, uint64_t gullSampsPerMinorFrame, uint32_t * pulMinorFrameSampCount, 
-				  uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
+int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, 
+		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
+
+
+//write samples from this minor frame to the appropriate measurement files
+uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int iMeasIdx, 
+				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, 
 				  uint64_t * pullWordsWritten,
 				  uint8_t bCombineTM1Meas, uint8_t bAssembleCounter, uint8_t bWriteSamplesToFile);
 
-void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo);
-void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx);
+/*For combining samples. Clearly unfinished*/
+uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample, 
+				uint16_t uMSBShift, uint16_t uLSBShift, 
+				uint16_t uJustification, uint8_t bMSBIsFirst);
 
-//uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample, uint16_t uMSBShift, uint16_t uLSBShift, uint16_t uJustification, uint8_t bMSBIsFirst);
 
-uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFrameIdx, uint16_t uNumMFCounters, uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint64_t * pullMFCVal);
+uint64_t ullAssembleCounterVal(struct suPCMInfo * psuPCMInfo, int64_t llMinorFrameIdx,uint64_t * pullMFCVal);
+
 
 uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize, 
-				    struct suMeasurementInfo ** ppsuMeasInfo, int16_t iNMeasurements,
-				    uint16_t * pauMinorFrame, uint64_t gullSampsPerMinorFrame, uint64_t * pullCounterVal, 
-				    uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
-				    uint64_t * pullFirstMFCVal,
-				    uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas,
-				    uint64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount,
-				    uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS);
+				    struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
+				    uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllWordOffset_GPS);
 
-uint64_t ullGetFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize, 
-				     struct suMeasurementInfo ** ppsuMeasInfo, int16_t iNMeasurements,
-				     uint16_t * pauMinorFrame, uint64_t gullSampsPerMinorFrame, 
-				     uint64_t * pullCounterVal, uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
-				     uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas, 
-				     uint64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount,
-				     uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS);
 
-int bCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
-			int64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount, 
+int bCheckForNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
 			uint8_t bCombineTM1Meas);
 
-int iWriteMeasurementTStamps(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx,
-			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame,
-			     int64_t llWordOffset_GPS, uint64_t ullGPSWordCount);
+int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx,
+			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame, 
+			     int64_t llWordOffset_GPS);
 
-int64_t llGetMinorFrameIdx(uint16_t * pauMinorFrame);
+int64_t llGetMinorFrameIdx(struct suPCMInfo * psuPCMInfo, uint16_t * pauMinorFrame);
 
-uint8_t bBadSFIDIncrement(int64_t llMinorFrameIdx, int64_t llOldMinorFrameIdx);
+uint8_t bBadSFIDIncrement(struct suPCMInfo * psuPCMInfo, int64_t llMinorFrameIdx, int64_t llOldMinorFrameIdx);
+
+int iPCMFree(struct suPCMInfo * psuPCMInfo);
+int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
+
+void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx);
+void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo);
 
 void vUsage(void);
 
-//global var declarations
-int64_t  gllMinorFramesPerMajorFrame;
-uint64_t gullSampsPerMinorFrame;	       //Number of samples to grab at each periodic interval
-uint16_t guAsymWRInd;
-uint16_t guAsymFRInd;
-uint16_t guSFIDIdx;
-uint16_t guTMLink;
-double   gdWordPeriod;
+
+
+
+
 
 #endif //end #ifndef _PARSE_PCM_SAMPLES
