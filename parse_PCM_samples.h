@@ -1,7 +1,6 @@
 #ifndef _PARSE_PCM_SAMPLES
 #define PARSE_PCM_SAMPLES
 
-//#define DEF_N_SAMPBITS                   16 //in bits
 #define DEF_TM_LINK                       1
 
 #define DEF_OUTPREFIX  "parsed_TM1-samples"
@@ -12,6 +11,8 @@
 #define DEF_VERBOSE                       0    //please tell me
 
 #define DEF_STR_SIZE                   1024
+
+#define TM_NO_TS_SEARCH                '\0'
 
 //#define MAX_N_MINORFRAMES               256
 //#define MAX_GPS_WORDS                     2
@@ -32,7 +33,7 @@ struct suPCMInfo
     int16_t         iNMeasurements;
 
     uint64_t        ullSampBitLength;	       //Sample size (in bytes)
-    uint64_t        ullSampsPerMinorFrame;	       //Number of samples to grab at each periodic interval
+    uint64_t        ullSampsPerMinorFrame;     //Number of samples to grab at each periodic interval
     uint64_t        ullBytesPerMinorFrame;
     uint32_t        ulMinorFrameSampCount;
     uint64_t        ullMinorFrameCount;
@@ -53,9 +54,10 @@ struct suPCMInfo
     uint16_t        uNGPSWordsInPCM;
     int64_t         llCurrentGPSWord;
     uint64_t        ullGPSWordCount;
-    uint64_t        ullGPSWordStreakCount;         //How long this word has persisted (measures drift time within PCM stream)
-    uint16_t  *     pauGPSMeasIdx;		       //GPS 1pps measurement indices (indexing measurements in PCM header from zero )
-
+    uint64_t        ullGPSWordStreakCount;     //How long this word has persisted (measures drift time within PCM stream)
+    uint16_t  *     pauGPSMeasIdx;	       //GPS 1pps measurement indices (indexing measurements in PCM header from zero )
+    
+    uint8_t         bDoSearchFrameForWord;     //Perform a search of each minor frame for a particular word in order to produce a timestamp
 };
 
 struct suMeasurementInfo
@@ -91,6 +93,7 @@ struct suMeasurementInfo
     uint8_t     bTSCalcEnabled;
     uint64_t  * pallWordOffsets;
     uint16_t    uOffsetBufCount;
+    char        szTSSearchWord[DEF_STR_SIZE]; 
     char        szTStampFile[DEF_STR_SIZE];
     FILE *      psuTStampFile;
 };
@@ -102,13 +105,11 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
 
 
-//write samples from this minor frame to the appropriate measurement files
 uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int iMeasIdx, 
 				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, 
 				  uint64_t * pullWordsWritten,
 				  uint8_t bCombineTM1Meas, uint8_t bAssembleCounter, uint8_t bWriteSamplesToFile);
 
-/*For combining samples. Clearly unfinished*/
 uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample, 
 				uint16_t uMSBShift, uint16_t uLSBShift, 
 				uint16_t uJustification, uint8_t bMSBIsFirst);
@@ -121,9 +122,10 @@ uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize,
 				    struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
 				    uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllWordOffset_GPS);
 
-
 int bCheckForNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
 			uint8_t bCombineTM1Meas);
+
+void vSearchMinorFrameFor16BitWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx);
 
 int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx,
 			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame, 
@@ -141,10 +143,5 @@ void vPrintPCMInfo (struct suPCMInfo * psuPCMInfo);
 void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo);
 
 void vUsage(void);
-
-
-
-
-
 
 #endif //end #ifndef _PARSE_PCM_SAMPLES

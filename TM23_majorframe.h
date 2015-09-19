@@ -92,7 +92,7 @@ static uint16_t        uTM23LSBWord[]   =    {  0, 0,
 static uint8_t abTM23TSCalcEnabled[]    =    {  0, 0,
 					        0, 0,
 					        0, 0,
-						0};
+						1};
 
 static char   * szTM23TSSearchWords[]   =    { TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH,
 					       TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH, 

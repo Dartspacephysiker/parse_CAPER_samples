@@ -2,8 +2,7 @@
 *.out
 
 #No execs or objects
-parse_CAPER_samples
-parse_TM23_samples
+parse_PCM_samples
 *.o
 
 #no unique counter files
