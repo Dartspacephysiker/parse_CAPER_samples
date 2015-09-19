@@ -92,17 +92,20 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx);
 uint64_t ullAssembleCounterVal(uint64_t * paullMajorFrameVals, int64_t llMinorFrameIdx, uint16_t uNumMFCounters, uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint64_t * pullMFCVal);
 
 uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize, 
-			   struct suMeasurementInfo ** ppsuMeasInfo, int16_t iNMeasurements,
-			   uint16_t * pauMinorFrame, uint64_t gullSampsPerMinorFrame, 
-			   uint64_t * pullCounterVal, uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
-			   uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas, 
-				       uint64_t * pllCurrentGPSWord, uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS);
+				       struct suMeasurementInfo ** ppsuMeasInfo, int16_t iNMeasurements,
+				       uint16_t * pauMinorFrame, uint64_t gullSampsPerMinorFrame, 
+				       uint64_t * pullCounterVal, uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
+				       uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas, 
+				       uint64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount,
+				       uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS);
 
-int iCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, 
-			 uint16_t * pauMinorFrame,int64_t * pllCurrentGPSWord, uint8_t bCombineTM1Meas);
+int bCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
+			int64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount, 
+			uint8_t bCombineTM1Meas);
 
 int iWriteMeasurementTStamps(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx,
-			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame, int64_t llWordOffset_GPS);
+			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame,
+			     int64_t llWordOffset_GPS, uint64_t ullGPSWordCount);
 
 int64_t llGetMinorFrameIdx(uint16_t * pauMinorFrame);
 
@@ -183,10 +186,12 @@ int main( int argc, char * argv[] )
     uint64_t     ullCounterVal;
     uint16_t     uMinorFrameBitShift;
 
-    uint16_t     uNGPSWords;
+    uint16_t     uNGPSWordsInPCM;
     int64_t      llCurrentGPSWord;
-    uint16_t  *  pauGPSMeasIdx; //GPS 1pps measurement indices (indexing from zero in the arrays above)
-    int64_t      llWordOffset_MajorFrame; //Current major frame offset (in words) relative to first recorded major frame
+    uint64_t     ullGPSWordCount;
+    uint64_t     ullGPSWordStreakCount;         //How long this word has persisted, or a measure of the drift time within this PCM stream
+    uint16_t  *  pauGPSMeasIdx;			//GPS 1pps measurement indices (indexing from zero in the arrays above)
+    int64_t      llWordOffset_MajorFrame;	//Current major frame offset (in words) relative to first recorded major frame
     int64_t      llWordOffset_MinorFrame;
     int64_t      llWordOffset_GPS;
 
@@ -224,9 +229,11 @@ int main( int argc, char * argv[] )
     ullCounterVal                  = 0;
     uMinorFrameBitShift            = 0;
 			           
-    uNGPSWords                     = 0;
+    uNGPSWordsInPCM                = 0;
     pauGPSMeasIdx                  = NULL;
-    llCurrentGPSWord               = 0;
+    llCurrentGPSWord               = -1;
+    ullGPSWordCount                = -1;     //This will go to zero once we initialize the GPS word and MFC count
+    ullGPSWordStreakCount          = 0;
     llWordOffset_MajorFrame        = 0;
     llWordOffset_MinorFrame        = 0;
     llWordOffset_GPS               = 0;
@@ -370,9 +377,9 @@ int main( int argc, char * argv[] )
 			                   
 	if ( bTStampMode )               
 	    {		                   
-	    uNGPSWords                   = TM1_N_GPS_WORDS;
-	    pauGPSMeasIdx                = (uint16_t *) malloc(uNGPSWords * sizeof(uint16_t));
-	    for ( iArgIdx = 0; iArgIdx < uNGPSWords; iArgIdx++ )
+	    uNGPSWordsInPCM              = TM1_N_GPS_WORDS;
+	    pauGPSMeasIdx                = (uint16_t *) malloc(uNGPSWordsInPCM * sizeof(uint16_t));
+	    for ( iArgIdx = 0; iArgIdx < uNGPSWordsInPCM; iArgIdx++ )
 		{		         
 		pauGPSMeasIdx[iArgIdx]   = auTM1GPSMeasIdx[iArgIdx];
 		}
@@ -404,9 +411,9 @@ int main( int argc, char * argv[] )
 				         
 	if ( bTStampMode )               
 	    {		                   
-	    uNGPSWords                   = TM23_N_GPS_WORDS;
-	    pauGPSMeasIdx                = (uint16_t *) malloc(uNGPSWords * sizeof(uint16_t));
-	    for ( iArgIdx = 0; iArgIdx < uNGPSWords; iArgIdx++ )
+	    uNGPSWordsInPCM              = TM23_N_GPS_WORDS;
+	    pauGPSMeasIdx                = (uint16_t *) malloc(uNGPSWordsInPCM * sizeof(uint16_t));
+	    for ( iArgIdx = 0; iArgIdx < uNGPSWordsInPCM; iArgIdx++ )
 		{		         
 		pauGPSMeasIdx[iArgIdx]   = auTM23GPSMeasIdx[iArgIdx];
 		}		         
@@ -513,7 +520,8 @@ int main( int argc, char * argv[] )
 					       pauMinorFrame,gullSampsPerMinorFrame, 
 					       &ullCounterVal, paullMajorFrameVals, pauMFCIndices, uNumMFCounters,
 					       ullSampBitLength, uMinorFrameBitShift, bCombineTM1Meas,
-							   &llCurrentGPSWord, pauGPSMeasIdx[0], &llWordOffset_GPS);
+							   &llCurrentGPSWord,&ullGPSWordCount,&ullGPSWordStreakCount,
+							   pauGPSMeasIdx[0], &llWordOffset_GPS);
 	    //break out if we couldn't get it
 	    if ( ullFirstMFCVal == -1 ) 
 		{
@@ -586,7 +594,8 @@ int main( int argc, char * argv[] )
 		llWordOffset_MinorFrame = ( llMinorFrameIdx - 1 ) * gullSampsPerMinorFrame;
 
 		//Check for new GPS word in this minor frame, then calculate GPS word offset
-		if ( iCheckForNewGPSWord(ppsuMeasInfo[pauGPSMeasIdx[0]],llMinorFrameIdx,pauMinorFrame,&llCurrentGPSWord,bCombineTM1Meas) )
+		if ( bCheckForNewGPSWord(ppsuMeasInfo[pauGPSMeasIdx[0]],llMinorFrameIdx,pauMinorFrame,
+					 &llCurrentGPSWord,&ullGPSWordCount,&ullGPSWordStreakCount,bCombineTM1Meas) )
 		    {
 			llWordOffset_GPS = llWordOffset_MajorFrame + llCurrentGPSWord;
 		    }
@@ -596,7 +605,8 @@ int main( int argc, char * argv[] )
 		    if ( ppsuMeasInfo[iMeasIdx]->bTSCalcEnabled && ( ppsuMeasInfo[iMeasIdx]->uOffsetBufCount > 0 ) )
 	    		{
 			iWriteMeasurementTStamps(ppsuMeasInfo[iMeasIdx], llMinorFrameIdx,
-						 llWordOffset_MajorFrame, llWordOffset_MinorFrame, llWordOffset_GPS);
+						 llWordOffset_MajorFrame, llWordOffset_MinorFrame,
+						 llWordOffset_GPS, ullGPSWordCount);
 	    		}
 	    	    }
 	    	}
@@ -1124,7 +1134,8 @@ uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize,
 				       uint16_t * pauMinorFrame, uint64_t gullSampsPerMinorFrame, 
 				       uint64_t * pullCounterVal, uint64_t * paullMajorFrameVals, uint16_t * pauMFCIndices, uint16_t uNumMFCounters,
 				       uint64_t ullSampBitLength, uint16_t uMinorFrameBitShift, uint8_t bCombineTM1Meas,
-				       uint64_t * pllCurrentGPSWord, uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS)
+				       uint64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount,
+				       uint16_t uGPSMeasIdx, int64_t * pllWordOffset_GPS)
 {
     int iMeasIdx;
     int iArgIdx;
@@ -1198,19 +1209,22 @@ uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize,
 
 	if ( !bGotFirstGPSWord )
 	    {
-	    if ( iCheckForNewGPSWord(ppsuMeasInfo[uGPSMeasIdx], llMinorFrameIdx, pauMinorFrame,pllCurrentGPSWord,bCombineTM1Meas) )
+		if ( bCheckForNewGPSWord(ppsuMeasInfo[uGPSMeasIdx], llMinorFrameIdx, pauMinorFrame, 
+					 pllCurrentGPSWord, pullGPSWordCount, pullGPSWordStreakCount,bCombineTM1Meas) )
 		{
 		bGotFirstGPSWord = 1;
 		(*pullCounterVal) = ullAssembleCounterVal(paullMajorFrameVals,llMinorFrameIdx,uNumMFCounters,ullSampBitLength, uMinorFrameBitShift, &ullGPSMFCVal);
-		(*pllWordOffset_GPS) = gllMinorFramesPerMajorFrame * ullGPSMFCVal * gullSampsPerMinorFrame;
+		//		(*pllWordOffset_GPS) = gllMinorFramesPerMajorFrame * ullGPSMFCVal * gullSampsPerMinorFrame;
 		}
 	    }
 	}
 
     if ( bAllMFCValsCollected && bGotFirstGPSWord )
 	{
-	//Now we pick up the first MFC Value and go back to the beginning of the file
+	//Get the proper GPS offset
+	(*pllWordOffset_GPS) = gllMinorFramesPerMajorFrame * (ullGPSMFCVal - ullFirstMFCVal) * gullSampsPerMinorFrame;  
 
+	//Now we go back to the beginning of the file
 	rewind(psuInFile);
 	ullInFilePos = 0;
 	}
@@ -1222,19 +1236,17 @@ uint64_t ullGetFirstMFCVal_initGPSWord(FILE * psuInFile, size_t szInFileSize,
     return ullFirstMFCVal;
 }
 
-int iCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, 
-			 uint16_t * pauMinorFrame,int64_t * pllCurrentGPSWord, uint8_t bCombineTM1Meas)
+int bCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
+			int64_t * pllCurrentGPSWord, uint64_t * pullGPSWordCount, uint64_t * pullGPSWordStreakCount,
+			uint8_t bCombineTM1Meas)
 {
-    //    int iMeasIdx;
     int iWdIdx;
 
     uint16_t uNonZeroGPSWordCount;
     int64_t  llTestGPSWord;
 
-    //    iMeasIdx             = pauGPSMeasIdx[0];
     uNonZeroGPSWordCount = 0;
     llTestGPSWord        = -1;
-    
 
     if ( (llMinorFrameIdx % psuMeasInfo->uMinorFrInt) == ( psuMeasInfo->uMinorFrame % psuMeasInfo->uMinorFrInt ) )
 	{
@@ -1246,8 +1258,6 @@ int iCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorF
 
 	    if( iLSBWdIdx != ( TM_SKIP_LSB - 1 ) )
 		{
-		//		    for ( iWdIdx = psuMeasInfo->uWord; iWdIdx < gullSampsPerMinorFrame; iWdIdx += psuMeasInfo->uWdInt )
-		//			{
 		if ( iLSBWdIdx == TM_NO_LSB - 1 )
 		    {
 		    llTestGPSWord = pauMinorFrame[iWdIdx];
@@ -1260,8 +1270,6 @@ int iCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorF
 		    {
 		    llTestGPSWord = ( ( pauMinorFrame[iWdIdx] & 0x3FF ) <<  6 ) | ( pauMinorFrame[iLSBWdIdx] >> 4 );
 		    }
-		//			iLSBWdIdx += psuMeasInfo->uWdInt;
-		//			}
 		}
 	    }
 	else
@@ -1270,18 +1278,28 @@ int iCheckForNewGPSWord(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorF
 	    }
 	}
 
-    //    printf("%lld\n",llTestGPSWord);
-
-    if ( ( llTestGPSWord > 0 ) && ( llTestGPSWord != (*pllCurrentGPSWord) ) )
+    if ( llTestGPSWord > 0 )
 	{
-	(*pllCurrentGPSWord) = llTestGPSWord;
+	if ( llTestGPSWord != (*pllCurrentGPSWord) )
+	    {
+	    (*pllCurrentGPSWord) = llTestGPSWord;
+	    (*pullGPSWordCount)++;
+	    (*pullGPSWordStreakCount) = 0;
+	    }
+	else
+	    {
+	    (*pullGPSWordCount)++;
+	    (*pullGPSWordStreakCount)++;
+	    }
 	return 1;
 	}
+
     return 0;
 }
 
 int iWriteMeasurementTStamps(struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx,
-			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame, int64_t llWordOffset_GPS)
+			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame, 
+			     int64_t llWordOffset_GPS, uint64_t ullGPSWordCount)
 {
     int iArgIdx;
     int64_t llBaseOffset;
@@ -1292,8 +1310,8 @@ int iWriteMeasurementTStamps(struct suMeasurementInfo * psuMeasInfo, int64_t llM
 
     for (iArgIdx = 0; iArgIdx < psuMeasInfo->uOffsetBufCount; iArgIdx++ )
 	{
-	    llWordOffset_Measurement = (llBaseOffset + psuMeasInfo->pallWordOffsets[iArgIdx]) - llWordOffset_GPS;
-	    dTimeOffset_Measurement = llWordOffset_Measurement * gdWordPeriod;
+	    llWordOffset_Measurement = (llBaseOffset + psuMeasInfo->pallWordOffsets[iArgIdx]) - llWordOffset_GPS; //rel to current GPS val
+	    dTimeOffset_Measurement = llWordOffset_Measurement * gdWordPeriod + ullGPSWordCount;
 	    fprintf(psuMeasInfo->psuTStampFile,"%.8f\n",dTimeOffset_Measurement);
 	}
 
