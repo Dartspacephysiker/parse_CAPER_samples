@@ -20,11 +20,13 @@
 struct suPCMInfo
 {
 
+    uint16_t        uTMLink;
+    uint64_t        ullBitRate;
+
     uint16_t        uAsymWRInd;
     uint16_t        uAsymFRInd;
     int64_t         llMinorFramesPerMajorFrame;
     uint16_t        uSFIDIdx;
-    uint16_t        uTMLink;
     double          dWordPeriod;
 
     int16_t         iNMeasurements;
@@ -135,6 +137,7 @@ int iPCMFree(struct suPCMInfo * psuPCMInfo);
 int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
 
 void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx);
+void vPrintPCMInfo (struct suPCMInfo * psuPCMInfo);
 void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo);
 
 void vUsage(void);

@@ -4,6 +4,8 @@
 2015/09/18 Adding time calculation
            NOTE: This assumes that we don't skip the last frame! Otherwise the major frame
                  count is botched.
+2015/09/19 Made a structure for PCM info. Ultimately it would be nice to read in a text file
+                 to define PCM information.
 */
 
 
@@ -100,8 +102,6 @@ int main( int argc, char * argv[] )
     psuUniqCounterFile = (FILE *) NULL;
     strncpy(szOutPrefix,DEF_OUTPREFIX,DEF_STR_SIZE);
 
-    //    psuPCMInfo->ullBytesPerMinorFrame      = ullSampsPerMinorFrame * sizeof(uint16_t);
-
     ppsuMeasInfo = (struct suMeasurementInfo **) NULL;
     iMeasIdx                   = 0;
 
@@ -173,7 +173,6 @@ int main( int argc, char * argv[] )
 
 	    default :
 		if (szInFile[0] == '\0') strcpy(szInFile, argv[iArgIdx]);
-		//		else                     strcpy(szUniqCounterFile,argv[iArgIdx]);
 		break;
 
 	    } /* end command line arg switch */
@@ -191,13 +190,10 @@ int main( int argc, char * argv[] )
     printf(" \n");
 
     //init measurements
-    //    psuMeasInfo = (struct suMeasurementInfo *) malloc(sizeof(struct suMeasurementInfo) * psuPCMInfo->iNMeasurements);
     ppsuMeasInfo = (struct suMeasurementInfo ** ) malloc(psuPCMInfo->iNMeasurements * sizeof(struct suMeasurementInfo *));
     for ( iMeasIdx = 0; iMeasIdx < psuPCMInfo->iNMeasurements; iMeasIdx++)
 	{
-	//	    psuMeasInfo[iMeasIdx] = psuMeasurementInit(iMeasIdx);
 	ppsuMeasInfo[iMeasIdx] = (struct suMeasurementInfo *) malloc(sizeof(struct suMeasurementInfo));
-	//	if (psuMeasInfo == (struct suMeasurementInfo *) NULL)
 	if (ppsuMeasInfo[iMeasIdx] == (struct suMeasurementInfo *) NULL)
 	    {
 	    printf("Couldn't initialize measurement %" PRIi16 "!\n",iMeasIdx);
@@ -218,7 +214,6 @@ int main( int argc, char * argv[] )
 
     pauIsMinorFrameCollected = (uint16_t *) calloc(psuPCMInfo->llMinorFramesPerMajorFrame,2);
     ppauMajorFrame = (uint16_t **) malloc(psuPCMInfo->llMinorFramesPerMajorFrame * sizeof(uint16_t *));
-    //    pauMajFTemp = malloc(psuPCMInfo->llMinorFramesPerMajorFrame * psuPCMInfo->ullSampsPerMinorFrame * sizeof(uint16_t));
     pauMajFTemp = malloc(psuPCMInfo->ullBytesPerMajorFrame);
 
     for (llMinorFrameIdx = 0; llMinorFrameIdx < psuPCMInfo->llMinorFramesPerMajorFrame; llMinorFrameIdx++) 
@@ -282,11 +277,11 @@ int main( int argc, char * argv[] )
     llMinorFrameIdx    = 1;
     do
     	{
-    	ullWordsWritten       = 0;
-	psuPCMInfo->ulMinorFrameSampCount = 0;
 	//reset global vars
-	psuPCMInfo->uAsymWRInd        = 0;
-	psuPCMInfo->uAsymFRInd        = 0;
+    	ullWordsWritten                   = 0;
+	psuPCMInfo->ulMinorFrameSampCount = 0;
+	psuPCMInfo->uAsymWRInd            = 0;
+	psuPCMInfo->uAsymFRInd            = 0;
 
     	ullWordsRead = fread(pauMinorFrame, 2, psuPCMInfo->ullSampsPerMinorFrame, psuInFile);     	//Get samples from infile
     	if (ullWordsRead != psuPCMInfo->ullSampsPerMinorFrame)
@@ -333,7 +328,6 @@ int main( int argc, char * argv[] )
 	    if ( bTStampMode )
 	    	{
 		llWordOffset_MajorFrame = ( psuPCMInfo->ullCurrentMFCVal * psuPCMInfo->llMinorFramesPerMajorFrame * psuPCMInfo->ullSampsPerMinorFrame) - 1;
-		//		llWordOffset_MinorFrame = ( llMinorFrameIdx - 1 ) * psuPCMInfo->llMinorFramesPerMajorFrame;
 		llWordOffset_MinorFrame = ( llMinorFrameIdx - 1 ) * psuPCMInfo->ullSampsPerMinorFrame;
 
 		//Check for new GPS word in this minor frame, then calculate GPS word offset
@@ -356,13 +350,11 @@ int main( int argc, char * argv[] )
 
 	//did we get the whole major frame?
 	psuPCMInfo->ullMinorFrameCount++;
-	//	if (psuPCMInfo->ullMinorFrameCount % psuPCMInfo->llMinorFramesPerMajorFrame == 0) psuPCMInfo->llMajorFrameCount++;
 	if ( llMinorFrameIdx == psuPCMInfo->llMinorFramesPerMajorFrame ) psuPCMInfo->llMajorFrameCount++; //NOTE: This assumes that we don't skip the last frame!
 	if ( bVerbose ) printf("Major frame #%" PRIu64 "\n", psuPCMInfo->llMajorFrameCount);
 
     	if (bVerbose) 
     	    {
-	    // printf("Read %" PRIu64 " bytes (iteration #%" PRIu64 ")\n",ullInFilePos,ullNSampsRead);
     	    printf("N InSamps read     : %" PRIu64 "\n",ullNSampsRead);
     	    printf("InFile Position (bytes) : %" PRIu64 "\n",ullInFilePos);
     	    printf("Read %" PRIu64 " bytes; Wrote %" PRIu64 " bytes\n",ullWordsRead*2,ullWordsWritten);
@@ -465,7 +457,8 @@ int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM
 				         
 	psuPCMInfo->ullSampBitLength                 = TM1_WORD_BITLENGTH;
 	psuPCMInfo->uMinorFrameBitShift              = TM1_MINORFRAME_BITSHIFT;
-	psuPCMInfo->dWordPeriod                     = (double) psuPCMInfo->ullSampBitLength/ (double) TM1_BPS;
+	psuPCMInfo->ullBitRate                       = TM1_BPS;
+	psuPCMInfo->dWordPeriod                     = (double) psuPCMInfo->ullSampBitLength/ (double) psuPCMInfo->ullBitRate;
 			                   
 	if ( bTStampMode )               
 	    {		                   
@@ -500,7 +493,8 @@ int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM
 				         
 	psuPCMInfo->ullSampBitLength                 = TM23_WORD_BITLENGTH;
 	psuPCMInfo->uMinorFrameBitShift              = TM23_MINORFRAME_BITSHIFT;
-	psuPCMInfo->dWordPeriod                     = (double) psuPCMInfo->ullSampBitLength/(double) TM23_BPS;
+	psuPCMInfo->ullBitRate                       = TM23_BPS;
+	psuPCMInfo->dWordPeriod                     = (double) psuPCMInfo->ullSampBitLength/(double) psuPCMInfo->ullBitRate;
 				         
 	if ( bTStampMode )               
 	    {		                   
@@ -619,7 +613,6 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 	psuMeasInfo->uSampsPerMinorFrame = 0; //This has to be recalculated
 
 	//initialize memory word ranges
-	//		psuMeasInfo->ppauAsymWRanges = (uint16_t **) malloc(ullBytesInAsymWRanges);
 	psuMeasInfo->pauWtemp            = malloc(uNAsymWRanges * 2 * sizeof(uint16_t));
 	for (ullAsymRangeIdx = 0; ullAsymRangeIdx < uNAsymWRanges; ullAsymRangeIdx++) 
 	    {
@@ -659,7 +652,6 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 	ullBytesInAsymFRanges      = uNAsymFRanges * sizeof(uint16_t *) * 2;
 	
 	//initialize memory word ranges
-	//		psuMeasInfo->ppauAsymFRanges = (uint16_t **) malloc(ullBytesInAsymFRanges);
 	psuMeasInfo->pauFtemp = malloc(uNAsymFRanges * 2 * sizeof(uint16_t));
 	for (ullAsymRangeIdx = 0; ullAsymRangeIdx < uNAsymFRanges; ullAsymRangeIdx++) 
 	    {
@@ -909,8 +901,7 @@ uint64_t ullAssembleCounterVal(struct suPCMInfo * psuPCMInfo, int64_t llMinorFra
     ullCounterVal = 0;
     for ( iMFCIdx = 0; iMFCIdx < psuPCMInfo->uNumMFCounters; iMFCIdx++ )
 	{
-	    ullCounterVal = ullCounterVal | ( psuPCMInfo->paullMajorFrameVals[iMFCIdx] << psuPCMInfo->ullSampBitLength*iMFCIdx ); //	    ullCounterVal = ullCounterVal | ( psuPCMInfo->paullMajorFrameVals[iMFCIdx] << psuPCMInfo->ullSampBitLength*(psuPCMInfo->uNumMFCounters-iMFCIdx-1) );
-	//printf("Major frame counter %i: %" PRIu64 "\n",iMFCIdx, psuPCMInfo->paullMajorFrameVals[iMFCIdx]);
+	    ullCounterVal = ullCounterVal | ( psuPCMInfo->paullMajorFrameVals[iMFCIdx] << psuPCMInfo->ullSampBitLength*iMFCIdx ); 
 	}
     if ( pullMFCVal != NULL ) 
 	(*pullMFCVal) = ullCounterVal;
@@ -924,8 +915,8 @@ uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize,
 				    struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
 				     uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllWordOffset_GPS)
 {
-    int iMeasIdx;
-    int iArgIdx;
+    int                  iMeasIdx;
+    int                  iArgIdx;
 
     uint64_t             ullWordsWritten;
     uint32_t             ulMinorFrameSampCount;
@@ -935,12 +926,8 @@ uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize,
     uint16_t             uMFCValCount;
     uint8_t              bAllMFCValsCollected;
 
-    //    uint64_t             ullFirstMFCVal;
-
     uint8_t              bGotFirstGPSWord;
     int64_t              llFirstGPSWord;
-    //    uint64_t             psuPCMInfo->ullGPSMFCVal;
-
 
     ullWordsWritten      = 0;
     ulMinorFrameSampCount= 0;
@@ -996,7 +983,6 @@ uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize,
 		{
 		bGotFirstGPSWord = 1;
 		psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo, llMinorFrameIdx,&psuPCMInfo->ullGPSMFCVal);
-		//		(*pllWordOffset_GPS) = llMinorFramesPerMajorFrame * psuPCMInfo->ullGPSMFCVal * psuPCMInfo->ullSampsPerMinorFrame;
 		}
 	    }
 	}
@@ -1015,7 +1001,7 @@ uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize,
 	printf("allmfc: %i, gotfirstgps: %i\n",bAllMFCValsCollected,bGotFirstGPSWord);
 	return 0;
 	}
-    //    return ullFirstMFCVal;
+
     return 1;
 }
 
@@ -1153,8 +1139,25 @@ int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo)
 
 void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx)
 { 
-    //    for
 
+
+}
+
+void vPrintPCMInfo (struct suPCMInfo * psuPCMInfo)
+{
+    printf("\n");		                 
+    printf("Subframe ID word index               :   %" PRIu16 "\n",psuPCMInfo->uSFIDIdx);
+    printf("TM Link #                            :   %" PRIu16 "\n",psuPCMInfo->uTMLink);
+    printf("PCM bit rate                         :   %" PRIu64 "\n",psuPCMInfo->ullBitRate);
+    printf("PCM word period (s)                  :   %.8f\n"       ,psuPCMInfo->dWordPeriod);
+    printf("N measurements tracked               :   %" PRIu16 "\n",psuPCMInfo->iNMeasurements);
+    printf("\n");		                 
+    printf("Sample word length in bits           :   %" PRIu64 "\n",psuPCMInfo->ullSampBitLength);
+    printf("Number of samples per minor frame    :   %" PRIu64 "\n",psuPCMInfo->ullSampsPerMinorFrame);
+    printf("N Minor frames per major frame       :   %" PRIi64 "\n",psuPCMInfo->llMinorFramesPerMajorFrame);
+    printf("N bits in minor frame counter        :   %" PRIu16 "\n",psuPCMInfo->uMinorFrameBitShift);
+    printf("N major frame counters               :   %" PRIu16 "\n",psuPCMInfo->uNumMFCounters);
+    printf("\n");		                 
 }
 
 void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo)
