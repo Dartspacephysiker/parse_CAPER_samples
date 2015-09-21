@@ -7,3 +7,7 @@ parse_PCM_samples
 
 #no unique counter files
 *unique_counter.txt
+
+#no timestamp files
+*tstamps.txt
+*tstamp_summary.txt

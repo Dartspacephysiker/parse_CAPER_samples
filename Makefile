@@ -8,7 +8,7 @@ CFLAGS=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -ggdb -fpack-struct=1
 EXEC= parse_PCM_samples
 SRC = parse_PCM_samples.c
 OBJ = $(SRC:.c=.o)
-HEADERS = parse_PCM_samples.h TM1_majorframe.h TM23_majorframe.h
+HEADERS = parse_PCM_samples.h PCM_and_measurement_structs.h defaults.h TM1_majorframe.h TM23_majorframe.h 
 
 all: $(SRC) $(EXEC)
 

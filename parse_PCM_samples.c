@@ -6,6 +6,7 @@
                  count is botched.
 2015/09/19 Made a structure for PCM info. Ultimately it would be nice to read in a text file
                  to define PCM information.
+2015/09/21 Separated structure definitions and defaults from parse_PCM_samples.h
 */
 
 
@@ -16,7 +17,11 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "defaults.h"
+#include "PCM_and_measurement_structs.h"
 #include "parse_PCM_samples.h"
+
+//Definitions of TM1, TM2, and TM3
 #include "TM1_majorframe.h"
 #include "TM23_majorframe.h"
 
@@ -346,9 +351,10 @@ int main( int argc, char * argv[] )
 		llWordOffset_MinorFrame = ( llMinorFrameIdx - 1 ) * psuPCMInfo->ullSampsPerMinorFrame;
 
 		//Check for new GPS word in this minor frame, then calculate GPS word offset
-		if ( bCheckForNewGPSWord(psuPCMInfo, ppsuMeasInfo[psuPCMInfo->pauGPSMeasIdx[0]], llMinorFrameIdx, pauMinorFrame, bCombineTM1Meas) )
+		if ( bGotNewGPSWord(psuPCMInfo, ppsuMeasInfo[psuPCMInfo->pauGPSMeasIdx[0]], llMinorFrameIdx, pauMinorFrame, bCombineTM1Meas) )
 		    {
-			llWordOffset_GPS = llWordOffset_MajorFrame + psuPCMInfo->llCurrentGPSWord;
+		    psuPCMInfo->ullGPSWordCount++;
+		    llWordOffset_GPS = llWordOffset_MajorFrame + psuPCMInfo->llCurrentGPSWord;
 		    }
 		
 	    	for (iMeasIdx = 0; iMeasIdx < psuPCMInfo->iNMeasurements; iMeasIdx++)
@@ -455,6 +461,7 @@ int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM
 
     psuPCMInfo->ullCounterVal                  = 0;
     psuPCMInfo->pauGPSMeasIdx                  = NULL;
+    psuPCMInfo->llFirstGPSWord                 = -1;
     psuPCMInfo->llCurrentGPSWord               = -1;
     psuPCMInfo->ullGPSWordCount                = -1;     //This will go to zero once we initialize the GPS word and MFC count
     psuPCMInfo->ullGPSWordStreakCount          = 0;
@@ -1023,7 +1030,7 @@ uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize,
 
 	if ( !bGotFirstGPSWord )
 	    {
-		if ( bCheckForNewGPSWord(psuPCMInfo, ppsuMeasInfo[psuPCMInfo->pauGPSMeasIdx[0]], llMinorFrameIdx, pauMinorFrame, bCombineTM1Meas) )
+		if ( bGotNewGPSWord(psuPCMInfo, ppsuMeasInfo[psuPCMInfo->pauGPSMeasIdx[0]], llMinorFrameIdx, pauMinorFrame, bCombineTM1Meas) )
 		{
 		bGotFirstGPSWord = 1;
 		psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo, llMinorFrameIdx,&psuPCMInfo->ullGPSMFCVal);
@@ -1049,7 +1056,7 @@ uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize,
     return 1;
 }
 
-int bCheckForNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
+int bGotNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
 			uint8_t bCombineTM1Meas)
 {
     int iWdIdx;
@@ -1092,15 +1099,19 @@ int bCheckForNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo 
 
     if ( llTestGPSWord > 0 )
 	{
-	if ( llTestGPSWord != psuPCMInfo->llCurrentGPSWord )
+	if ( psuPCMInfo->llFirstGPSWord == -1 )
+	    {
+		psuPCMInfo->llFirstGPSWord = llTestGPSWord;
+	    }
+	else if ( llTestGPSWord != psuPCMInfo->llCurrentGPSWord )
 	    {
 	    psuPCMInfo->llCurrentGPSWord = llTestGPSWord;
-	    psuPCMInfo->ullGPSWordCount++;
+	    //	    psuPCMInfo->ullGPSWordCount++;
 	    psuPCMInfo->ullGPSWordStreakCount = 0;
 	    }
 	else
 	    {
-	    psuPCMInfo->ullGPSWordCount++;
+		//	    psuPCMInfo->ullGPSWordCount++;
 	    psuPCMInfo->ullGPSWordStreakCount++;
 	    }
 	return 1;
@@ -1137,7 +1148,7 @@ void vSearchMinorFrameFor16BitWord(struct suPCMInfo * psuPCMInfo, struct suMeasu
 
 	if ( strncmp(acTestWord,psuMeasInfo->szTSSearchWord,szKeywordLen) == 0 )
 	    {
-		printf("Got a search word! It's like this: %s\n",acTestWord);
+		//		printf("Got a search word! It's like this: %s\n",acTestWord);
 		psuMeasInfo->pallWordOffsets[psuMeasInfo->uOffsetBufCount] = uWdIdx;
 		psuMeasInfo->uOffsetBufCount++;
 	    }
@@ -1158,7 +1169,8 @@ int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurement
     for (iArgIdx = 0; iArgIdx < psuMeasInfo->uOffsetBufCount; iArgIdx++ )
 	{
 	    llWordOffset_Measurement = (llBaseOffset + psuMeasInfo->pallWordOffsets[iArgIdx]) - llWordOffset_GPS; //rel to current GPS val
-	    dTimeOffset_Measurement = llWordOffset_Measurement * psuPCMInfo->dWordPeriod + psuPCMInfo->ullGPSWordCount;
+	    dTimeOffset_Measurement = llWordOffset_Measurement * psuPCMInfo->dWordPeriod + 
+		( ( psuPCMInfo->llCurrentGPSWord != -1 ) ? psuPCMInfo->ullGPSWordCount : 0 ); //strangeness here so that we don't count first GPS word twice
 	    fprintf(psuMeasInfo->psuTStampFile,"%.8f\n",dTimeOffset_Measurement);
 	}
 
