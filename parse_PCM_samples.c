@@ -292,7 +292,7 @@ int main( int argc, char * argv[] )
     llMinorFrameIdx    = 1;
     do
     	{
-	//reset global vars
+	//reset some counting vars
     	ullWordsWritten                   = 0;
 	psuPCMInfo->ulMinorFrameSampCount = 0;
 	psuPCMInfo->uAsymWRInd            = 0;
@@ -437,10 +437,10 @@ int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM
 
     //*******************
     //Initialize vars
-    psuPCMInfo->uAsymWRInd                    = 0;
-    psuPCMInfo->uAsymFRInd                    = 0;
-    psuPCMInfo->uSFIDIdx                      = 0;
-    psuPCMInfo->uTMLink                       = uTMLink;
+    psuPCMInfo->uAsymWRInd                     = 0;
+    psuPCMInfo->uAsymFRInd                     = 0;
+    psuPCMInfo->uSFIDIdx                       = 0;
+    psuPCMInfo->uTMLink                        = uTMLink;
 
     psuPCMInfo->ulMinorFrameSampCount          = 0;
     psuPCMInfo->ullMinorFrameCount             = 0;
@@ -466,10 +466,10 @@ int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM
 	printf("TM1 : SKIN/ELF/VF/VLF/AGC samples\n");
 
 	psuPCMInfo->iNMeasurements                   = N_TM1_MEASUREMENTS;
-        psuPCMInfo->uSFIDIdx                        = TM1_SFID_IDX;
-	psuPCMInfo->ullSampsPerMinorFrame           = TM1_SAMPSPERMINORFRAME;
+        psuPCMInfo->uSFIDIdx                         = TM1_SFID_IDX;
+	psuPCMInfo->ullSampsPerMinorFrame            = TM1_SAMPSPERMINORFRAME;
 	psuPCMInfo->ullBytesPerMinorFrame            = psuPCMInfo->ullSampsPerMinorFrame * sizeof(uint16_t);
-	psuPCMInfo->llMinorFramesPerMajorFrame      = TM1_MINOR_PER_MAJOR;
+	psuPCMInfo->llMinorFramesPerMajorFrame       = TM1_MINOR_PER_MAJOR;
 	psuPCMInfo->uNumMFCounters                   = TM1_NUM_MFCOUNTERS;
 	psuPCMInfo->paullMajorFrameVals              = (uint64_t *) malloc(psuPCMInfo->uNumMFCounters * sizeof(uint64_t));
 	psuPCMInfo->pauMFCIndices                    = (uint16_t *) malloc(psuPCMInfo->uNumMFCounters * sizeof(uint16_t));
@@ -482,7 +482,7 @@ int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM
 	psuPCMInfo->ullSampBitLength                 = TM1_WORD_BITLENGTH;
 	psuPCMInfo->uMinorFrameBitShift              = TM1_MINORFRAME_BITSHIFT;
 	psuPCMInfo->ullBitRate                       = TM1_BPS;
-	psuPCMInfo->dWordPeriod                     = (double) psuPCMInfo->ullSampBitLength/ (double) psuPCMInfo->ullBitRate;
+	psuPCMInfo->dWordPeriod                      = (double) psuPCMInfo->ullSampBitLength/ (double) psuPCMInfo->ullBitRate;
 			                   
 	if ( bTStampMode )               
 	    {		                   
@@ -502,10 +502,10 @@ int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM
 	printf("TM2/3: RxDSP samples\n");
 
 	psuPCMInfo->iNMeasurements                   = N_TM23_MEASUREMENTS;
-        psuPCMInfo->uSFIDIdx                        = TM23_SFID_IDX;
-	psuPCMInfo->ullSampsPerMinorFrame           = TM23_SAMPSPERMINORFRAME;
+        psuPCMInfo->uSFIDIdx                         = TM23_SFID_IDX;
+	psuPCMInfo->ullSampsPerMinorFrame            = TM23_SAMPSPERMINORFRAME;
 	psuPCMInfo->ullBytesPerMinorFrame            = psuPCMInfo->ullSampsPerMinorFrame * sizeof(uint16_t);
-	psuPCMInfo->llMinorFramesPerMajorFrame      = TM23_MINOR_PER_MAJOR;				         
+	psuPCMInfo->llMinorFramesPerMajorFrame       = TM23_MINOR_PER_MAJOR;				         
 	psuPCMInfo->uNumMFCounters                   = TM23_NUM_MFCOUNTERS;
 	psuPCMInfo->paullMajorFrameVals              = (uint64_t *) malloc(psuPCMInfo->uNumMFCounters * sizeof(uint64_t));
 	psuPCMInfo->pauMFCIndices                    = (uint16_t *) malloc(psuPCMInfo->uNumMFCounters * sizeof(uint16_t));
@@ -518,7 +518,7 @@ int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM
 	psuPCMInfo->ullSampBitLength                 = TM23_WORD_BITLENGTH;
 	psuPCMInfo->uMinorFrameBitShift              = TM23_MINORFRAME_BITSHIFT;
 	psuPCMInfo->ullBitRate                       = TM23_BPS;
-	psuPCMInfo->dWordPeriod                     = (double) psuPCMInfo->ullSampBitLength/(double) psuPCMInfo->ullBitRate;
+	psuPCMInfo->dWordPeriod                      = (double) psuPCMInfo->ullSampBitLength/(double) psuPCMInfo->ullBitRate;
 				         
 	if ( bTStampMode )               
 	    {		                   
@@ -693,7 +693,7 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
         psuMeasInfo->uNAsymFRanges   = uNAsymFRanges;
 	psuMeasInfo->ppauAsymFRanges = (uint16_t **) malloc(uNAsymFRanges * sizeof(uint16_t *));
 	
-	ullBytesInAsymFRanges      = uNAsymFRanges * sizeof(uint16_t *) * 2;
+	ullBytesInAsymFRanges        = uNAsymFRanges * sizeof(uint16_t *) * 2;
 	
 	//initialize memory word ranges
 	psuMeasInfo->pauFtemp = malloc(uNAsymFRanges * 2 * sizeof(uint16_t));
