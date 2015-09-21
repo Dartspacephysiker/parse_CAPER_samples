@@ -354,7 +354,10 @@ int main( int argc, char * argv[] )
 		if ( bGotNewGPSWord(psuPCMInfo, ppsuMeasInfo[psuPCMInfo->pauGPSMeasIdx[0]], llMinorFrameIdx, pauMinorFrame, bCombineTM1Meas) )
 		    {
 		    psuPCMInfo->ullGPSWordCount++;
-		    llWordOffset_GPS = llWordOffset_MajorFrame + psuPCMInfo->llCurrentGPSWord;
+		    if ( psuPCMInfo->llCurrentGPSWord > -1 )
+			llWordOffset_GPS = llWordOffset_MajorFrame + psuPCMInfo->llCurrentGPSWord;
+		    else
+			llWordOffset_GPS = llWordOffset_MajorFrame + psuPCMInfo->llFirstGPSWord;
 		    }
 		
 	    	for (iMeasIdx = 0; iMeasIdx < psuPCMInfo->iNMeasurements; iMeasIdx++)
