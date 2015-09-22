@@ -1092,7 +1092,7 @@ uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize,
 		    {
 		    if ( ppsuMeasInfo[iMeasIdx]->uTSSWIdx == -1 )
 			{
-			bSearchMinorFrameFor16BitWord(psuPCMInfo, ppsuMeasInfo[iMeasIdx], pauMinorFrame, llMinorFrameIdx);
+			bIsSearchWordInMinorFrame(psuPCMInfo, ppsuMeasInfo[iMeasIdx], pauMinorFrame, llMinorFrameIdx);
 			}
 		    if ( bAllMFCValsCollected && ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal == -1 )
 			{
@@ -1243,7 +1243,7 @@ int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsu
 	if ( ppsuMeasInfo[iMeasIdx]->szTSSearchWord[0] != '\0' )
 	    {
 	    //recalc searchword_offset, if there's a new search word
-	    if ( bSearchMinorFrameFor16BitWord(psuPCMInfo, ppsuMeasInfo[iMeasIdx], pauMinorFrame, llMinorFrameIdx) )
+	    if ( bIsSearchWordInMinorFrame(psuPCMInfo, ppsuMeasInfo[iMeasIdx], pauMinorFrame, llMinorFrameIdx) )
 		{
 		psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo,llMinorFrameIdx, &ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal);
 
@@ -1324,7 +1324,7 @@ uint8_t bBadSFIDIncrement(struct suPCMInfo * psuPCMInfo, int64_t llMinorFrameIdx
     return ( ( ( llMinorFrameIdx - llOldMinorFrameIdx ) != 1 ) && ( ( llMinorFrameIdx - llOldMinorFrameIdx ) != 1 - psuPCMInfo->llMinorFramesPerMajorFrame ) );
 }
 
-uint8_t bSearchMinorFrameFor16BitWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx)
+uint8_t bIsSearchWordInMinorFrame(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx)
 {
     uint16_t    uWdIdx;
     char        acTestWord[5];
