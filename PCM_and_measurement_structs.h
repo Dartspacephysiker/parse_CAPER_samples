@@ -61,7 +61,8 @@ struct suMeasurementInfo			       //Struct for keeping track of a measurement wi
     uint32_t        ulSPS;
 		    
     int32_t   *     palSample;			       //Buffer for samples as well as a sample count
-    uint64_t        ullSampCount;
+    uint64_t        llSampIdx;
+    uint64_t        ullTotalSampCount;
 		    
     uint16_t        uNAsymWRanges;		       //Vars for asymmetric word ranges defined by NASA PCM doc
     uint16_t **     ppauAsymWRanges;

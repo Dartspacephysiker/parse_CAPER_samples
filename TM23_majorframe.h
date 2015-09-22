@@ -93,7 +93,7 @@ static uint16_t        uTM23LSBWord[]   =    {  0, 0,
 static uint8_t auTM23TSCalcType[]       =    {  0, 0,
 					        0, 0,
 					        0, 0,
-						1};
+						2};
 
 static char   * aszTM23TSSearchWords[]  =    { TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH,
 					       TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH, 
@@ -103,7 +103,7 @@ static char   * aszTM23TSSearchWords[]  =    { TM23_NO_TS_SEARCH, TM23_NO_TS_SEA
 static uint64_t aullTM23InternWordRate[]=    { TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH,
 					       TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH, 
 					       TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH, 
-                                               599405};
+                                               3333333};
 
 
 static uint16_t    auTM23MFCMeasIdx[]   =    {  2, 3};    ///Major frame measurement indices (indexing from zero in the arrays above)

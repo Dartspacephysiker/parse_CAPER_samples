@@ -334,6 +334,8 @@ int main( int argc, char * argv[] )
 	    {
 	    for (iMeasIdx = 0; iMeasIdx < psuPCMInfo->iNMeasurements; iMeasIdx++)
 		{
+		    ppsuMeasInfo[iMeasIdx]->llSampIdx = 0; 		    //Reset at beginning of loop
+
 		    uParseMeasurementSamples(psuPCMInfo,ppsuMeasInfo[iMeasIdx],iMeasIdx,pauMinorFrame,llMinorFrameIdx,&ullWordsWritten,bCombineTM1Meas,bAssembleCounter,1+ppsuMeasInfo[iMeasIdx]->uTSCalcType);
 		}
 	    
@@ -540,8 +542,8 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
     psuMeasInfo->szOutFile[0]        = '\0';
     psuMeasInfo->szTStampFile[0]     = '\0';
 
-    psuMeasInfo->ullSampCount        = 0;
-
+    psuMeasInfo->llSampIdx        =  0;
+    psuMeasInfo->ullTotalSampCount   =  0;
     psuMeasInfo->llWordOffset_TSSW   = -1;       //In any case, set these based on TM descriptions
     psuMeasInfo->uTSSWIdx            = -1;       
     psuMeasInfo->lTSSW_SampleNum     = -1;       
@@ -831,9 +833,9 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 				}
 			    else
 				{
-				psuMeasInfo->palSample[psuMeasInfo->ullSampCount] = uCombinedSample;
+				psuMeasInfo->palSample[psuMeasInfo->llSampIdx] = uCombinedSample;
 				}
-			    psuMeasInfo->ullSampCount++;
+			    psuMeasInfo->llSampIdx++;
 			    psuPCMInfo->ulMinorFrameSampCount += 2;
 			    if ( ( ( psuMeasInfo->uTSCalcType == 1 ) && ( psuMeasInfo->szTSSearchWord[0] == '\0' ) ) 
 				 || ( psuMeasInfo->uTSCalcType == 2 ) ) 
@@ -843,7 +845,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 				if ( psuMeasInfo->uTSCalcType == 2 && bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
 				    {
 				    psuMeasInfo->uTSSWIdx = iWdIdx; //NOTE! This value is intermediate to the calculation of the search word offset! It will change later!
-				    psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->ullSampCount;
+				    psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->llSampIdx;
 				    }
 				}
 			    }
@@ -863,10 +865,10 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			    }
 			else
 			    {
-				printf("%s sampcount : %" PRIu64 "\n",psuMeasInfo->szName,psuMeasInfo->ullSampCount);
-			    psuMeasInfo->palSample[psuMeasInfo->ullSampCount] = pauMinorFrame[iWdIdx];
+				printf("%s sampcount : %" PRIu64 "\n",psuMeasInfo->szName,psuMeasInfo->llSampIdx);
+			    psuMeasInfo->palSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx];
 			    }
-			psuMeasInfo->ullSampCount++;
+			psuMeasInfo->llSampIdx++;
 			psuPCMInfo->ulMinorFrameSampCount++;
 			if ( ( ( psuMeasInfo->uTSCalcType == 1 ) && ( psuMeasInfo->szTSSearchWord[0] == '\0' ) ) 
 			     || ( psuMeasInfo->uTSCalcType == 2 ) ) 
@@ -876,7 +878,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			    if ( psuMeasInfo->uTSCalcType == 2 && bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
 				{
 				psuMeasInfo->uTSSWIdx = iWdIdx; //NOTE! This value is intermediate to the calculation of the search word offset! It will change later!
-				psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->ullSampCount;
+				psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->llSampIdx;
 				}
 			    }
 			}
@@ -915,13 +917,13 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			}
 		    else
 			{
-			    if (psuMeasInfo->ullSampCount > psuMeasInfo->uSampsPerMinorFrame)
+			    if (psuMeasInfo->llSampIdx > psuMeasInfo->uSampsPerMinorFrame)
 				{
-				    printf("%s samp count: %" PRIu64 "   sampsperminorfram: %" PRIu16 "\n",psuMeasInfo->szName,psuMeasInfo->ullSampCount,psuMeasInfo->uSampsPerMinorFrame);
+				    printf("%s samp count: %" PRIu64 "   sampsperminorfram: %" PRIu16 "\n",psuMeasInfo->szName,psuMeasInfo->llSampIdx,psuMeasInfo->uSampsPerMinorFrame);
 				}
-			 psuMeasInfo->palSample[psuMeasInfo->ullSampCount] = pauMinorFrame[iWdIdx];
+			 psuMeasInfo->palSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx];
 			}
-		    psuMeasInfo->ullSampCount++;
+		    psuMeasInfo->llSampIdx++;
 		    psuPCMInfo->ulMinorFrameSampCount++;
 		    if ( ( ( psuMeasInfo->uTSCalcType == 1 ) && ( psuMeasInfo->szTSSearchWord == TM_NO_TS_SEARCH ) ) 
 			 || ( psuMeasInfo->uTSCalcType == 2 ) ) 
@@ -931,7 +933,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			if ( psuMeasInfo->uTSCalcType == 2 && bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
 			    {
 			    psuMeasInfo->uTSSWIdx = iWdIdx; //NOTE! This value is intermediate to the calculation of the search word offset! It will change later!
-			    psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->ullSampCount;
+			    psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->llSampIdx;
 			    }
 			}
 		    }
@@ -960,9 +962,9 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			    }
 			else
 			    {
-			    psuMeasInfo->palSample[psuMeasInfo->ullSampCount] = pauMinorFrame[psuMeasInfo->uWord];
+			    psuMeasInfo->palSample[psuMeasInfo->llSampIdx] = pauMinorFrame[psuMeasInfo->uWord];
 			    }
-			psuMeasInfo->ullSampCount++;
+			psuMeasInfo->llSampIdx++;
 			psuPCMInfo->ulMinorFrameSampCount++;
 			if ( ( ( psuMeasInfo->uTSCalcType == 1 ) && ( psuMeasInfo->szTSSearchWord[0] == '\0' ) ) 
 			     || ( psuMeasInfo->uTSCalcType == 2 ) )
@@ -972,7 +974,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			    if ( psuMeasInfo->uTSCalcType == 2 && bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
 				{
 				psuMeasInfo->uTSSWIdx = iWdIdx; //NOTE! This value is intermediate to the calculation of the search word offset! It will change later!
-				psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->ullSampCount;
+				psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->llSampIdx;
 				}
 			    }
 			}
@@ -1285,11 +1287,14 @@ int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurement
 
 	for (iArgIdx = 0; iArgIdx < psuMeasInfo->uOffsetBufCount; iArgIdx++ )
 	    {
-	    llWordOffset_Measurement = (llBaseOffset + psuMeasInfo->pallWordOffsets[iArgIdx]) - psuMeasInfo->lTSSW_SampleNum; //rel to current search word val
-	    dTimeOffset_Measurement = llWordOffset_Measurement * psuMeasInfo->dInternalWordPeriod + 
-		
+		//llWordOffset_Measurement = (llBaseOffset + psuMeasInfo->pallWordOffsets[iArgIdx]) - psuMeasInfo->lTSSW_SampleNum; //rel to current search word
+	    //	    dTimeOffset_Measurement = llWordOffset_Measurement * psuMeasInfo->dInternalWordPeriod + 
 	    //calc offset relative to searchword here
+	    llWordOffset_Measurement = ( iArgIdx - psuMeasInfo->lTSSW_SampleNum ) / 2.0; //rel to current search word
+	    dTimeOffset_Measurement = (double) llWordOffset_Measurement * psuMeasInfo->dInternalWordPeriod + dTimeOffset_SW;
+		
 	    fprintf(psuMeasInfo->psuTStampFile,"%12.8f\t%05d\n",dTimeOffset_Measurement,psuMeasInfo->palSample[iArgIdx]);
+	    psuMeasInfo->
 	    }
 	}
 
@@ -1307,8 +1312,6 @@ int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurement
     //reset the count of the offset buffer
     psuMeasInfo->uOffsetBufCount = 0;
 
-    //    if ( psuMeasInfo->uTSCalcType > 1 ) 
-    //	psuMeasInfo->ullSampCount = 0;
     return EXIT_SUCCESS;
 }
 
