@@ -21,9 +21,9 @@ uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample,
 uint64_t ullAssembleCounterVal(struct suPCMInfo * psuPCMInfo, int64_t llMinorFrameIdx,uint64_t * pullMFCVal);
 
 
-uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize, 
-				    struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
-				    uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllWordOffset_GPS);
+uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFileSize, 
+					       struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
+					       uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllWordOffset_GPS);
 
 int bGotNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
 			uint8_t bCombineTM1Meas);

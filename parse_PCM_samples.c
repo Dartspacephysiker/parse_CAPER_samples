@@ -285,7 +285,7 @@ int main( int argc, char * argv[] )
     printf("\n");
 
     //Get first GPS word and MFCVal
-    if ( !bFoundFirstMFCValAndGPSWord(psuInFile,suInFileStat.st_size, psuPCMInfo, ppsuMeasInfo, pauMinorFrame, bCombineTM1Meas, &llWordOffset_GPS) )
+    if ( !bFoundFirstMFCValGPSWordAndSearchWords(psuInFile,suInFileStat.st_size, psuPCMInfo, ppsuMeasInfo, pauMinorFrame, bCombineTM1Meas, &llWordOffset_GPS) )
 	{
 	printf("TStampMode: Unable to get a first major frame count! Is something wrong with your data?\n");
 	printf("Exiting...");
@@ -536,9 +536,9 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 
     int iTmpIdx;
 
-    psuMeasInfo->szAbbrev[0]       = '\0';
-    psuMeasInfo->szOutFile[0]      = '\0';
-    psuMeasInfo->szTStampFile[0]   = '\0';
+    psuMeasInfo->szAbbrev[0]         = '\0';
+    psuMeasInfo->szOutFile[0]        = '\0';
+    psuMeasInfo->szTStampFile[0]     = '\0';
 
     psuMeasInfo->ullSampCount        = 0;
 
@@ -1026,9 +1026,9 @@ uint64_t ullAssembleCounterVal(struct suPCMInfo * psuPCMInfo, int64_t llMinorFra
     return ullCounterVal;
 }
 
-uint8_t bFoundFirstMFCValAndGPSWord(FILE * psuInFile, size_t szInFileSize, 
-				    struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
-				     uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllWordOffset_GPS)
+uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFileSize, 
+					       struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
+					       uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllWordOffset_GPS)
 {
     int                  iMeasIdx;
     int                  iArgIdx;
@@ -1307,8 +1307,8 @@ int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurement
     //reset the count of the offset buffer
     psuMeasInfo->uOffsetBufCount = 0;
 
-    if ( psuMeasInfo->uTSCalcType > 1 ) 
-	psuMeasInfo->ullSampCount = 0;
+    //    if ( psuMeasInfo->uTSCalcType > 1 ) 
+    //	psuMeasInfo->ullSampCount = 0;
     return EXIT_SUCCESS;
 }
 
