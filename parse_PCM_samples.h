@@ -40,6 +40,8 @@ uint8_t bBadSFIDIncrement(struct suPCMInfo * psuPCMInfo, int64_t llMinorFrameIdx
 
 uint8_t bSearchMinorFrameFor16BitWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx);
 
+uint8_t bIsSearchWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, uint16_t * pauMinorFrame, uint16_t uWdIdx, int64_t llMinorFrameIdx);
+
 int iPCMFree(struct suPCMInfo * psuPCMInfo);
 int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
 

@@ -40,10 +40,10 @@ struct suPCMInfo
     int64_t         llFirstGPSWord;		       //The first GPS word in the file
     int64_t         llCurrentGPSWord;		       //The current GPS word as we loop through the file
     uint64_t        ullGPSWordCount;		       //How many non-zero GPS words seen so far (critical for time calculation)
-    uint64_t        ullGPSWordStreakCount;     //How long this word has persisted (measures drift time within PCM stream)
-    uint16_t  *     pauGPSMeasIdx;	       //GPS 1pps measurement indices (indexing measurements in PCM header from zero )
+    uint64_t        ullGPSWordStreakCount;             //How long this word has persisted (measures drift time within PCM stream)
+    uint16_t  *     pauGPSMeasIdx;	               //GPS 1pps measurement indices (indexing measurements in PCM header from zero )
     
-    uint8_t         bDoSearchFrameForWord;     //Perform a search of each minor frame for a particular word in order to produce a timestamp
+    //    uint8_t         bDoSearchFrameForWord;             //Perform a search of each minor frame for a particular word in order to produce a timestamp
 };
 
 
@@ -75,9 +75,10 @@ struct suMeasurementInfo			       //Struct for keeping track of a measurement wi
     uint64_t  *     pallWordOffsets;		       //If calctype = 2, timestamps for this measurement are calculated  
     uint16_t        uOffsetBufCount;		       //relative to TSSearchWord and using the measurement's word period.
     char            szTSSearchWord[DEF_STR_SIZE]; 
-    int64_t         llTSSearchWord_Offset;
-    uint16_t        uTSSearchWordIdx;
-    int64_t         llTSSearchWordMFCVal;
+    int64_t         llWordOffset_TSSW;
+    uint16_t        uTSSWIdx;
+    int32_t         lTSSW_SampleNum;
+    int64_t         llTSSW_MFCVal;
     double          dInternalWordPeriod;
     char            szTStampFile[DEF_STR_SIZE];
     FILE *          psuTStampFile;
