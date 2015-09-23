@@ -28,11 +28,10 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
 int bGotNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
 			uint8_t bCombineTM1Meas);
 
-int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, int64_t * pllWordOffset_MajorFrame, int64_t * pllWordOffset_MinorFrame, int64_t * pllWordOffset_GPS, uint8_t bCombineTM1Meas);
+int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, int64_t * pllWordOffset_MajorFrame, int64_t * pllWordOffset_MinorFrame, int64_t * pllWordOffset_GPS, uint64_t * pullWordsWritten, uint8_t bCombineTM1Meas);
 
-int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx,
-			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame, 
-			     int64_t llWordOffset_GPS);
+int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, 
+			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame, int64_t llWordOffset_GPS, uint64_t * pullWordsWritten);
 
 int64_t llGetMinorFrameIdx(struct suPCMInfo * psuPCMInfo, uint16_t * pauMinorFrame);
 
