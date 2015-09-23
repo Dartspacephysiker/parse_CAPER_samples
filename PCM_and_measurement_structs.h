@@ -62,7 +62,7 @@ struct suMeasurementInfo			       //Struct for keeping track of a measurement wi
 		    
     int32_t   *     palSample;			       //Buffer for samples as well as a sample count
     uint64_t        llSampIdx;
-    uint64_t        ullTotalSampCount;
+    int64_t         llTotalSampCount;
 		    
     uint16_t        uNAsymWRanges;		       //Vars for asymmetric word ranges defined by NASA PCM doc
     uint16_t **     ppauAsymWRanges;
@@ -73,7 +73,7 @@ struct suMeasurementInfo			       //Struct for keeping track of a measurement wi
     uint16_t  *     pauFtemp;
 		    
     uint8_t         uTSCalcType;                       //Variables for calculation of timestamps			  
-    uint64_t  *     pallWordOffsets;		       //If calctype = 2, timestamps for this measurement are calculated  
+    int64_t  *      pallWordOffsets;		       //If calctype = 2, timestamps for this measurement are calculated  
     uint16_t        uOffsetBufCount;		       //relative to TSSearchWord and using the measurement's word period.
     char            szTSSearchWord[DEF_STR_SIZE]; 
     int64_t         llWordOffset_TSSW;
