@@ -23,24 +23,27 @@ uint64_t ullAssembleCounterVal(struct suPCMInfo * psuPCMInfo, int64_t llMinorFra
 
 uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFileSize, 
 					       struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
-					       uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllWordOffset_GPS);
+					       uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllPCMWdOffset_GPS);
 
 int bGotNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
 			uint8_t bCombineTM1Meas);
+void vUpdateGPSWord(struct suPCMInfo * psuPCMInfo, int64_t * pllPCMWdOffset_MajorFrame, int64_t * pllPCMWdOffset_GPS);
 
-int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, int64_t * pllWordOffset_MajorFrame, int64_t * pllWordOffset_MinorFrame, int64_t * pllWordOffset_GPS, uint64_t * pullWordsWritten, uint8_t bCombineTM1Meas);
+int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, int64_t * pllPCMWdOffset_MajorFrame, int64_t * pllPCMWdOffset_MinorFrame, int64_t * pllPCMWdOffset_GPS, uint64_t * pullWordsWritten, uint8_t bCombineTM1Meas);
 
 int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, 
-			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame, int64_t llWordOffset_GPS, uint64_t * pullWordsWritten);
+			     int64_t llPCMWdOffset_MajorFrame, int64_t llPCMWdOffset_MinorFrame, int64_t llPCMWdOffset_GPS, uint64_t * pullWordsWritten);
 
 int64_t llGetMinorFrameIdx(struct suPCMInfo * psuPCMInfo, uint16_t * pauMinorFrame);
 
 uint8_t bBadSFIDIncrement(struct suPCMInfo * psuPCMInfo, int64_t llMinorFrameIdx, int64_t llOldMinorFrameIdx);
 
+//Routines for finding search words
 uint8_t bIsSearchWordInMinorFrame(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx);
-
 uint8_t bIsSearchWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, uint16_t * pauMinorFrame, uint16_t uWdIdx, int64_t llMinorFrameIdx);
+void vUpdateSearchWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, int iWdIdx);
 
+//Routines for freeing memory
 int iPCMFree(struct suPCMInfo * psuPCMInfo);
 int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
 

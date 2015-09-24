@@ -72,13 +72,14 @@ struct suMeasurementInfo			       //Struct for keeping track of a measurement wi
     uint16_t **     ppauAsymFRanges;
     uint16_t  *     pauFtemp;
 		    
-    uint8_t         uTSCalcType;                       //Variables for calculation of timestamps			  
-    int64_t  *      pallWordOffsets;		       //If calctype = 2, timestamps for this measurement are calculated  
-    uint16_t        uOffsetBufCount;		       //relative to TSSearchWord and using the measurement's word period.
-    char            szTSSearchWord[DEF_STR_SIZE]; 
-    int64_t         llWordOffset_TSSW;
+    uint8_t         uTSCalcType;                       //Variables for calculation of timestamps (NOTE: "TSSW" = timestamp search word)
+    int64_t  *      pallPCMWdOffsets;		       //CalcType = 1: TStamps calculated relative to GPS word
+    uint16_t        uOffsetBufCount;		       //Calctype = 2: TStamps calculated rel. to TSSW, using measurement's word period.
+    char            szTSSearchWord[DEF_STR_SIZE];      //Calctype = 3: TStamps for searchword are outputted along with TSSW sample number        
+    int64_t         llPCMWdOffset_TSSW;                
+    int64_t         llTSIdx;
     uint16_t        uTSSWIdx;
-    int32_t         lTSSW_SampleNum;
+    int64_t         llTSSW_SampleNum;
     int64_t         llTSSW_MFCVal;
     double          dInternalWordPeriod;
     char            szTStampFile[DEF_STR_SIZE];

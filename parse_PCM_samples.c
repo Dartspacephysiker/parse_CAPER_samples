@@ -71,9 +71,9 @@ int main( int argc, char * argv[] )
     uint8_t                     bAssembleCounter;
     uint8_t                     bWriteCounter;
 
-    int64_t                     llWordOffset_MajorFrame;       //Current major frame offset (in words) relative to first recorded major frame
-    int64_t                     llWordOffset_MinorFrame;
-    int64_t                     llWordOffset_GPS;
+    int64_t                     llPCMWdOffset_MajorFrame;       //Current major frame offset (in words) relative to first recorded major frame
+    int64_t                     llPCMWdOffset_MinorFrame;
+    int64_t                     llPCMWdOffset_GPS;
 
     uint8_t                     bVerbose;
     int                         err;
@@ -124,9 +124,9 @@ int main( int argc, char * argv[] )
     bAssembleCounter               = DEF_ASSEMBLE_COUNTER;
     bWriteCounter                  = 0;
 
-    llWordOffset_MajorFrame        = 0;
-    llWordOffset_MinorFrame        = 0;
-    llWordOffset_GPS               = 0;
+    llPCMWdOffset_MajorFrame       = 0;
+    llPCMWdOffset_MinorFrame       = 0;
+    llPCMWdOffset_GPS              = 0;
 			           
     bVerbose                       = DEF_VERBOSE;
     err                            = 0;
@@ -285,7 +285,7 @@ int main( int argc, char * argv[] )
     printf("\n");
 
     //Get first GPS word and MFCVal
-    if ( !bFoundFirstMFCValGPSWordAndSearchWords(psuInFile,suInFileStat.st_size, psuPCMInfo, ppsuMeasInfo, pauMinorFrame, bCombineTM1Meas, &llWordOffset_GPS) )
+    if ( !bFoundFirstMFCValGPSWordAndSearchWords(psuInFile,suInFileStat.st_size, psuPCMInfo, ppsuMeasInfo, pauMinorFrame, bCombineTM1Meas, &llPCMWdOffset_GPS) )
 	{
 	printf("TStampMode: Unable to get a first major frame count! Is something wrong with your data?\n");
 	printf("Exiting...");
@@ -350,7 +350,7 @@ int main( int argc, char * argv[] )
 	    if ( bTStampMode )
 		{
 		    iCalcTStamps(psuPCMInfo, ppsuMeasInfo, pauMinorFrame, llMinorFrameIdx, 
-				 &llWordOffset_MajorFrame, &llWordOffset_MinorFrame, &llWordOffset_GPS, &ullWordsWritten, bCombineTM1Meas);
+				 &llPCMWdOffset_MajorFrame, &llPCMWdOffset_MinorFrame, &llPCMWdOffset_GPS, &ullWordsWritten, bCombineTM1Meas);
 		}
 
 	    }
@@ -545,9 +545,10 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 
     psuMeasInfo->llSampIdx           =  0;
     psuMeasInfo->llTotalSampCount    =  0;
-    psuMeasInfo->llWordOffset_TSSW   = -1;       //In any case, set these based on TM descriptions
+    psuMeasInfo->llPCMWdOffset_TSSW  = -1;       //In any case, set these based on TM descriptions
+    psuMeasInfo->llTSIdx             =  0;
     psuMeasInfo->uTSSWIdx            = -1;       
-    psuMeasInfo->lTSSW_SampleNum     = -1;       
+    psuMeasInfo->llTSSW_SampleNum    = -1;       
     psuMeasInfo->llTSSW_MFCVal       = -1;
     psuMeasInfo->uTSSWIdx            = -1;
 
@@ -746,8 +747,8 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 	{
 	sprintf(psuMeasInfo->szTStampFile,"%s--%s--tstamps.txt",szOutPrefix,psuMeasInfo->szAbbrev);
 	psuMeasInfo->psuTStampFile    = (FILE *) fopen(psuMeasInfo->szTStampFile,"w");
-	psuMeasInfo->pallWordOffsets  = (int64_t *) malloc(psuMeasInfo->uSampsPerMinorFrame * sizeof(int64_t));
-	if ( psuMeasInfo->pallWordOffsets == NULL )
+	psuMeasInfo->pallPCMWdOffsets  = (int64_t *) malloc(psuMeasInfo->uSampsPerMinorFrame * sizeof(int64_t));
+	if ( psuMeasInfo->pallPCMWdOffsets == NULL )
 	    return EXIT_FAILURE;
 	
 	}
@@ -755,7 +756,7 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 	{
 	psuMeasInfo->szTStampFile[0]  = '\0';
 	psuMeasInfo->psuTStampFile    = NULL;
-	psuMeasInfo->pallWordOffsets  = NULL;
+	psuMeasInfo->pallPCMWdOffsets = NULL;
 	}
     //	psuMeasInfo->uOffsetBufCount  = 0;
 
@@ -783,11 +784,11 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 				  uint64_t * pullWordsWritten,
 				  uint8_t bCombineTM1Meas, uint8_t bAssembleCounter, uint8_t iWriteSamplesToFile)
 {
-//Modes for iWriteSamplesToFile
-//=============================
+//Modes for iWriteMode
+//====================
 //0: Don't write to any files or sample buffers; only find MFC words or special search words and update counters
 //1: Write sample directly to the binary file corresponding to the current measurement
-//2: Write samples to measurement buffers so that timestamps and measurement values can be outputted as ASCII
+//2: Write samples to measurement buffers ( so that, e.g, timestamps and measurement values can be outputted as ASCII )
     int iArgIdx;
     int iWdIdx;
     int iFrIdx;
@@ -859,25 +860,21 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			    }
 
 			if ( ( ( psuMeasInfo->uTSCalcType == 1 ) && ( psuMeasInfo->szTSSearchWord[0] == '\0' ) ) 
-			     || ( psuMeasInfo->uTSCalcType == 2 ) ) 
+			     || ( psuMeasInfo->uTSCalcType >= 2 ) ) 
 			    {
 			    if ( psuMeasInfo->uTSCalcType == 2 )
 				{
-				psuMeasInfo->pallWordOffsets[psuMeasInfo->llSampIdx] = iWdIdx;
+				psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = iWdIdx;
 				if ( bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
 				    {
-				    psuMeasInfo->uTSSWIdx = iWdIdx; //relative to PCM stream
-				    psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo,llMinorFrameIdx, &psuMeasInfo->llTSSW_MFCVal);
-				    psuMeasInfo->llWordOffset_TSSW = psuMeasInfo->uTSSWIdx + psuPCMInfo->llMinorFramesPerMajorFrame * psuPCMInfo->ullCurrentMFCVal * psuPCMInfo->ullSampsPerMinorFrame;
-
-				    psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->llTotalSampCount; //internal stuff
+				    vUpdateSearchWord(psuPCMInfo, psuMeasInfo, llMinorFrameIdx, iWdIdx);
 				    }
 
 
 				}
 			    else
 				{
-				psuMeasInfo->pallWordOffsets[psuMeasInfo->llSampIdx] = iWdIdx;
+				psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = iWdIdx;
 				}
 			    }
 
@@ -906,19 +903,15 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			{
 			if ( psuMeasInfo->uTSCalcType == 2 )
 			    {
-			    psuMeasInfo->pallWordOffsets[psuMeasInfo->llSampIdx] = psuMeasInfo->llTotalSampCount;
+			    psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = psuMeasInfo->llTotalSampCount;
 			    if ( bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
 				{
-				psuMeasInfo->uTSSWIdx = iWdIdx; //relative to PCM stream
-				psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo,llMinorFrameIdx, &psuMeasInfo->llTSSW_MFCVal);
-				psuMeasInfo->llWordOffset_TSSW = psuMeasInfo->uTSSWIdx + psuPCMInfo->llMinorFramesPerMajorFrame * psuPCMInfo->ullCurrentMFCVal * psuPCMInfo->ullSampsPerMinorFrame;
-				
-				psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->llTotalSampCount; //internal stuff
+				vUpdateSearchWord(psuPCMInfo, psuMeasInfo, llMinorFrameIdx, iWdIdx);
 				}
 			    }
 			else
 			    {
-			    psuMeasInfo->pallWordOffsets[psuMeasInfo->llSampIdx] = iWdIdx;
+			    psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = iWdIdx;
 			    }
 			}
 		    
@@ -966,19 +959,15 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 		    {
 		    if ( psuMeasInfo->uTSCalcType == 2 )
 			{
-			psuMeasInfo->pallWordOffsets[psuMeasInfo->llSampIdx] = psuMeasInfo->llTotalSampCount;
+			psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = psuMeasInfo->llTotalSampCount;
 			if ( bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
 			    {
-			    psuMeasInfo->uTSSWIdx = iWdIdx; //relative to PCM stream
-			    psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo,llMinorFrameIdx, &psuMeasInfo->llTSSW_MFCVal);
-			    psuMeasInfo->llWordOffset_TSSW = psuMeasInfo->uTSSWIdx + psuPCMInfo->llMinorFramesPerMajorFrame * psuPCMInfo->ullCurrentMFCVal * psuPCMInfo->ullSampsPerMinorFrame;
-				
-			    psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->llTotalSampCount; //internal stuff
+			    vUpdateSearchWord(psuPCMInfo, psuMeasInfo, llMinorFrameIdx, iWdIdx);
 			    }
 			}
 		    else
 			{
-			psuMeasInfo->pallWordOffsets[psuMeasInfo->llSampIdx] = iWdIdx;
+			psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = iWdIdx;
 			}
 		    }
 
@@ -994,6 +983,9 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 	{
 	int iLowerLim;
 	int iUpperLim;
+	iWdIdx = psuMeasInfo->uWord;    //Because the word location is never asymmetric when the frame location is,
+                                	//we just assume it's always the same word
+
 	for (uAsymIdx = 0; uAsymIdx < psuMeasInfo->uNAsymFRanges; uAsymIdx++)
 	    {
 	    iLowerLim = psuMeasInfo->ppauAsymFRanges[uAsymIdx][0]; //these ranges are inclusive
@@ -1004,11 +996,11 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 		    {
 		    if ( iWriteMode == 2 )
 			{
-			(*pullWordsWritten) += fwrite(&pauMinorFrame[psuMeasInfo->uWord],2,1,psuMeasInfo->psuOutFile);
+			(*pullWordsWritten) += fwrite(&pauMinorFrame[iWdIdx],2,1,psuMeasInfo->psuOutFile);
 			}
 		    else if ( iWriteMode == 1 )
 			{
-			psuMeasInfo->palSample[psuMeasInfo->llSampIdx] = pauMinorFrame[psuMeasInfo->uWord];
+			psuMeasInfo->palSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx];
 			}
 
 		    if ( ( ( psuMeasInfo->uTSCalcType == 1 ) && ( psuMeasInfo->szTSSearchWord[0] == '\0' ) ) 
@@ -1016,19 +1008,15 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			{
 			if ( psuMeasInfo->uTSCalcType == 2 )
 			    {
-			    psuMeasInfo->pallWordOffsets[psuMeasInfo->llSampIdx] = psuMeasInfo->llTotalSampCount;
+			    psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = psuMeasInfo->llTotalSampCount;
 			    if ( bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
 				{
-				psuMeasInfo->uTSSWIdx = iWdIdx; //relative to PCM stream
-				psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo,llMinorFrameIdx, &psuMeasInfo->llTSSW_MFCVal);
-				psuMeasInfo->llWordOffset_TSSW = psuMeasInfo->uTSSWIdx + psuPCMInfo->llMinorFramesPerMajorFrame * psuPCMInfo->ullCurrentMFCVal * psuPCMInfo->ullSampsPerMinorFrame;
-
-				psuMeasInfo->lTSSW_SampleNum  = psuMeasInfo->llTotalSampCount; //internal stuff
+				vUpdateSearchWord(psuPCMInfo, psuMeasInfo, llMinorFrameIdx, iWdIdx);
 				}
 			    }
 			else
 			    {
-			    psuMeasInfo->pallWordOffsets[psuMeasInfo->llSampIdx] = psuMeasInfo->uWord;
+			    psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = iWdIdx;
 			    }
 			}
 
@@ -1038,7 +1026,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			    {
 			    if ( iMeasIdx == psuPCMInfo->pauMFCIndices[iArgIdx] )
 				{
-				psuPCMInfo->paullMajorFrameVals[iArgIdx] = pauMinorFrame[psuMeasInfo->uWord];
+				psuPCMInfo->paullMajorFrameVals[iArgIdx] = pauMinorFrame[iWdIdx];
 				break;
 				}
 			    }
@@ -1088,7 +1076,7 @@ uint64_t ullAssembleCounterVal(struct suPCMInfo * psuPCMInfo, int64_t llMinorFra
 
 uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFileSize, 
 					       struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
-					       uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllWordOffset_GPS)
+					       uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllPCMWdOffset_GPS)
 {
     int                  iMeasIdx;
     int                  iArgIdx;
@@ -1106,21 +1094,31 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
 
     //    uint8_t              bGotAllTSSearchWords;
     uint16_t             uNTSSearchWords;
+    uint16_t             uTSSWIdx;
+    int64_t           *  pallFirst_PCMWdOffset;
+    int64_t           *  pallFirstTSSWSampleNum;
+    uint16_t          *  pauFirst_TSSWIdx;
+    int64_t           *  pallFirstTSSW_MFCVal;
+    int               *  paiMeasIdx;
 
-    ullWordsWritten      = 0;
-    ulMinorFrameSampCount= 0;
-    llMinorFrameIdx      = 0;
-    ullInFilePos         = 0;
-    iMeasIdx             = 0;
-    ullTemp              = 0;
-    uMFCValCount         = 0;
-    bAllMFCValsCollected = 0;
+    //    uint8_t           *  pabGotTSSearchWord;
 
-    bGotFirstGPSWord     = 0;
-    llFirstGPSWord       = 0;
-	
+    ullWordsWritten        = 0;
+    ulMinorFrameSampCount  = 0;
+    llMinorFrameIdx        = 0;
+    ullInFilePos           = 0;
+    iMeasIdx               = 0;
+    ullTemp                = 0;
+    uMFCValCount           = 0;
+    bAllMFCValsCollected   = 0;
+			   
+    bGotFirstGPSWord       = 0;
+    llFirstGPSWord         = 0;
+			   
     //    bGotAllTSSearchWords = 0;
-    uNTSSearchWords      = 0;
+    uNTSSearchWords        = 0;    			   
+    uTSSWIdx               = 0;
+    pallFirst_PCMWdOffset  = NULL;
 
     for (iMeasIdx = 0; iMeasIdx < psuPCMInfo->iNMeasurements; iMeasIdx++)
 	{
@@ -1128,7 +1126,17 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
 	    uNTSSearchWords++;
 	}
 
-    while ( ( !bAllMFCValsCollected || !bGotFirstGPSWord || ( uNTSSearchWords > 0 ) ) && ( ( ullInFilePos = ftell(psuInFile) ) < szInFileSize ) )
+    //    pabGotTSSearchWord   = calloc(uNTSSearchWords * sizeof(uint8_t));
+    pauFirst_TSSWIdx       = calloc(uNTSSearchWords, sizeof(uint16_t));
+    pallFirstTSSWSampleNum = calloc(uNTSSearchWords, sizeof(int64_t));
+    pallFirstTSSW_MFCVal   = calloc(uNTSSearchWords, sizeof(int64_t));
+    paiMeasIdx             = calloc(uNTSSearchWords, sizeof(int));
+    pallFirst_PCMWdOffset  = calloc(uNTSSearchWords, sizeof(int64_t));
+
+    for ( iArgIdx = 0; iArgIdx < uNTSSearchWords; iArgIdx++ )
+	pallFirst_PCMWdOffset[iArgIdx] = -1;
+    
+    while ( ( !bAllMFCValsCollected || !bGotFirstGPSWord || ( uTSSWIdx < uNTSSearchWords ) ) && ( ( ullInFilePos = ftell(psuInFile) ) < szInFileSize ) )
 	{
 	psuPCMInfo->uAsymWRInd = 0;
 	psuPCMInfo->uAsymFRInd = 0;
@@ -1148,24 +1156,24 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
 
 	    uParseMeasurementSamples(psuPCMInfo, ppsuMeasInfo[iMeasIdx], iMeasIdx, pauMinorFrame, llMinorFrameIdx, &ullWordsWritten, bCombineTM1Meas,1,0);
 
-	    if ( uNTSSearchWords > 0 )
+	    if ( uTSSWIdx <  uNTSSearchWords )
 		{
-		    if ( ( ppsuMeasInfo[iMeasIdx]->szTSSearchWord[0] != TM_NO_TS_SEARCH ) && ( ppsuMeasInfo[iMeasIdx]->llWordOffset_TSSW == -1 ) ) 
+		    if ( ( ppsuMeasInfo[iMeasIdx]->szTSSearchWord[0] != TM_NO_TS_SEARCH ) && ( ppsuMeasInfo[iMeasIdx]->llPCMWdOffset_TSSW != -1 ) )
 		    {
-		    if ( bAllMFCValsCollected && ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal == -1 )
-			{
-			psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo,llMinorFrameIdx, &ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal);
-			}
-		    if ( ( ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal != -1 ) && ( ppsuMeasInfo[iMeasIdx]->uTSSWIdx != -1 ) )
-			{
-			ppsuMeasInfo[iMeasIdx]->llWordOffset_TSSW = ppsuMeasInfo[iMeasIdx]->uTSSWIdx + psuPCMInfo->llMinorFramesPerMajorFrame * (ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal - psuPCMInfo->ullFirstMFCVal) * psuPCMInfo->ullSampsPerMinorFrame;  
-			printf("Search word %u\n",uNTSSearchWords);
-			printf("%s (%s) llWordOffset_TSSW: %" PRIi64 "\n",
-			       ppsuMeasInfo[iMeasIdx]->szName,ppsuMeasInfo[iMeasIdx]->szTSSearchWord,ppsuMeasInfo[iMeasIdx]->llWordOffset_TSSW);
-			printf("\n");
+			pallFirst_PCMWdOffset[uNTSSearchWords-1] = ppsuMeasInfo[iMeasIdx]->llPCMWdOffset_TSSW;
+			pallFirstTSSWSampleNum[uNTSSearchWords-1]= ppsuMeasInfo[iMeasIdx]->llTSSW_SampleNum;
+			pauFirst_TSSWIdx[uNTSSearchWords-1]      = ppsuMeasInfo[iMeasIdx]->uTSSWIdx;
+			pallFirstTSSW_MFCVal[uNTSSearchWords-1]  = ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal;
+			paiMeasIdx[uNTSSearchWords-1]            = iMeasIdx;
+			printf("Search word %u\n",uTSSWIdx);
+			printf("%s (%s) llPCMWdOffset_TSSW: %" PRIi64 "\n",
+			       ppsuMeasInfo[iMeasIdx]->szName,ppsuMeasInfo[iMeasIdx]->szTSSearchWord,ppsuMeasInfo[iMeasIdx]->llPCMWdOffset_TSSW);
+			printf("          llTSSW_SampleNum: %11" PRIi64 "\n",ppsuMeasInfo[iMeasIdx]->llTSSW_SampleNum);
+			printf(" psuPCMInfo->ullCounterVal: %11" PRIi64 "\n",psuPCMInfo->ullCounterVal);
+			printf("             llTSSW_MFCVal: %11" PRIi64 "\n",ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal);
+			printf("End search word init\n\n");
 
-			uNTSSearchWords--;
-			}
+			uTSSWIdx++;
 		    }
 		}
 	    }
@@ -1180,7 +1188,7 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
 	    }
 	
 	
-	if ( uMFCValCount == psuPCMInfo->uNumMFCounters )
+	if ( uMFCValCount == psuPCMInfo->uNumMFCounters && ( psuPCMInfo->ullFirstMFCVal == 0 ) )
 	    {
 	    psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo,llMinorFrameIdx, &psuPCMInfo->ullFirstMFCVal);
 	    bAllMFCValsCollected = 1;
@@ -1203,7 +1211,28 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
     if ( bAllMFCValsCollected && bGotFirstGPSWord )
 	{
 	//Get the proper GPS offset
-	(*pllWordOffset_GPS) = psuPCMInfo->llFirstGPSWord + psuPCMInfo->llMinorFramesPerMajorFrame * (psuPCMInfo->ullGPSMFCVal - psuPCMInfo->ullFirstMFCVal) * psuPCMInfo->ullSampsPerMinorFrame - 1;  
+	(*pllPCMWdOffset_GPS) = psuPCMInfo->llFirstGPSWord + psuPCMInfo->llMinorFramesPerMajorFrame * (psuPCMInfo->ullGPSMFCVal - psuPCMInfo->ullFirstMFCVal) * psuPCMInfo->ullSampsPerMinorFrame - 1;
+
+	//Get the proper TSSW offset
+	for ( iArgIdx = 0; iArgIdx < uNTSSearchWords; iArgIdx++ )
+	    {
+	    iMeasIdx = paiMeasIdx[iArgIdx];
+	    ppsuMeasInfo[iMeasIdx]->llTSSW_SampleNum = pallFirstTSSWSampleNum[iArgIdx];
+	    ppsuMeasInfo[iMeasIdx]->llPCMWdOffset_TSSW = pallFirst_PCMWdOffset[iArgIdx];
+	    //	    ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal = (pallFirstTSSW_MFCVal[iArgIdx] - psuPCMInfo->ullFirstMFCVal);
+	    ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal = pallFirstTSSW_MFCVal[iArgIdx];
+	    ppsuMeasInfo[iMeasIdx]->uTSSWIdx = pauFirst_TSSWIdx[iArgIdx];
+	    printf("Search word %u\n",iArgIdx);
+	    printf("%s (%s) llPCMWdOffset_TSSW: %" PRIi64 "\n",
+		   ppsuMeasInfo[iMeasIdx]->szName,ppsuMeasInfo[iMeasIdx]->szTSSearchWord,ppsuMeasInfo[iMeasIdx]->llPCMWdOffset_TSSW);
+	    printf("          llTSSW_SampleNum: %11" PRIi64 "\n",ppsuMeasInfo[iMeasIdx]->llTSSW_SampleNum);
+	    printf(" psuPCMInfo->ullCounterVal: %11" PRIi64 "\n",psuPCMInfo->ullCounterVal);
+	    printf("             llTSSW_MFCVal: %11" PRIi64 "\n",ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal);
+	    printf("End search word init\n\n");
+	    }
+
+	printf("First GPS word       : %" PRIi64 "\n",psuPCMInfo->llFirstGPSWord);
+	printf("First GPS word offset: %" PRIi64 "\n",*pllPCMWdOffset_GPS);
 
 	//Now we go back to the beginning of the file
 	rewind(psuInFile);
@@ -1282,21 +1311,31 @@ int bGotNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psu
     return 0;
 }
 
-int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, int64_t * pllWordOffset_MajorFrame, int64_t * pllWordOffset_MinorFrame, int64_t * pllWordOffset_GPS, uint64_t * pullWordsWritten, uint8_t bCombineTM1Meas)
+void vUpdateGPSWord(struct suPCMInfo * psuPCMInfo, int64_t * pllPCMWdOffset_MajorFrame, int64_t * pllPCMWdOffset_GPS)
+{
+    psuPCMInfo->ullGPSWordCount++;
+    if ( psuPCMInfo->llCurrentGPSWord > -1 )
+	*pllPCMWdOffset_GPS = (*pllPCMWdOffset_MajorFrame) + psuPCMInfo->llCurrentGPSWord;
+    else
+	*pllPCMWdOffset_GPS = (*pllPCMWdOffset_MajorFrame) + psuPCMInfo->llFirstGPSWord;
+
+    printf("GPS Word Count     : %" PRIu64 "\n",psuPCMInfo->ullGPSWordCount);
+    printf("llPCMWdOffset_GPS   : %" PRIu64 "\n",*pllPCMWdOffset_GPS);
+}
+
+int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, int64_t * pllPCMWdOffset_MajorFrame, int64_t * pllPCMWdOffset_MinorFrame, int64_t * pllPCMWdOffset_GPS, uint64_t * pullWordsWritten, uint8_t bCombineTM1Meas)
 {
     int iMeasIdx;
 
-    *pllWordOffset_MajorFrame = ( psuPCMInfo->ullCurrentMFCVal * psuPCMInfo->llMinorFramesPerMajorFrame * psuPCMInfo->ullSampsPerMinorFrame) - 1;
-    *pllWordOffset_MinorFrame = ( llMinorFrameIdx - 1 ) * psuPCMInfo->ullSampsPerMinorFrame;
+    //    printf("Bout to calc some tstamps...\n");
+
+    *pllPCMWdOffset_MajorFrame = ( psuPCMInfo->ullCurrentMFCVal * psuPCMInfo->llMinorFramesPerMajorFrame * psuPCMInfo->ullSampsPerMinorFrame) - 1;
+    *pllPCMWdOffset_MinorFrame = ( llMinorFrameIdx - 1 ) * psuPCMInfo->ullSampsPerMinorFrame;
     
     //Check for new GPS word in this minor frame, then calculate GPS word offset
     if ( bGotNewGPSWord(psuPCMInfo, ppsuMeasInfo[psuPCMInfo->pauGPSMeasIdx[0]], llMinorFrameIdx, pauMinorFrame, bCombineTM1Meas) )
 	{
-	psuPCMInfo->ullGPSWordCount++;
-	if ( psuPCMInfo->llCurrentGPSWord > -1 )
-	    *pllWordOffset_GPS = (*pllWordOffset_MajorFrame) + psuPCMInfo->llCurrentGPSWord;
-	else
-	    *pllWordOffset_GPS = (*pllWordOffset_MajorFrame) + psuPCMInfo->llFirstGPSWord;
+	vUpdateGPSWord(psuPCMInfo, pllPCMWdOffset_MajorFrame, pllPCMWdOffset_GPS);
 	}
     
     for (iMeasIdx = 0; iMeasIdx < psuPCMInfo->iNMeasurements; iMeasIdx++)
@@ -1305,8 +1344,8 @@ int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsu
 	if ( ( ppsuMeasInfo[iMeasIdx]->uTSCalcType > 0 ) && ( ppsuMeasInfo[iMeasIdx]->llSampIdx > 0 ) )
 	    {
 	    iWriteMeasurementTStamps(psuPCMInfo,ppsuMeasInfo[iMeasIdx], llMinorFrameIdx,
-				     *pllWordOffset_MajorFrame, *pllWordOffset_MinorFrame,
-				     *pllWordOffset_GPS, pullWordsWritten);
+				     *pllPCMWdOffset_MajorFrame, *pllPCMWdOffset_MinorFrame,
+				     *pllPCMWdOffset_GPS, pullWordsWritten);
 	    }
 	}
 
@@ -1314,31 +1353,31 @@ int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsu
 }
 
 int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx,
-			     int64_t llWordOffset_MajorFrame, int64_t llWordOffset_MinorFrame, int64_t llWordOffset_GPS, uint64_t * pullWordsWritten)
+			     int64_t llPCMWdOffset_MajorFrame, int64_t llPCMWdOffset_MinorFrame, int64_t llPCMWdOffset_GPS, uint64_t * pullWordsWritten)
 {
     int iArgIdx;
     int64_t llBaseOffset;
-    int64_t llWordOffset_Measurement;
+    int64_t llPCMWdOffset_Measurement;
     double  dTimeOffset_Measurement;
 
-    llBaseOffset = llWordOffset_MajorFrame + llWordOffset_MinorFrame;
+    llBaseOffset = llPCMWdOffset_MajorFrame + llPCMWdOffset_MinorFrame;
 
     if ( psuMeasInfo->uTSCalcType == 2 ) //Do special trickery for measurements that aren't actually sampled at rate given in NASA PCM measurement list
 	{
-	int64_t llWordOffset_SW;
+	int64_t llPCMWdOffset_SW;
 	double dTimeOffset_SW;
 
 	//calculate searchword offset relative to GPS word
-	llWordOffset_SW = psuMeasInfo->llWordOffset_TSSW - llWordOffset_GPS; //This is the word offset within the PCM stream
-	dTimeOffset_SW  = llWordOffset_SW * psuPCMInfo->dWordPeriod + 
+	llPCMWdOffset_SW = psuMeasInfo->llPCMWdOffset_TSSW - llPCMWdOffset_GPS; //This is the word offset within the PCM stream
+	dTimeOffset_SW  = llPCMWdOffset_SW * psuPCMInfo->dWordPeriod + 
 	    ( ( psuPCMInfo->llCurrentGPSWord != -1 ) ? psuPCMInfo->ullGPSWordCount : 0 ); //strangeness here so that we don't count first GPS word twice
 
 	for (iArgIdx = 0; iArgIdx < psuMeasInfo->llSampIdx; iArgIdx++ )
 	    {
 	    //calc offset relative to number of samples between current sample and searchword sample here; 
 	    //This offset is NOT calculated based on word offset in the PCM stream
-	    llWordOffset_Measurement = ( psuMeasInfo->pallWordOffsets[iArgIdx] - psuMeasInfo->lTSSW_SampleNum ) / 2.0; //rel to current search word
-	    dTimeOffset_Measurement = (double) llWordOffset_Measurement * psuMeasInfo->dInternalWordPeriod + dTimeOffset_SW;
+	    llPCMWdOffset_Measurement = ( psuMeasInfo->pallPCMWdOffsets[iArgIdx] - psuMeasInfo->llTSSW_SampleNum ) / 2.0; //rel to current search word
+	    dTimeOffset_Measurement = (double) llPCMWdOffset_Measurement * psuMeasInfo->dInternalWordPeriod + dTimeOffset_SW;
 		
 	    fprintf(psuMeasInfo->psuTStampFile,"%12.8f\t%05d\n",dTimeOffset_Measurement,psuMeasInfo->palSample[iArgIdx]);
 	    (*pullWordsWritten)++;
@@ -1348,8 +1387,8 @@ int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurement
 	{
 	for (iArgIdx = 0; iArgIdx < psuMeasInfo->llSampIdx; iArgIdx++ )
 	    {
-	    llWordOffset_Measurement = (llBaseOffset + psuMeasInfo->pallWordOffsets[iArgIdx]) - llWordOffset_GPS; //rel to current GPS val
-	    dTimeOffset_Measurement = llWordOffset_Measurement * psuPCMInfo->dWordPeriod + 
+	    llPCMWdOffset_Measurement = (llBaseOffset + psuMeasInfo->pallPCMWdOffsets[iArgIdx]) - llPCMWdOffset_GPS; //rel to current GPS val
+	    dTimeOffset_Measurement = llPCMWdOffset_Measurement * psuPCMInfo->dWordPeriod + 
 		( ( psuPCMInfo->llCurrentGPSWord != -1 ) ? psuPCMInfo->ullGPSWordCount : 0 ); //strangeness here so that we don't count first GPS word twice
 	    fprintf(psuMeasInfo->psuTStampFile,"%12.8f\n",dTimeOffset_Measurement);
 	    }
@@ -1396,7 +1435,7 @@ uint8_t bIsSearchWordInMinorFrame(struct suPCMInfo * psuPCMInfo, struct suMeasur
 		}
 	    else
 		{
-		    //		psuMeasInfo->pallWordOffsets[psuMeasInfo->uOffsetBufCount] = uWdIdx;
+		    //		psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->uOffsetBufCount] = uWdIdx;
 		    //		psuMeasInfo->uOffsetBufCount++;
 		}
 		//		printf("Got a search word! It's like this: %s\n",acTestWord);
@@ -1431,6 +1470,23 @@ uint8_t bIsSearchWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * 
     return 0;
 }
 
+void vUpdateSearchWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, int iWdIdx)
+{
+    psuMeasInfo->uTSSWIdx = iWdIdx; //relative to PCM stream
+    psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo,llMinorFrameIdx, &psuMeasInfo->llTSSW_MFCVal);
+    /* psuMeasInfo->llPCMWdOffset_TSSW = psuMeasInfo->uTSSWIdx + psuPCMInfo->llMinorFramesPerMajorFrame * psuPCMInfo->ullCurrentMFCVal * psuPCMInfo->ullSampsPerMinorFrame; */
+    psuMeasInfo->llPCMWdOffset_TSSW = psuMeasInfo->uTSSWIdx + psuPCMInfo->llMinorFramesPerMajorFrame * (psuMeasInfo->llTSSW_MFCVal - psuPCMInfo->ullFirstMFCVal) * psuPCMInfo->ullSampsPerMinorFrame;
+    
+    psuMeasInfo->llTSSW_SampleNum  = psuMeasInfo->llTotalSampCount; //internal stuff
+
+    printf("%s (%s) llPCMWdOffset_TSSW: %11" PRIi64 "\n",
+	   psuMeasInfo->szName,psuMeasInfo->szTSSearchWord,psuMeasInfo->llPCMWdOffset_TSSW);
+    printf("          llTSSW_SampleNum: %11" PRIi64 "\n",psuMeasInfo->llTSSW_SampleNum);
+    printf(" psuPCMInfo->ullCounterVal: %11" PRIi64 "\n",psuPCMInfo->ullCounterVal);
+    printf("psuMeasInfo->llTSSW_MFCVal: %11" PRIi64 "\n",psuMeasInfo->llTSSW_MFCVal);
+    printf("\n");
+}
+
 //void vResetMeasSampleInde
 
 int iPCMFree(struct suPCMInfo * psuPCMInfo)
@@ -1456,15 +1512,15 @@ int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo)
     //free asymm frame ranges
 	//    if (psuMeasInfo->uNAsymFRanges > 0)
 	//	{
-    if ( psuMeasInfo->pauFtemp        != NULL ) free(psuMeasInfo->pauFtemp);
-    if ( psuMeasInfo->ppauAsymFRanges != NULL ) free(psuMeasInfo->ppauAsymFRanges);
+    if ( psuMeasInfo->pauFtemp         != NULL ) free(psuMeasInfo->pauFtemp);
+    if ( psuMeasInfo->ppauAsymFRanges  != NULL ) free(psuMeasInfo->ppauAsymFRanges);
         //      }
 
-    if ( psuMeasInfo->palSample       != NULL ) free(psuMeasInfo->palSample);
+    if ( psuMeasInfo->palSample        != NULL ) free(psuMeasInfo->palSample);
 
-    if ( psuMeasInfo->psuOutFile      != NULL )	fclose(psuMeasInfo->psuOutFile);
-    if ( psuMeasInfo->psuTStampFile   != NULL ) fclose(psuMeasInfo->psuTStampFile);
-    if ( psuMeasInfo->pallWordOffsets != NULL )	free(psuMeasInfo->pallWordOffsets);
+    if ( psuMeasInfo->psuOutFile       != NULL ) fclose(psuMeasInfo->psuOutFile);
+    if ( psuMeasInfo->psuTStampFile    != NULL ) fclose(psuMeasInfo->psuTStampFile);
+    if ( psuMeasInfo->pallPCMWdOffsets != NULL ) free(psuMeasInfo->pallPCMWdOffsets);
 
     free(psuMeasInfo);
 
