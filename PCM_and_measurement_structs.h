@@ -60,7 +60,7 @@ struct suMeasurementInfo			       //Struct for keeping track of a measurement wi
     uint16_t        uMinorFrInt;		       //How often does it show up?
     uint32_t        ulSPS;
 		    
-    int32_t   *     palSample;			       //Buffer for samples as well as a sample count
+    int64_t   *     pallSample;			       //Buffer for samples, or a sample count if uTSCalcType == 3
     uint64_t        llSampIdx;
     int64_t         llTotalSampCount;
 		    
