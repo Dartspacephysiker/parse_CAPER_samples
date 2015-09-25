@@ -41,8 +41,6 @@ END {
     printf "=====================================================================\n\n"
     for (idx in tDiffCount)
     {
-#	if (!(1 in tDiffNum[idx]))
-#	{
 	    printf "%9.6f  : %i", idx, tDiffCount[idx]
 	    if ( tDiffCount[idx] < maxNTimesToTrack )
 	    {
@@ -59,6 +57,6 @@ END {
 		printf "                       %10.6f                   %4i\n", tDiffTime[idx,idx2],tDiffNum[idx,idx2]
 	    printf "\n"
 	}
-#    }
+
 	    printf "Total N time differences: %i\n", totalNTimes-1
 }

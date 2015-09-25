@@ -573,8 +573,8 @@ static uint8_t auTM1TSCalcType[]        =    {0, 0,								    //Serial #1, 0-7
 					      0, 0,								                      
 					      //0, 0,			                 			    		        
 					      
-					      1, 0,								    //Serial #4, 22-29
-					      1, 0,								                      
+					      2, 0,								    //Serial #4, 22-29
+					      2, 0,								                      
 					      0, 0,								                      
 					      0, 0,								                      
 					      

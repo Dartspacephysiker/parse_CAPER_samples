@@ -630,7 +630,7 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 
 	if ( bTStampMode )
 	    {
-	    psuMeasInfo->uTSCalcType  = auTM23TSCalcType[iMeasIdx];
+	    psuMeasInfo->uTSCalcType     = auTM23TSCalcType[iMeasIdx];
 	    if ( aszTM23TSSearchWords[iMeasIdx] != '\0' )
 		sprintf(psuMeasInfo->szTSSearchWord,"%s",aszTM23TSSearchWords[iMeasIdx]); 
 	    else
@@ -778,7 +778,6 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
     return EXIT_SUCCESS;
 }
 
-
 //Write samples from this minor frame to the appropriate measurement files
 uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int iMeasIdx, 
 				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, 
@@ -800,9 +799,9 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 	{
 	if ( psuMeasInfo->uTSCalcType <= 1 )
 	    iWriteMode = 1;
-	else if ( psuMeasInfo->uTSCalcType == 2 )
+	else if ( ( psuMeasInfo->uTSCalcType == 2 ) || ( psuMeasInfo->uTSCalcType == 3 ) )
 	    iWriteMode = 2;
-	else if ( psuMeasInfo->uTSCalcType == 3 )
+	else if ( psuMeasInfo->uTSCalcType == 4 )
 	    iWriteMode = 1;
 	}
     else
@@ -1280,28 +1279,22 @@ void vUpdateGPSWord(struct suPCMInfo * psuPCMInfo, int64_t * pllPCMWdOffset_Majo
 
 void vSetTStampInfo(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, int iWdIdx )
 {
-    /* if ( ( psuMeasInfo->uTSCalcType == 1 ) || ( psuMeasInfo->uTSCalcType == 2 ) ) */
-    /* 	{ */
-    /* 	psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llTSIdx] = iWdIdx; */
-    /* 	psuMeasInfo->llTSIdx++; */
-    /* 	} */
-    
-    if (psuMeasInfo->uTSCalcType == 1 )
+    if ( ( psuMeasInfo->uTSCalcType == 1 ) || ( psuMeasInfo->uTSCalcType == 2 ) )
 	{
 	psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llTSIdx] = iWdIdx;
 	psuMeasInfo->llTSIdx++;
 	}
-    else if ( psuMeasInfo->uTSCalcType == 2 )
+    else if ( psuMeasInfo->uTSCalcType == 3 )
 	{
 	psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llTSIdx] = psuMeasInfo->llTotalSampCount;
 	psuMeasInfo->llTSIdx++;
 	}
 
-    if ( ( psuMeasInfo->uTSCalcType >= 2 ) && bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
+    if ( ( psuMeasInfo->uTSCalcType >= 3 ) && bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
 	{
 	vUpdateSearchWord(psuPCMInfo, psuMeasInfo, llMinorFrameIdx, iWdIdx);
 
-	if ( psuMeasInfo->uTSCalcType == 3 ) //Here, we want to output the searchword sample number with the timestamp 
+	if ( psuMeasInfo->uTSCalcType == 4 ) //Here, we want to output the searchword sample number with the timestamp 
 	                                     //instead of the value of the searchword. We use the measurement's sample buffer to hold the value
 	    {
 	    psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llTSIdx] = iWdIdx;
@@ -1351,7 +1344,7 @@ int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurement
 
     llBaseOffset = llPCMWdOffset_MajorFrame + llPCMWdOffset_MinorFrame;
 
-    if ( psuMeasInfo->uTSCalcType >= 2 ) //Do special trickery for measurements that aren't actually sampled at rate given in NASA PCM measurement list
+    if ( psuMeasInfo->uTSCalcType >= 3 ) //Do special trickery for measurements that aren't actually sampled at rate given in NASA PCM measurement list
 	{
 	int64_t llPCMWdOffset_SW;
 	double dTimeOffset_SW;
@@ -1379,7 +1372,17 @@ int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurement
 	    llPCMWdOffset_Measurement = (llBaseOffset + psuMeasInfo->pallPCMWdOffsets[iArgIdx]) - llPCMWdOffset_GPS; //rel to current GPS val
 	    dTimeOffset_Measurement = llPCMWdOffset_Measurement * psuPCMInfo->dWordPeriod + 
 		( ( psuPCMInfo->llCurrentGPSWord != -1 ) ? psuPCMInfo->ullGPSWordCount : 0 ); //strangeness here so that we don't count first GPS word twice
-	    fprintf(psuMeasInfo->psuTStampFile,"%12.8f\n",dTimeOffset_Measurement);
+
+	    fprintf(psuMeasInfo->psuTStampFile,"%12.8f",dTimeOffset_Measurement);
+	    if ( psuMeasInfo->uTSCalcType == 2 )
+		{
+		fprintf(psuMeasInfo->psuTStampFile,"\t%5" PRIu16 "\n", (uint16_t)psuMeasInfo->paullSample[iArgIdx]);
+		(*pullWordsWritten)++;
+		}
+	    else
+		{
+		fprintf(psuMeasInfo->psuTStampFile,"\n");
+		}
 	    }
 	}
 
@@ -1418,7 +1421,7 @@ uint8_t bIsSearchWordInMinorFrame(struct suPCMInfo * psuPCMInfo, struct suMeasur
 
 	if ( strncmp(acTestWord,psuMeasInfo->szTSSearchWord,szKeywordLen) == 0 )
 	    {
-	    if ( psuMeasInfo->uTSCalcType > 1 )
+	    if ( psuMeasInfo->uTSCalcType >= 3 )
 		{
 		    psuMeasInfo->uTSSWIdx = uWdIdx; //NOTE! This value is intermediate to the calculation of the search word offset! It will change later!
 		}
