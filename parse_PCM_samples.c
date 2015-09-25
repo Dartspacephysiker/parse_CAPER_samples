@@ -736,12 +736,12 @@ int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 	}
     
     //Now handle initialization of buffers
-    psuMeasInfo->pallSample          = (int64_t *) malloc(psuMeasInfo->uSampsPerMinorFrame * sizeof(int64_t));
-    if ( psuMeasInfo->pallSample == NULL )
+    psuMeasInfo->paullSample         = (uint64_t *) malloc(psuMeasInfo->uSampsPerMinorFrame * sizeof(uint64_t));
+    if ( psuMeasInfo->paullSample == NULL )
 	return EXIT_FAILURE;
 	
     for ( iTmpIdx = 0; iTmpIdx < psuMeasInfo->uSampsPerMinorFrame; iTmpIdx++ )
-	psuMeasInfo->pallSample[iTmpIdx] = -1;
+	psuMeasInfo->paullSample[iTmpIdx] = -1;
 
     //Do timestamp stuff
     if ( psuMeasInfo->uTSCalcType > 0 )
@@ -802,6 +802,8 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 	    iWriteMode = 1;
 	else if ( psuMeasInfo->uTSCalcType == 2 )
 	    iWriteMode = 2;
+	else if ( psuMeasInfo->uTSCalcType == 3 )
+	    iWriteMode = 1;
 	}
     else
 	{
@@ -854,7 +856,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			
 			if ( iWriteMode >= 1 )
 			    {
-			    vWriteSample(uCombinedSample, psuMeasInfo->llSampIdx, psuMeasInfo, iWriteMode, bIsCombined, pullWordsWritten);
+			    vWriteSample((uint64_t)uCombinedSample, psuMeasInfo->llSampIdx, psuMeasInfo, iWriteMode, bIsCombined, pullWordsWritten);
 			    psuMeasInfo->llSampIdx++;
 			    }
 
@@ -875,7 +877,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 		    {
 		    if ( iWriteMode >= 1 )
 			{
-			vWriteSample(pauMinorFrame[iWdIdx], psuMeasInfo->llSampIdx, psuMeasInfo, iWriteMode,  0, pullWordsWritten);
+			vWriteSample((uint64_t)pauMinorFrame[iWdIdx], psuMeasInfo->llSampIdx, psuMeasInfo, iWriteMode,  0, pullWordsWritten);
 			psuMeasInfo->llSampIdx++;
 			}
 
@@ -892,7 +894,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 		    /* else if ( iWriteMode == 2 ) */
 		    /* 	{ */
 		    /* 	    //			printf("%s sampcount : %" PRIu64 "\n",psuMeasInfo->szName,psuMeasInfo->llSampIdx); */
-		    /* 	psuMeasInfo->pallSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx]; */
+		    /* 	psuMeasInfo->paullSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx]; */
 		    /* 	psuMeasInfo->llSampIdx++; */
 		    /* 	} */
 
@@ -944,7 +946,8 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 		{
 		if ( iWriteMode >= 1 )
 		    {
-		    vWriteSample(pauMinorFrame[iWdIdx], psuMeasInfo->llSampIdx, psuMeasInfo, iWriteMode,  0, pullWordsWritten);
+			//printf("Samp: %" PRIu16 "\n",pauMinorFrame[iWdIdx]);
+		    vWriteSample((uint64_t)pauMinorFrame[iWdIdx], psuMeasInfo->llSampIdx, psuMeasInfo, iWriteMode,  0, pullWordsWritten);
 		    psuMeasInfo->llSampIdx++;
 		    }
 
@@ -960,7 +963,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 		/*     } */
 		/* else if ( iWriteMode == 2 ) */
 		/*     { */
-		/*     psuMeasInfo->pallSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx]; */
+		/*     psuMeasInfo->paullSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx]; */
 		/*     psuMeasInfo->llSampIdx++; */
 		/*     } */
 		
@@ -1005,7 +1008,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 		    {
 		    if ( iWriteMode >= 1 )
 			{
-			vWriteSample(pauMinorFrame[iWdIdx], psuMeasInfo->llSampIdx, psuMeasInfo, iWriteMode,  0, pullWordsWritten);
+			vWriteSample((uint64_t)pauMinorFrame[iWdIdx], psuMeasInfo->llSampIdx, psuMeasInfo, iWriteMode,  0, pullWordsWritten);
 			psuMeasInfo->llSampIdx++;
 			}
 
@@ -1021,7 +1024,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 		    /* 	} */
 		    /* else if ( iWriteMode == 1 ) */
 		    /* 	{ */
-		    /* 	psuMeasInfo->pallSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx]; */
+		    /* 	psuMeasInfo->paullSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx]; */
 		    /* 	psuMeasInfo->llSampIdx++; */
 		    /* 	} */
 
@@ -1065,15 +1068,15 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
     return EXIT_SUCCESS;
 }
 
-void vWriteSample(uint16_t uSample, int64_t llSampleIdx, struct suMeasurementInfo * psuMeasInfo, int iWriteMode, uint8_t bIsCombined, uint64_t * pullWordsWritten)
+void vWriteSample(uint64_t ullSample, int64_t llSampleIdx, struct suMeasurementInfo * psuMeasInfo, int iWriteMode, uint8_t bIsCombined, uint64_t * pullWordsWritten)
 {
     if ( iWriteMode == 1 )
 	{
-	(*pullWordsWritten) += fwrite(&uSample,2,1,psuMeasInfo->psuOutFile) * ( 1 + bIsCombined );
+	    (*pullWordsWritten) += fwrite((int16_t * )&ullSample,2,1,psuMeasInfo->psuOutFile) * ( 1 + bIsCombined );
 	}
     else if ( iWriteMode == 2 )
 	{
-	psuMeasInfo->pallSample[llSampleIdx] = uSample;
+	psuMeasInfo->paullSample[llSampleIdx] = ullSample;
 	}
 }
 
@@ -1362,12 +1365,23 @@ void vUpdateGPSWord(struct suPCMInfo * psuPCMInfo, int64_t * pllPCMWdOffset_Majo
 
 void vSetTStampInfo(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, int iWdIdx )
 {
-    if ( ( psuMeasInfo->uTSCalcType == 1 ) || ( psuMeasInfo->uTSCalcType == 2 ) )
+    /* if ( ( psuMeasInfo->uTSCalcType == 1 ) || ( psuMeasInfo->uTSCalcType == 2 ) ) */
+    /* 	{ */
+    /* 	psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llTSIdx] = iWdIdx; */
+    /* 	psuMeasInfo->llTSIdx++; */
+    /* 	} */
+    
+    if (psuMeasInfo->uTSCalcType == 1 )
 	{
 	psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llTSIdx] = iWdIdx;
 	psuMeasInfo->llTSIdx++;
 	}
-    
+    else if ( psuMeasInfo->uTSCalcType == 2 )
+	{
+	psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llTSIdx] = psuMeasInfo->llTotalSampCount;
+	psuMeasInfo->llTSIdx++;
+	}
+
     if ( ( psuMeasInfo->uTSCalcType >= 2 ) && bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) )
 	{
 	vUpdateSearchWord(psuPCMInfo, psuMeasInfo, llMinorFrameIdx, iWdIdx);
@@ -1439,7 +1453,7 @@ int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurement
 	    llPCMWdOffset_Measurement = ( psuMeasInfo->pallPCMWdOffsets[iArgIdx] - psuMeasInfo->llTSSW_SampleNum ) / 2.0; //rel to current search word
 	    dTimeOffset_Measurement = (double) llPCMWdOffset_Measurement * psuMeasInfo->dInternalWordPeriod + dTimeOffset_SW;
 		
-	    fprintf(psuMeasInfo->psuTStampFile,"%12.8f\t%10" PRIi64 "\n",dTimeOffset_Measurement,psuMeasInfo->pallSample[iArgIdx]);
+	    fprintf(psuMeasInfo->psuTStampFile,"%12.8f\t%10" PRIu64 "\n",dTimeOffset_Measurement,psuMeasInfo->paullSample[iArgIdx]);
 	    (*pullWordsWritten)++;
 	    }
 	}
@@ -1576,7 +1590,7 @@ int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo)
     if ( psuMeasInfo->ppauAsymFRanges  != NULL ) free(psuMeasInfo->ppauAsymFRanges);
         //      }
 
-    if ( psuMeasInfo->pallSample       != NULL ) free(psuMeasInfo->pallSample);
+    if ( psuMeasInfo->paullSample      != NULL ) free(psuMeasInfo->paullSample);
 
     if ( psuMeasInfo->psuOutFile       != NULL ) fclose(psuMeasInfo->psuOutFile);
     if ( psuMeasInfo->psuTStampFile    != NULL ) fclose(psuMeasInfo->psuTStampFile);

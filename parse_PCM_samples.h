@@ -12,7 +12,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, 
 				  uint64_t * pullWordsWritten,
 				  uint8_t bCombineTM1Meas, uint8_t bAssembleCounter, uint8_t iWriteSamplesToFile);
-void vWriteSample(uint16_t uSample, int64_t llSampleIdx, struct suMeasurementInfo * psuMeasInfo, int iWriteMode, uint8_t bIsCombined, uint64_t * pullWordsWritten);
+void vWriteSample(uint64_t ullSample, int64_t llSampleIdx, struct suMeasurementInfo * psuMeasInfo, int iWriteMode, uint8_t bIsCombined, uint64_t * pullWordsWritten);
 
 uint16_t combine_MSB_LSB_sample(uint16_t uMSBSample, uint16_t uLSBSample, 
 				uint16_t uMSBShift, uint16_t uLSBShift, 
