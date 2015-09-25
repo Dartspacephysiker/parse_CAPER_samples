@@ -886,35 +886,6 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			vSetTStampInfo(psuPCMInfo, psuMeasInfo, pauMinorFrame, llMinorFrameIdx, iWdIdx );
 			}
 
-		    /* if ( iWriteMode == 1 ) */
-		    /* 	{ */
-		    /* 	(*pullWordsWritten) += fwrite(&pauMinorFrame[iWdIdx],2,1,psuMeasInfo->psuOutFile); */
-		    /* 	psuMeasInfo->llSampIdx++; */
-		    /* 	} */
-		    /* else if ( iWriteMode == 2 ) */
-		    /* 	{ */
-		    /* 	    //			printf("%s sampcount : %" PRIu64 "\n",psuMeasInfo->szName,psuMeasInfo->llSampIdx); */
-		    /* 	psuMeasInfo->paullSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx]; */
-		    /* 	psuMeasInfo->llSampIdx++; */
-		    /* 	} */
-
-		    /* if ( ( ( psuMeasInfo->uTSCalcType == 1 ) && ( psuMeasInfo->szTSSearchWord[0] == '\0' ) )  */
-		    /* 	 || ( psuMeasInfo->uTSCalcType == 2 ) )  */
-		    /* 	{ */
-		    /* 	if ( psuMeasInfo->uTSCalcType == 2 ) */
-		    /* 	    { */
-		    /* 	    psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = psuMeasInfo->llTotalSampCount; */
-		    /* 	    if ( bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) ) */
-		    /* 		{ */
-		    /* 		vUpdateSearchWord(psuPCMInfo, psuMeasInfo, llMinorFrameIdx, iWdIdx); */
-		    /* 		} */
-		    /* 	    } */
-		    /* 	else */
-		    /* 	    { */
-		    /* 	    psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = iWdIdx; */
-		    /* 	    } */
-		    /* 	} */
-		    
 		    if ( bAssembleCounter )
 			{
 			for ( iArgIdx = 0; iArgIdx < psuPCMInfo->uNumMFCounters; iArgIdx++ )
@@ -956,34 +927,6 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 		    vSetTStampInfo(psuPCMInfo, psuMeasInfo, pauMinorFrame, llMinorFrameIdx, iWdIdx );
 		    }
 
-		/* if ( iWriteMode == 1 ) */
-		/*     { */
-		/*     (*pullWordsWritten) += fwrite(&pauMinorFrame[iWdIdx],2,1,psuMeasInfo->psuOutFile); */
-		/*     psuMeasInfo->llSampIdx++; */
-		/*     } */
-		/* else if ( iWriteMode == 2 ) */
-		/*     { */
-		/*     psuMeasInfo->paullSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx]; */
-		/*     psuMeasInfo->llSampIdx++; */
-		/*     } */
-		
-		/* if ( ( ( psuMeasInfo->uTSCalcType == 1 ) && ( psuMeasInfo->szTSSearchWord == TM_NO_TS_SEARCH ) )  */
-		/*      || ( psuMeasInfo->uTSCalcType == 2 ) )  */
-		/*     { */
-		/*     if ( psuMeasInfo->uTSCalcType == 2 ) */
-		/* 	{ */
-		/* 	psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = psuMeasInfo->llTotalSampCount; */
-		/* 	if ( bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) ) */
-		/* 	    { */
-		/* 	    vUpdateSearchWord(psuPCMInfo, psuMeasInfo, llMinorFrameIdx, iWdIdx); */
-		/* 	    } */
-		/* 	} */
-		/*     else */
-		/* 	{ */
-		/* 	psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = iWdIdx; */
-		/* 	} */
-		/*     } */
-
 		psuMeasInfo->llTotalSampCount++;
 		psuPCMInfo->ulMinorFrameSampCount++;
 		}
@@ -1016,34 +959,6 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 			{
 			vSetTStampInfo(psuPCMInfo, psuMeasInfo, pauMinorFrame, llMinorFrameIdx, iWdIdx );
 			}
-
-		    /* if ( iWriteMode == 2 ) */
-		    /* 	{ */
-		    /* 	(*pullWordsWritten) += fwrite(&pauMinorFrame[iWdIdx],2,1,psuMeasInfo->psuOutFile); */
-		    /* 	psuMeasInfo->llSampIdx++; */
-		    /* 	} */
-		    /* else if ( iWriteMode == 1 ) */
-		    /* 	{ */
-		    /* 	psuMeasInfo->paullSample[psuMeasInfo->llSampIdx] = pauMinorFrame[iWdIdx]; */
-		    /* 	psuMeasInfo->llSampIdx++; */
-		    /* 	} */
-
-		    /* if ( ( ( psuMeasInfo->uTSCalcType == 1 ) && ( psuMeasInfo->szTSSearchWord[0] == '\0' ) )  */
-		    /* 	 || ( psuMeasInfo->uTSCalcType == 2 ) ) */
-		    /* 	{ */
-		    /* 	if ( psuMeasInfo->uTSCalcType == 2 ) */
-		    /* 	    { */
-		    /* 	    psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = psuMeasInfo->llTotalSampCount; */
-		    /* 	    if ( bIsSearchWord(psuPCMInfo, psuMeasInfo, pauMinorFrame, iWdIdx, llMinorFrameIdx) ) */
-		    /* 		{ */
-		    /* 		vUpdateSearchWord(psuPCMInfo, psuMeasInfo, llMinorFrameIdx, iWdIdx); */
-		    /* 		} */
-		    /* 	    } */
-		    /* 	else */
-		    /* 	    { */
-		    /* 	    psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llSampIdx] = iWdIdx; */
-		    /* 	    } */
-		    /* 	} */
 
 		    if ( bAssembleCounter )
 			{
@@ -1613,7 +1528,7 @@ void vPrintPCMInfo (struct suPCMInfo * psuPCMInfo)
     printf("Subframe ID word index               :   %" PRIu16 "\n",psuPCMInfo->uSFIDIdx);
     printf("TM Link #                            :   %" PRIu16 "\n",psuPCMInfo->uTMLink);
     printf("PCM bit rate                         :   %" PRIu64 "\n",psuPCMInfo->ullBitRate);
-    printf("PCM word period (s)                  :   %.8f\n"       ,psuPCMInfo->dWordPeriod);
+    printf("PCM word period (s)                  :   %10.8f\n"     ,psuPCMInfo->dWordPeriod);
     printf("N measurements tracked               :   %" PRIu16 "\n",psuPCMInfo->iNMeasurements);
     printf("\n");		                 
     printf("Sample word length in bits           :   %" PRIu64 "\n",psuPCMInfo->ullSampBitLength);

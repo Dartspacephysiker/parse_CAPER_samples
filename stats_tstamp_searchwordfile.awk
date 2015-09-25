@@ -59,7 +59,7 @@ BEGIN {
 }
 END {
     printf "-->\n"
-    printf "-->Stats for Rx-DSP file %s\n", ARGV[1]
+    printf "-->Statistics for searchword timestamp file %s\n", ARGV[1]
     printf "-->\n"
     printf "Time diff  | Count     |Time(s) of occurrence     | Occurrence number\n"
     printf "=====================================================================\n\n"

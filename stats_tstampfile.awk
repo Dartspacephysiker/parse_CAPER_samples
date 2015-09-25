@@ -1,7 +1,7 @@
 #!/usr/bin/awk -f
 
 #2015/09/21
-# check_RxDSP_tstampfile.awk --- Check the time differences between lines, do basic statistics
+# stats_tstampfile.awk --- Check the time differences between lines, do basic statistics
 
 # Records are separated by newline characters
 BEGIN { 
@@ -35,7 +35,7 @@ BEGIN {
 }
 END {
     printf "-->\n"
-    printf "-->Stats for Rx-DSP file %s\n", ARGV[1]
+    printf "-->Statistics for timestamp file %s\n", ARGV[1]
     printf "-->\n"
     printf "Time diff  | Count     |Time(s) of occurrence     | Occurrence number\n"
     printf "=====================================================================\n\n"
