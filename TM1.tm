@@ -9,6 +9,7 @@
 #	Values
 #	======
 #	NAME
+#       TM_NUM                                   //Number of the TM link containing this PCM channel
 #	N_MEASUREMENTS                           //Number of measurements in this link
 #	SFID_IDX				 //Location of subframe ID within minor frame, counting from 1
 #	BPS					 //Transfer rate of this link, in bits per second
@@ -47,6 +48,7 @@
 
 #Description of TM link
 NAME			:TM1
+TM_NUM                  :1
 N_MEASUREMENTS		:66
 SFID_IDX		:25
 BPS			:9600000

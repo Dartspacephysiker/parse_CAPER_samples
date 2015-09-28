@@ -8,6 +8,7 @@
 
 static char   * szPCMConfValNames[]   = {"NAME",
 					 "N_MEASUREMENTS",
+					 "TM_NUM",
 					 "SFID_IDX",
 					 "BPS",
 					 "SAMPLE_BITLENGTH",

@@ -40,6 +40,7 @@ int main( int argc, char * argv[] )
     char                        szOutPrefix[DEF_STR_SIZE];
 		                
     char                        szPCMConfFile[DEF_STR_SIZE];
+    uint8_t                     bHavePCMConfFile;
 
     struct stat                 suInFileStat;		       //input stuff
 		                
@@ -97,6 +98,7 @@ int main( int argc, char * argv[] )
     szOutPrefix[0]                 = '\0';
 
     szPCMConfFile[0]               = '\0';
+    bHavePCMConfFile               = 0;
 
     pauMinorFrame                  = NULL;
 
@@ -158,6 +160,7 @@ int main( int argc, char * argv[] )
 
 		    case 'P' :                  /* PCM conf file */
 			iArgIdx++;
+			bHavePCMConfFile = 1;
 			strncpy(szPCMConfFile, argv[iArgIdx],DEF_STR_SIZE);
 			break;
 
@@ -214,11 +217,14 @@ int main( int argc, char * argv[] )
     //init PCM channel info
     psuPCMInfo = (struct suPCMInfo * ) malloc( sizeof(struct suPCMInfo) );
     ppsuMeasInfo = (struct suMeasurementInfo ** ) malloc(psuPCMInfo->iNMeasurements * sizeof(struct suMeasurementInfo *));
-    //    err = iPCMInit(psuPCMInfo, uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
+    if ( bHavePCMConfFile )
+	err = iInitPCMFromASCII(szPCMConfFile, psuPCMInfo, ppsuMeasInfo, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode );
+    else
+	err = iInitPCM(psuPCMInfo, uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
 
 
-    err = iInitFromPCMASCII(szPCMConfFile, psuPCMInfo, ppsuMeasInfo, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode );
-    return EXIT_SUCCESS;
+    if (bVerbose) vPrintPCMInfo (psuPCMInfo);
+    //	return EXIT_SUCCESS;
 
     if ( psuPCMInfo->ullSampBitLength < 1 || psuPCMInfo->ullSampBitLength > 16 )
 	{
@@ -226,6 +232,7 @@ int main( int argc, char * argv[] )
 	return EXIT_FAILURE;
 	}
     printf(" \n");
+    return EXIT_SUCCESS;
 
     //init measurements
     ppsuMeasInfo = (struct suMeasurementInfo ** ) malloc(psuPCMInfo->iNMeasurements * sizeof(struct suMeasurementInfo *));
@@ -238,8 +245,12 @@ int main( int argc, char * argv[] )
 	    return EXIT_FAILURE;
 	    }
 
-	err = iMeasurementInit(psuPCMInfo, ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix, 
-			       bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
+	if ( bHavePCMConfFile )
+	    err = iInitMeasurementFromASCII(psuPCMInfo, ppsuMeasInfo[iMeasIdx], iMeasIdx, szOutPrefix, 
+					    bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
+	else
+	    err = iInitMeasurement(psuPCMInfo, ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix,
+				   bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
 	if (bVerbose) vPrintMeasurementInfo(ppsuMeasInfo[iMeasIdx]);
 	}
 
@@ -435,7 +446,7 @@ int main( int argc, char * argv[] )
     return EXIT_SUCCESS;
 }
 
-int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode )
+int iInitPCM(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode )
 {
     int iArgIdx;
 
@@ -539,7 +550,7 @@ int iPCMInit(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM
 	}
 }
 
-int iMeasurementInit(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, 
+int iInitMeasurement(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, 
 		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode )
 {
     uint16_t uNAsymWRanges;
