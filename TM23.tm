@@ -9,8 +9,8 @@ Help it out
 #
 #	Values
 #	======
-#	NAME                                     //Number of measurements in this link
-#	N_MEASUREMENTS
+#	NAME
+#	N_MEASUREMENTS                           //Number of measurements in this link
 #	SFID_IDX				 //Location of subframe ID within minor frame, counting from 1
 #	BPS					 //Transfer rate of this link, in bits per second
 #						                                                                                       

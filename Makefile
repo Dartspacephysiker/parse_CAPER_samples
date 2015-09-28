@@ -4,6 +4,9 @@
 
 SRC_DIR=./
 CFLAGS=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -ggdb -fpack-struct=1
+LDFLAGS = -pipe -Wall -lm -pthread
+
+CC = gcc
 
 EXEC= parse_PCM_samples
 SRC = parse_PCM_samples.c ascii_reader.c
@@ -13,13 +16,12 @@ HEADERS = parse_PCM_samples.h PCM_and_measurement_structs.h defaults.h TM1_major
 all: $(SRC) $(EXEC)
 
 $(EXEC): $(OBJ)
-	gcc $(CFLAGS) $< -o $@
-
+	$(CC) -o $@ $(LDFLAGS) $?
 
 .c.o: $(HEADERS)
-	$(CC) -o $@ $(CFLAGS) -c $<
+	$(CC) -o $@ $(CFLAGS) -c $?
 
 .PHONY: clean
 
 clean:
-	rm parse_PCM_samples *.o
+	rm parse_PCM_samples *.o 

@@ -18,7 +18,6 @@
 #include <sys/stat.h>
 
 #include "defaults.h"
-
 #include "ascii_reader.h"
 #include "PCM_and_measurement_structs.h"
 #include "parse_PCM_samples.h"
@@ -157,14 +156,14 @@ int main( int argc, char * argv[] )
 			sscanf(argv[iArgIdx],"%" PRIu16 ,&uTMLink);
 			break;
 
-		    case 'p' :                  /* Prefix for output files */
-			iArgIdx++;
-			strncpy(szOutPrefix, argv[iArgIdx],DEF_STR_SIZE);
-			break;
-
 		    case 'P' :                  /* PCM conf file */
 			iArgIdx++;
 			strncpy(szPCMConfFile, argv[iArgIdx],DEF_STR_SIZE);
+			break;
+
+		    case 'p' :                  /* Prefix for output files */
+			iArgIdx++;
+			strncpy(szOutPrefix, argv[iArgIdx],DEF_STR_SIZE);
 			break;
 
 		    case 'C' :                  /* Combine TM1 MSB/LSB measurements */
@@ -213,7 +212,6 @@ int main( int argc, char * argv[] )
     psuPCMInfo = (struct suPCMInfo * ) malloc( sizeof(struct suPCMInfo) );
     //    err = iPCMInit(psuPCMInfo, uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
     err = iPCMInitNUMTWO(psuPCMInfo,bCombineTM1Meas,bDoCheckSFIDIncrement,bTStampMode );
-
     return EXIT_SUCCESS;
 
     if ( psuPCMInfo->ullSampBitLength < 1 || psuPCMInfo->ullSampBitLength > 16 )
@@ -1581,15 +1579,16 @@ void vUsage(void)
     printf("Convert a Chapter 10 PCM dump into separate measurement files!             \n");
     printf(" Note: All of the TMs are defined in the respective header files!          \n");
     printf("\n");
-    printf("Usage: parse_CAPER_samples [flags]                                         \n");
+    printf("Usage: parse_CAPER_samples <filename> [flags]                              \n");
     printf("                                                                           \n");
-    printf("   <filename>   Input/output file names                                    \n");
+    printf("   <filename>   Input file name                                            \n");
     printf("                                                                           \n");
     printf("   INPUT FILE PARAMETERS                                                   \n");
     printf("   -L           TM link number (can be 1-4)                        [%i]    \n",DEF_TM_LINK);
     printf("                                                                           \n");
     printf("                                                                           \n");
     printf("   OPTIONAL PARAMETERS                                                     \n");
+    printf("   -P           PCM config file                                    [%s]    \n",DEF_PCMCONF_FILE);
     printf("   -p           Prefix for output files                            [%s]    \n",DEF_OUTPREFIX);
     printf("   -C           Combine MSB/LSB channels on the fly(TM1 Only!)     [%i]    \n",DEF_COMBINE_TM1);
     printf("   -c           Check integrity of data by following SFID,         [%i]    \n",DEF_DO_CHECK_SFID_INCREMENT);

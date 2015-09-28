@@ -38,6 +38,7 @@ static char  * PCM_MEAS_ARRAYS[] = {"MEAS_NAME",
 struct suPCMInfo
 {
 
+    char            szName[128];
     uint16_t        uTMLink;			       //Variables defined by NASA's PCM measurement doc
     uint64_t        ullBitRate;
     uint16_t        uAsymWRInd;
