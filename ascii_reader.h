@@ -4,7 +4,7 @@
 #include "PCM_and_measurement_structs.h"
 
 
-int iPCMInitNUMTWO(struct suPCMInfo * psuPCMInfo,struct suMeasurementInfo ** ppsuMeasInfo,
+int iPCMInitNUMTWO(char * szPCMConfFile, struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
 		   uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
 
 void vInitPCMASCIIArrays(struct suPCMInfo * psuPCMInfo);

@@ -94,19 +94,28 @@
 	szSubLine = malloc(bufsize*sizeof(char));			\
 	iCnt = 0;							\
 									\
-	while ( ( getline(&szSubLine,(size_t *)&bufsize,psuFile) ) != -1 )	\
+	while ( ( getline(&szSubLine,(size_t *)&bufsize,psuPCMConfFile) ) != -1 )	\
 	    {								\
 		if ( isspace(szSubLine[0]) || ( szSubLine[0] == '#' ) )	\
 		    continue;						\
 		else if ( szSubLine[0] == ';' )				\
 		    {							\
-		    if (DEBUG) printf("Leaving UINT loop w/ count %i...\n",iCnt); \
+		    if ( iCnt == 0 ) /*init to zero*/			\
+			{						\
+			int iTmp;					\
+			for ( iTmp = 0; iTmp < nArrElem; iTmp++ )	\
+			    {						\
+				pStruct->pauField[iTmp] = 0;		\
+			    }						\
+			printf("Initialized %s->%s to zeros...\n",#pStruct,#pauField); \
+			}						\
+		    if (DEBUG) printf("\nLeaving UINT loop w/ count %i...\n\n",iCnt); \
 		    break;						\
 		    }							\
 		else							\
 		    {							\
 		    szTrimmed = trimwhitespace(szSubLine);		\
-		    if (DEBUG) printf("%s\n",szTrimmed);		\
+		    if (DEBUG) printf("%s, ",szTrimmed);		\
 		    pStruct->pauField[iCnt++] = (uint16_t) strtoul(szTrimmed,NULL,10); \
 		    }							\
 	    }								\
@@ -122,19 +131,19 @@
 	szSubLine = malloc(bufsize*sizeof(char));			\
 	iCnt = 0;							\
 									\
-	while ( ( getline(&szSubLine,(size_t *)&bufsize,psuFile) ) != -1 )	\
+	while ( ( getline(&szSubLine,(size_t *)&bufsize,psuPCMConfFile) ) != -1 )	\
 	    {								\
 		if ( isspace(szSubLine[0]) || ( szSubLine[0] == '#' ) )	\
 		    continue;						\
 		else if ( szSubLine[0] == ';' )				\
 		    {							\
-		    if (DEBUG) printf("Leaving ULL loop w/ count %i...\n",iCnt); \
+		    if (DEBUG) printf("\nLeaving ULL loop w/ count %i...\n\n",iCnt); \
 		    break;						\
 		    }							\
 		else							\
 		    {							\
 		    szTrimmed = trimwhitespace(szSubLine);		\
-		    if (DEBUG) printf("%s\n",szTrimmed);		\
+		    if (DEBUG) printf("%s, ",szTrimmed);		\
 		    pStruct->paullField[iCnt++] = strtoull(szTrimmed,NULL,10); \
 		    }							\
 	    }								\
@@ -151,19 +160,19 @@
 	szSubLine = malloc(bufsize*sizeof(char));			\
 	iCnt = 0;							\
 									\
-	while ( ( getline(&szSubLine,(size_t *)&bufsize,psuFile) ) != -1 )	\
+	while ( ( getline(&szSubLine,(size_t *)&bufsize,psuPCMConfFile) ) != -1 )	\
 	    {								\
 		if ( isspace(szSubLine[0]) || ( szSubLine[0] == '#' ) )	\
 		    continue;						\
 		else if ( szSubLine[0] == ';' )				\
 		    {							\
-		    if (DEBUG) printf("Leaving UL loop w/ count %i...\n",iCnt); \
+		    if (DEBUG) printf("\nLeaving UL loop w/ count %i...\n\n",iCnt); \
 		    break;						\
 		    }							\
 		else							\
 		    {							\
 		    szTrimmed = trimwhitespace(szSubLine);		\
-		    if (DEBUG) printf("%s\n",szTrimmed);		\
+		    if (DEBUG) printf("%s, ",szTrimmed);		\
 		    pStruct->paulField[iCnt++] = strtoul(szTrimmed,NULL,10); \
 		    }							\
 	    }								\
@@ -179,19 +188,19 @@
 	szSubLine = malloc(bufsize*sizeof(char));			\
 	iCnt = 0;							\
 									\
-	while ( ( getline(&szSubLine,(size_t *)&bufsize,psuFile) ) != -1 )	\
+	while ( ( getline(&szSubLine,(size_t *)&bufsize,psuPCMConfFile) ) != -1 )	\
 	    {								\
 		if ( isspace(szSubLine[0]) || ( szSubLine[0] == '#' ) )	\
 		    continue;						\
 		else if ( szSubLine[0] == ';' )				\
 		    {							\
-		    if (DEBUG) printf("Leaving STR loop w/ count %i...\n",iCnt); \
+		    if (DEBUG) printf("\nLeaving STR loop w/ count %i...\n\n",iCnt); \
 		    break;						\
 		    }							\
 		else							\
 		    {							\
 		    szTrimmed = trimwhitespace(szSubLine);		\
-		    if (DEBUG) printf("%s\n",szTrimmed);		\
+		    if (DEBUG) printf("%s, ",szTrimmed);		\
 		    strncpy(pStruct->pszField[iCnt++],szTrimmed,strlen(szTrimmed)); \
 		    }							\
 	    }								\
@@ -214,13 +223,23 @@
 	uItem1 = 0;							\
 	uItem2 = 0;							\
 									\
-	while ( ( getline(&szSubLine,(size_t *)&bufsize,psuFile) ) != -1 ) \
+	while ( ( getline(&szSubLine,(size_t *)&bufsize,psuPCMConfFile) ) != -1 ) \
 	    {								\
 	    if ( isspace(szSubLine[0]) || ( szSubLine[0] == '#' ) )	\
 		continue;						\
 	    else if ( szSubLine[0] == ';' )				\
 		{							\
-		if (DEBUG) printf("Leaving UINT loop w/ count %i...\n",iCnt); \
+		    if ( iCnt == 0 ) /*init to zero*/			\
+			{						\
+			int iTmp;					\
+			for ( iTmp = 0; iTmp < nArrElem; iTmp++ )	\
+			    {						\
+				pStruct->pau2Field[iTmp][0] = 0;	\
+				pStruct->pau2Field[iTmp][1] = 0;	\
+			    }						\
+			printf("Initialized %s->%s to zeros...\n",#pStruct,#pau2Field); \
+			}						\
+		if (DEBUG) printf("\nLeaving UINT loop w/ count %i...\n\n",iCnt); \
 		break;							\
 		}							\
 	    else							\
@@ -233,19 +252,19 @@
 		    pStruct->pau2Field[iCnt][0] = strtoul(szItem1,NULL,10); \
 		    pStruct->pau2Field[iCnt][1] = strtoul(szItem2,NULL,10); \
 		    iCnt++;						\
-		    if (DEBUG) printf("szItem1: %s; szItem2: %s\n",szItem1,szItem2); \
+		    if (DEBUG) printf("szItem1: %s; szItem2: %s\t",szItem1,szItem2); \
 		    }							\
 		}							\
 	    }								\
 	}
 
-int iPCMInitNUMTWO(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, 
+int iInitFromPCMASCII(char * szPCMConfFile, struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, 
 		   uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode )
 {
     int iArgIdx;
 
     char fname[] = "TM23.tm";
-    FILE * psuFile;
+    FILE * psuPCMConfFile;
     char              *  szLine;
     int                  iLineIdx;
     int                  bufsize;
@@ -289,15 +308,15 @@ int iPCMInitNUMTWO(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** pp
         exit(1);
     }
 
-    psuFile = (FILE *) fopen(fname,"r");
-    if (psuFile == NULL)
+    psuPCMConfFile = (FILE *) fopen(szPCMConfFile,"r");
+    if (psuPCMConfFile == NULL)
 	{
-	fprintf(stderr, "Error opening input file\n");
+	fprintf(stderr, "Error opening PCM configuration file! Did you provide one?\n");
 	return EXIT_FAILURE;
 	}
 
     //get line from file
-    while( ( getline(&szLine,(size_t *)&bufsize,psuFile) ) != -1 )
+    while( ( getline(&szLine,(size_t *)&bufsize,psuPCMConfFile) ) != -1 )
 	{
 	// If errors reading line then skip over it
 	// Also skip comments, which are marked with "#"
@@ -328,44 +347,11 @@ int iPCMInitNUMTWO(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** pp
 	    READ_UINT_TO_STRUCT(N_GPS_WORDS,psuPCMInfo,uNGPSWordsInPCM)
 
 	    }
-	/* else if ( (szDataItem == NULL) && (szCodeName[0] != POUND_SIGN) && !isspace(szCodeName[0]) ) */
-	/*     { */
-	/*     char * szCodeNameTrimmed; */
-	/*     int  iMatchIdx; */
-	/*     int  iMatch; */
-
-	/*     iMatchIdx = 0; */
-	/*     iMatch = -1; */
-	    
-	/*     szCodeNameTrimmed = trimwhitespace(szCodeName); */
-
-	/*     for (iMatchIdx = 0; iMatchIdx < N_PCM_MEAS_FIELDS; iMatchIdx++) */
-	/* 	{ */
-	/* 	if ( strncasecmp(szCodeNameTrimmed,szPCMMeasConfNames[iMatchIdx],strlen(szPCMMeasConfNames[iMatchIdx])) == 0 ) */
-	/* 	    { */
-	/* 	    iMatch = iMatchIdx; */
-	/* 	    if (DEBUG) printf("Matched %s...\n",szPCMMeasConfNames[iMatch]); */
-
-	/* 	    break; */
-	/* 	    } */
-	/* 	} */
-
-	/*     //	    if(0) {} */
-	/*     //	    READ_STR_ARR_TO_PPSTRUCT(ppsuPCMInfo,iNMeasurements */
-
-
-
-	/*     //	szDataItem = strtok(NULL, "\n"); */
-	/*     //	    READ_INT */
-	/* //	printf("szDataItem:%c\n",szCodeName[0]); */
-	    
-	/* } */
 	else
 	    continue;
 
 	iLineIdx++;
 	}
-
 
     //With knowledge of num measurements, initialize arrays
     if ( psuPCMInfo->iNMeasurements > 0 )
@@ -381,8 +367,11 @@ int iPCMInitNUMTWO(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** pp
 	}
 
     //Finished reading vals, now read arrays
-    rewind(psuFile);
-    while( ( getline(&szLine,(size_t *)&bufsize,psuFile) ) != -1 )
+    rewind(psuPCMConfFile);
+
+    int nMeas;
+    nMeas = psuPCMInfo->iNMeasurements;
+    while( ( getline(&szLine,(size_t *)&bufsize,psuPCMConfFile) ) != -1 )
 	{
 
 	// If errors reading line then skip over it
@@ -395,9 +384,9 @@ int iPCMInitNUMTWO(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** pp
 	    char * szCodeNameTrimmed;
 
 	    szCodeNameTrimmed = trimwhitespace(szCodeName);
-	    if (DEBUG) printf("Setting it up: %s\n",szCodeNameTrimmed);
+	    if (DEBUG) printf("**%s\n",szCodeNameTrimmed);
 
-	    if(0) {}
+	    if(0) {}  //For dat macro logic
 	    READ_STR_ARR_TO_STRUCT(MEAS_NAME,psuPCMInfo,pszSerialMeasNames,nMeas)
 	    READ_STR_ARR_TO_STRUCT(MEAS_ABBREV,psuPCMInfo,pszSerialMeasAbbrev,nMeas)
 	    READ_STR_ARR_TO_STRUCT(MEAS_USER,psuPCMInfo,pszUser,nMeas)
@@ -423,6 +412,8 @@ int iPCMInitNUMTWO(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** pp
 	    }
 	}
     
+    fclose(psuPCMConfFile);
+
     return EXIT_SUCCESS;
 }
 
@@ -567,86 +558,3 @@ char * trimwhitespace(char * str)
     
     return str;
 }
-
-
-//int main( struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo )
-/* int main( int argc, char * argv[] ) */
-/* { */
-
-/*     char fname[] = "TM23.tm"; */
-/*     FILE * psuFile; */
-/*     char              *  szLine; */
-/*     int                  iLineIdx; */
-/*     int                  bufsize; */
-/*     char              *  szCodeName; */
-/*     char              *  szDataItem; */
-
-/*     bufsize=512; */
-
-/*     szLine = (char * )malloc(bufsize*sizeof(char)); */
-
-/*     if( szLine == NULL) */
-/*     { */
-/*         perror("Unable to allocate buffer"); */
-/*         exit(1); */
-/*     } */
-/*     iLineIdx = 0; */
-
-/*     psuFile = (FILE *) fopen(fname,"r"); */
-/*     if (psuFile == NULL) */
-/* 	{ */
-/* 	fprintf(stderr, "Error opening input file\n"); */
-/* 	return EXIT_FAILURE; */
-/* 	} */
-
-/*     //get line from file */
-/*     while( ( getline(&szLine,(size_t *)&bufsize,psuFile) ) != -1 ) */
-/*     { */
-/* 	// If errors reading line then skip over it */
-/* 	// Also skip comments, which are marked with "#" */
-/* 	//	if ((szCodeName == NULL) || (szDataItem == NULL) || (szCodeName[0] == "#") ) */
-/* 	//	printf("%s\n",szLine); */
-/* 	szCodeName = strtok(szLine, ":"); */
-/* 	szDataItem = strtok(NULL, "\n"); */
-
-/* 	//	if ( (szLine[0] == NULL) || (isspace(szLine[0])) || (szLine[0] == "#") ) */
-/* 	if ( (szCodeName == NULL) || (szDataItem == NULL) || (szCodeName == "#") ) */
-/* 	    continue; */
-/* 	else { */
-/* 	//	vParseLine(szLine */
-/* 	    //	szDataItem = strtok(NULL, "\n"); */
-/* 	    printf("SzCodeName:szDataItem --- %s : %s\n",szCodeName,szDataItem); */
-
-/* 	    if(0) {} */
-/* 	    READ_INT */
-/* 	//	printf("szDataItem:%c\n",szCodeName[0]); */
-/* 	} */
-/* 	//	sscanf(szLine,"%s:%s",szCodeName, */
-
-/* 	// Read things */
-/* 	/\* if(bFALSE) {} *\/ */
-
-/* 	/\* READ_INT(D2, szBitsPerSec, ulBitsPerSec)                    // D2 - Bit Rate *\/ */
-/* 	/\* READ_INT(F1, szCommonWordLen, ulCommonWordLen)              // F1 - Common Word Length *\/ */
-/* 	/\* READ_INT(F2, szWordTransferOrder, ulWordTransferOrder)      // F2 - MSB / LSB first *\/ */
-/* 	/\* READ_INT(F3, szParityType, ulParityType)                    // F3 - Even, odd, none *\/ */
-/* 	/\* READ_INT(F4, szParityTransferOrder, ulParityTransferOrder)  // F4 - Leading / Trailing *\/ */
-/* 	/\* else if (strcasecmp(szCodeField, "MF") == 0) *\/ */
-/*         /\* { *\/ */
-/*         /\* szCodeField = strtok(NULL, "\\"); *\/ */
-/*         /\* if (bFALSE) {}                          // Keep macro logic happy *\/ */
-/* 	/\* //        READ_P(N, szNumMinorFrames)           // MF\N - Number of minor frames *\/ */
-/*         /\* READ_P(N, ulNumMinorFrames)           // MF\N - Number of minor frames *\/ */
-/*         /\* } // end if MF *\/ */
-
-/* 	/\* READ_P(MF1, ulWordsInMinorFrame)          // MF1 - Number of word in minor frame *\/ */
-/* 	/\* READ_P(MF2, ulBitsInMinorFrame)           // MF2 - Number of bits in minor frame *\/ */
-/*         /\* READ_P(MF3, ulMinorFrameSyncType)         // MF3 - Minor Frame Sync Type *\/ */
-/* 	/\* READ_P(MF4, ulMinorFrameSyncPatLen)       // MF4 - Minor frame sync pattern length *\/ */
-/*         /\* READ_P(MF5, ullMinorFrameSyncPat)          // MF5 - Minor frame sync pattern *\/ */
-
-/* 	iLineIdx++; */
-/*     } */
-
-/*     return EXIT_SUCCESS; */
-/* } */

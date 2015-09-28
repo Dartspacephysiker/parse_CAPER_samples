@@ -205,6 +205,9 @@ int main( int argc, char * argv[] )
 	    } /* end command line arg switch */
 	} /* end for all arguments */
 
+    if ( szPCMConfFile[0] == '\0' )
+	strncpy(szPCMConfFile,DEF_PCMCONF_FILE,DEF_STR_SIZE);
+
     if ( szOutPrefix[0] == '\0' )
 	strncpy(szOutPrefix,DEF_OUTPREFIX,DEF_STR_SIZE);
 
@@ -214,7 +217,7 @@ int main( int argc, char * argv[] )
     //    err = iPCMInit(psuPCMInfo, uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
 
 
-    err = iPCMInitNUMTWO(psuPCMInfo,ppsuMeasInfo,bCombineTM1Meas,bDoCheckSFIDIncrement,bTStampMode );
+    err = iInitFromPCMASCII(szPCMConfFile, psuPCMInfo, ppsuMeasInfo, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode );
     return EXIT_SUCCESS;
 
     if ( psuPCMInfo->ullSampBitLength < 1 || psuPCMInfo->ullSampBitLength > 16 )
@@ -1501,6 +1504,8 @@ int iPCMFree(struct suPCMInfo * psuPCMInfo)
     if ( psuPCMInfo->pauMFCIndices        != NULL ) free( psuPCMInfo->pauMFCIndices );
     if ( psuPCMInfo->paullMajorFrameVals  != NULL ) free( psuPCMInfo->paullMajorFrameVals );
     if ( psuPCMInfo->pauGPSMeasIdx        != NULL ) free( psuPCMInfo->pauGPSMeasIdx );    
+
+    vFreePCMASCIIArrays(psuPCMInfo);
 
     free( psuPCMInfo );
 
