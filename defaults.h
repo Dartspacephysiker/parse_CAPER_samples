@@ -15,6 +15,9 @@
 
 #define DEF_STR_SIZE                   1024
 
+#define TM_SKIP_LSB                     499    //Skip this channel if combination is done on the fly
+#define TM_NO_LSB                       498    //Don't try to combine this channel
+
 //#define TM_NO_TS_SEARCH                '\0'
 #define TM_NO_TS_SEARCH              0x0000
 

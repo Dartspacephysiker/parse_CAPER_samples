@@ -16,12 +16,12 @@
 #define TM1_N_GPS_WORDS             2
 
 //Static variables to accommodate combination of MSB/LSB channels for measurements that are separated
-#define TM_SKIP_LSB               499    //Skip this channel if combination is done on the fly
-#define TM_NO_LSB                 498    //Don't try to combine this channel
+//#define TM_SKIP_LSB               499    //Skip this channel if combination is done on the fly
+//#define TM_NO_LSB                 498    //Don't try to combine this channel
 #define TM_UPPER6_MSB_LOWER10_LSB 109
 
 //Static variable to indicate that there is no timestamp_searchword
-#define TM1_NO_TS_SEARCH       0x0000
+//#define TM1_NO_TS_SEARCH       0x0000
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM1SerialMeasNames[]  =    { "Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",    //Serial #1, 0-7
@@ -604,97 +604,97 @@ static uint8_t auTM1TSCalcType[]        =    {0, 0,								    //Serial #1, 0-7
 					      0, 0,
 					      0}; 
 
-static char   * aszTM1TSSearchWords[]   =    { TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #1, 0-7
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+static char   * aszTM1TSSearchWords[]   =    { TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #1, 0-7
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #2, 8-15
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #2, 8-15
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #3, 16-21
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       //TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #3, 16-21
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       //TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #4, 22-29
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #4, 22-29
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #5, 30-37
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #5, 30-37
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #6, 38-45
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #6, 38-45
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #7, 46-51
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       //TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #7, 46-51
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       //TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //TM + SFID  52-58
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //TM + SFID  52-58
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH, 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH, 
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH, 
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH, 
 
-                                               TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-                                               TM1_NO_TS_SEARCH};
+                                               TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+                                               TM_NO_TS_SEARCH};
 
-static uint64_t aullTM1InternWordRate[] =    { TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #1, 0-7
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+static uint64_t aullTM1InternWordRate[] =    { TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #1, 0-7
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #2, 8-15
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #2, 8-15
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #3, 16-21
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       //TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #3, 16-21
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       //TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #4, 22-29
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #4, 22-29
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #5, 30-37
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #5, 30-37
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #6, 38-45
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #6, 38-45
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //Serial #7, 46-51
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       //TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //Serial #7, 46-51
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       //TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,				    //TM + SFID  52-58
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,				    //TM + SFID  52-58
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH, 
-					       TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH, 
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH, 
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH, 
 
-                                               TM1_NO_TS_SEARCH, TM1_NO_TS_SEARCH,
-                                               TM1_NO_TS_SEARCH};
+                                               TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+                                               TM_NO_TS_SEARCH};
 
 static uint16_t    auTM1MFCMeasIdx[]    =    {  53, 54,  //Major frame measurement indices (indexing from zero in the arrays above)
 					        55};

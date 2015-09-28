@@ -222,7 +222,6 @@ int main( int argc, char * argv[] )
     else
 	err = iInitPCM(psuPCMInfo, uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
 
-
     if (bVerbose) vPrintPCMInfo (psuPCMInfo);
     //	return EXIT_SUCCESS;
 
@@ -232,7 +231,6 @@ int main( int argc, char * argv[] )
 	return EXIT_FAILURE;
 	}
     printf(" \n");
-    return EXIT_SUCCESS;
 
     //init measurements
     ppsuMeasInfo = (struct suMeasurementInfo ** ) malloc(psuPCMInfo->iNMeasurements * sizeof(struct suMeasurementInfo *));
@@ -253,6 +251,7 @@ int main( int argc, char * argv[] )
 				   bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
 	if (bVerbose) vPrintMeasurementInfo(ppsuMeasInfo[iMeasIdx]);
 	}
+    //    return EXIT_SUCCESS;
 
 
     //initialize major frame, binary array for keeping track of
@@ -261,7 +260,6 @@ int main( int argc, char * argv[] )
 
     pauMinorFrame = malloc(psuPCMInfo->ullBytesPerMinorFrame);
 
-    //    pauIsMinorFrameCollected = (uint16_t *) calloc(psuPCMInfo->llMinorFramesPerMajorFrame,2);
     ppauMajorFrame = (uint16_t **) malloc(psuPCMInfo->llMinorFramesPerMajorFrame * sizeof(uint16_t *));
     pauMajFTemp = malloc(psuPCMInfo->ullBytesPerMajorFrame);
 

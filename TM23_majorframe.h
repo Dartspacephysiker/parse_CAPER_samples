@@ -17,7 +17,7 @@
 
 //Static variable to indicate that there is no timestamp_searchword
 //#define TM23_NO_TS_SEARCH    '\0'
-#define TM23_NO_TS_SEARCH      0x0000
+//#define TM23_NO_TS_SEARCH      0x0000
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM23SerialMeasNames[]    =    {"Subframe ID                 ", "GPS 1PPS                                   ",
@@ -95,14 +95,14 @@ static uint8_t auTM23TSCalcType[]       =    {  0, 0,
 					        0, 0,
 						3};
 
-static char   * aszTM23TSSearchWords[]  =    { TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH,
-					       TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH, 
-					       TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH, 
+static char   * aszTM23TSSearchWords[]  =    { TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH, 
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH, 
                                                "aDtr"};
 
-static uint64_t aullTM23InternWordRate[]=    { TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH,
-					       TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH, 
-					       TM23_NO_TS_SEARCH, TM23_NO_TS_SEARCH, 
+static uint64_t aullTM23InternWordRate[]=    { TM_NO_TS_SEARCH, TM_NO_TS_SEARCH,
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH, 
+					       TM_NO_TS_SEARCH, TM_NO_TS_SEARCH, 
                                                333333};
 
 
