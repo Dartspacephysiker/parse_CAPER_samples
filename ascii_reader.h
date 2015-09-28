@@ -7,6 +7,9 @@
 int iPCMInitNUMTWO(struct suPCMInfo * psuPCMInfo,struct suMeasurementInfo ** ppsuMeasInfo,
 		   uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
 
+void vInitPCMASCIIArrays(struct suPCMInfo * psuPCMInfo);
+void vFreePCMASCIIArrays(struct suPCMInfo * psuPCMInfo);
+
 char * trimwhitespace(char * str);
 
 

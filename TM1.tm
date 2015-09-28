@@ -61,7 +61,6 @@ N_MINFRAME_BITPOS	:5
 #Extra
 N_GPS_WORDS		:2
 
-
 //Static variables to accommodate combination of MSB/LSB channels for measurements that are separated
 #define TM_SKIP_LSB               499    //Skip this channel if combination is done on the fly
 #define TM_NO_LSB                 498    //Don't try to combine this channel

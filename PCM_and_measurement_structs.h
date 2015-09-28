@@ -85,7 +85,7 @@ struct suPCMInfo
     uint16_t  *     pauWdInt;
     uint16_t  *     pauFrame;
     uint16_t  *     pauFrInt;
-    uint32_t  *     pauSPS;
+    uint32_t  *     paulSPS;
     uint16_t  *     pauNAsymWRanges;
     uint16_t  *     pauAsymWRanges;
     uint16_t  *     pauNAsymFRanges;
@@ -94,8 +94,7 @@ struct suPCMInfo
     uint16_t  *     pauTSCalcType;
     char      **    pszTSSearchWords;
     uint64_t  *     pullInternWordRate;
-    uint64_t  *     pauMFCMeasIdx;
-    uint16_t  *     pauGPSMeasIdx;
+    uint16_t  *     pauMFCMeasIdx;
 };
 
 
