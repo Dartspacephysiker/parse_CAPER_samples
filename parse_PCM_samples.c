@@ -18,6 +18,8 @@
 #include <sys/stat.h>
 
 #include "defaults.h"
+
+#include "ascii_reader.h"
 #include "PCM_and_measurement_structs.h"
 #include "parse_PCM_samples.h"
 
@@ -38,6 +40,8 @@ int main( int argc, char * argv[] )
     		                
     char                        szOutPrefix[DEF_STR_SIZE];
 		                
+    char                        szPCMConfFile[DEF_STR_SIZE];
+
     struct stat                 suInFileStat;		       //input stuff
 		                
     uint16_t   *                pauMinorFrame;
@@ -92,6 +96,8 @@ int main( int argc, char * argv[] )
     psuUniqCounterFile             = (FILE *) NULL;
 
     szOutPrefix[0]                 = '\0';
+
+    szPCMConfFile[0]               = '\0';
 
     pauMinorFrame                  = NULL;
 
@@ -151,9 +157,14 @@ int main( int argc, char * argv[] )
 			sscanf(argv[iArgIdx],"%" PRIu16 ,&uTMLink);
 			break;
 
-		    case 'P' :                  /* Prefix for output files */
+		    case 'p' :                  /* Prefix for output files */
 			iArgIdx++;
 			strncpy(szOutPrefix, argv[iArgIdx],DEF_STR_SIZE);
+			break;
+
+		    case 'P' :                  /* PCM conf file */
+			iArgIdx++;
+			strncpy(szPCMConfFile, argv[iArgIdx],DEF_STR_SIZE);
 			break;
 
 		    case 'C' :                  /* Combine TM1 MSB/LSB measurements */
@@ -200,7 +211,10 @@ int main( int argc, char * argv[] )
 
     //init PCM channel info
     psuPCMInfo = (struct suPCMInfo * ) malloc( sizeof(struct suPCMInfo) );
-    err = iPCMInit(psuPCMInfo, uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
+    //    err = iPCMInit(psuPCMInfo, uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
+    err = iPCMInitNUMTWO(psuPCMInfo,bCombineTM1Meas,bDoCheckSFIDIncrement,bTStampMode );
+
+    return EXIT_SUCCESS;
 
     if ( psuPCMInfo->ullSampBitLength < 1 || psuPCMInfo->ullSampBitLength > 16 )
 	{
@@ -1576,14 +1590,14 @@ void vUsage(void)
     printf("                                                                           \n");
     printf("                                                                           \n");
     printf("   OPTIONAL PARAMETERS                                                     \n");
-    printf("   -P           Prefix for output files                           [%s]    \n",DEF_OUTPREFIX);
+    printf("   -p           Prefix for output files                            [%s]    \n",DEF_OUTPREFIX);
     printf("   -C           Combine MSB/LSB channels on the fly(TM1 Only!)     [%i]    \n",DEF_COMBINE_TM1);
     printf("   -c           Check integrity of data by following SFID,         [%i]    \n",DEF_DO_CHECK_SFID_INCREMENT);
     printf("                    (no parsed output is produced)                         \n");
     printf("   -A           Assemble unique counter based on major/minor       [%i]    \n",DEF_ASSEMBLE_COUNTER);
     printf("                    frames, and output to file                             \n");
     printf("   -T           Produce timestamps based on GPS pulse data for     [%i]    \n",DEF_CALC_TSTAMPS);
-    printf("                    measurements specified in PCM header file              \n");
+    printf("                    measurements specified in PCM config file              \n");
     printf("   -v           Verbose                                            [%i]    \n",DEF_VERBOSE);
     printf("                                                                           \n");
     printf("   -h           Help (this menu)                                           \n");
