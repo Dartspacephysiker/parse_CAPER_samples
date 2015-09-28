@@ -87,9 +87,9 @@ struct suPCMInfo
     uint16_t  *     pauFrInt;
     uint32_t  *     paulSPS;
     uint16_t  *     pauNAsymWRanges;
-    uint16_t  *     pauAsymWRanges;
+    uint16_t  **    ppauAsymWRanges;
     uint16_t  *     pauNAsymFRanges;
-    uint16_t  *     pauAsymFRanges;
+    uint16_t  **    ppauAsymFRanges;
     uint16_t  *     pauLSBWord;
     uint16_t  *     pauTSCalcType;
     char      **    pszTSSearchWords;
