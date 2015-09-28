@@ -4,7 +4,9 @@
 #include "PCM_and_measurement_structs.h"
 
 
-int iPCMInitNUMTWO(struct suPCMInfo * psuPCMInfo, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
+int iPCMInitNUMTWO(struct suPCMInfo * psuPCMInfo,struct suMeasurementInfo ** ppsuMeasInfo,
+		   uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
+
 char * trimwhitespace(char * str);
 
 

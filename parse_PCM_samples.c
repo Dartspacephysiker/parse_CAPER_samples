@@ -210,8 +210,11 @@ int main( int argc, char * argv[] )
 
     //init PCM channel info
     psuPCMInfo = (struct suPCMInfo * ) malloc( sizeof(struct suPCMInfo) );
+    ppsuMeasInfo = (struct suMeasurementInfo ** ) malloc(psuPCMInfo->iNMeasurements * sizeof(struct suMeasurementInfo *));
     //    err = iPCMInit(psuPCMInfo, uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
-    err = iPCMInitNUMTWO(psuPCMInfo,bCombineTM1Meas,bDoCheckSFIDIncrement,bTStampMode );
+
+
+    err = iPCMInitNUMTWO(psuPCMInfo,ppsuMeasInfo,bCombineTM1Meas,bDoCheckSFIDIncrement,bTStampMode );
     return EXIT_SUCCESS;
 
     if ( psuPCMInfo->ullSampBitLength < 1 || psuPCMInfo->ullSampBitLength > 16 )

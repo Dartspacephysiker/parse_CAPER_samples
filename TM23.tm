@@ -1,4 +1,3 @@
-Help it out
 #DESCRIPTION OF TM link to be read by parse_PCM_samples (v0.3)
 #
 #NOTE the following:
@@ -48,20 +47,19 @@ Help it out
 
 #Description of TM link
 NAME			:TM23
-N_MEASUREMENTS		:7		
-SFID_IDX		:1		
-BPS			:9600000	
-
+N_MEASUREMENTS		:7
+SFID_IDX		:1
+BPS			:9600000
 
 #Minor/major frame description
-SAMPLE_BITLENGTH	:16		
-N_SAMPLES_PER_MINOR	:400		
-N_MINOR_PER_MAJOR	:4		
-N_MAJFRAMECOUNTERS	:2		
-N_MINFRAME_BITPOS	:2		
+SAMPLE_BITLENGTH	:16
+N_SAMPLES_PER_MINOR	:400
+N_MINOR_PER_MAJOR	:4
+N_MAJFRAMECOUNTERS	:2
+N_MINFRAME_BITPOS	:2
 
 #Extra
-N_GPS_WORDS		:1		
+N_GPS_WORDS		:1
 
 #//Static variable to indicate that there is no timestamp_searchword
 #//#define TM23_NO_TS_SEARCH    '\0'
@@ -101,6 +99,7 @@ Dartmouth
 ;
 					   
 #Sample number within minor frame, counting from 1
+#When the interval is the size of the minor frame, the word only occurs once within the minor frame containing it
 #If the number is 0, it means there is a range of words in the minor frame that contain the relevant measurement.
 # These are usually marked "(!!!NOT SYMMETRIC!!!)" in NASA PCM docs
 MEAS_SAMPLE_LOC_IN_MINFRAME:
@@ -135,7 +134,7 @@ MEAS_SAMPLE_FRAME:
 1
 ;
 
-#*Interval of frames containing each word
+#Interval of frames containing each word
 MEAS_FRAME_INTERVAL:
 1
 4

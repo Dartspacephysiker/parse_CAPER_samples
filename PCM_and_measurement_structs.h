@@ -4,35 +4,37 @@
 #ifndef _PCM_AND_MEAS_STRUCTS
 #define _PCM_AND_MEAS_STRUCTS
 
-static char   * PCM_CONF_VALS[]   = {"NAME",
-				     "N_MEASUREMENTS",
-				     "SFID_IDX",
-				     "BPS",
-				     "SAMPLE_BITLENGTH",
-				     "N_SAMPLES_PER_MINOR",
-				     "N_MINOR_PER_MAJOR",
-				     "N_MAJFRAMECOUNTERS",
-				     "N_MINFRAME_BITPOS",
-				     "N_GPS_WORDS"};
+#define N_PCM_MEAS_FIELDS      18
 
-static char  * PCM_MEAS_ARRAYS[] = {"MEAS_NAME",
-				    "MEAS_ABBREV",
-				    "MEAS_USER",
-				    "MEAS_SAMPLE_LOC_IN_MINFRAME",
-				    "MEAS_SAMPLE_INTERVAL_IN_MINFRAME",
-				    "MEAS_SAMPLE_FRAME",
-				    "MEAS_FRAME_INTERVAL",
-				    "MEAS_SAMPLE_RATE",
-				    "MEAS_N_ASYM_WORD_RANGES",
-				    "MEAS_ASYM_WORD_RANGES",
-				    "MEAS_N_ASYM_FRAME_RANGES",
-				    "MEAS_ASYM_FRAME_RANGES",
-				    "MEAS_LSB_WORD",
-				    "MEAS_TSTAMP_CALC_TYPE",
-				    "MEAS_TSTAMP_SEARCH_WORD",
-				    "MEAS_INTERN_SAMP_RATE",
-				    "MAJFRAME_INDEX",
-				    "GPS_INDEX"};
+static char   * szPCMConfValNames[]   = {"NAME",
+					 "N_MEASUREMENTS",
+					 "SFID_IDX",
+					 "BPS",
+					 "SAMPLE_BITLENGTH",
+					 "N_SAMPLES_PER_MINOR",
+					 "N_MINOR_PER_MAJOR",
+					 "N_MAJFRAMECOUNTERS",
+					 "N_MINFRAME_BITPOS",
+					 "N_GPS_WORDS"};
+
+static char  * szPCMMeasConfNames[]   = {"MEAS_NAME",
+					 "MEAS_ABBREV",
+					 "MEAS_USER",
+					 "MEAS_SAMPLE_LOC_IN_MINFRAME",
+					 "MEAS_SAMPLE_INTERVAL_IN_MINFRAME",
+					 "MEAS_SAMPLE_FRAME",
+					 "MEAS_FRAME_INTERVAL",
+					 "MEAS_SAMPLE_RATE",
+					 "MEAS_N_ASYM_WORD_RANGES",
+					 "MEAS_ASYM_WORD_RANGES",
+					 "MEAS_N_ASYM_FRAME_RANGES",
+					 "MEAS_ASYM_FRAME_RANGES",
+					 "MEAS_LSB_WORD",
+					 "MEAS_TSTAMP_CALC_TYPE",
+					 "MEAS_TSTAMP_SEARCH_WORD",
+					 "MEAS_INTERN_SAMP_RATE",
+					 "MAJFRAME_INDEX",
+					 "GPS_INDEX"};
 
 
 struct suPCMInfo
@@ -75,7 +77,25 @@ struct suPCMInfo
     uint64_t        ullGPSWordStreakCount;             //How long this word has persisted (measures drift time within PCM stream)
     uint16_t  *     pauGPSMeasIdx;	               //GPS 1pps measurement indices (indexing measurements in PCM header from zero )
     
-    //    uint8_t         bDoSearchFrameForWord;             //Perform a search of each minor frame for a particular word in order to produce a timestamp
+    //Arrays to hold measurement info from ASCII file
+    char      **    pszSerialMeasNames;
+    char      **    pszSerialMeasAbbrev;
+    char      **    pszUser;
+    uint16_t  *     pauWord;
+    uint16_t  *     pauWdInt;
+    uint16_t  *     pauFrame;
+    uint16_t  *     pauFrInt;
+    uint32_t  *     pauSPS;
+    uint16_t  *     pauNAsymWRanges;
+    uint16_t  *     pauAsymWRanges;
+    uint16_t  *     pauNAsymFRanges;
+    uint16_t  *     pauAsymFRanges;
+    uint16_t  *     pauLSBWord;
+    uint16_t  *     pauTSCalcType;
+    char      **    pszTSSearchWords;
+    uint64_t  *     pullInternWordRate;
+    uint64_t  *     pauMFCMeasIdx;
+    uint16_t  *     pauGPSMeasIdx;
 };
 
 

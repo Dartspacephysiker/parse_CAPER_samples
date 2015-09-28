@@ -1,0 +1,1221 @@
+#DESCRIPTION OF TM link to be read by parse_PCM_samples (v0.3)
+#
+#NOTE the following:
+#  -->A line beginning with '#' is treated as a comment
+#  -->A line beginning with ';' marks the end of an array
+#
+#  -->A line beginning with any of the following is read into the program:
+#
+#	Values
+#	======
+#	NAME
+#	N_MEASUREMENTS                           //Number of measurements in this link
+#	SFID_IDX				 //Location of subframe ID within minor frame, counting from 1
+#	BPS					 //Transfer rate of this link, in bits per second
+#						                                                                                       
+#	SAMPLE_BITLENGTH                         //Length of each sample in bits (remember, 8 bits per byte)
+#	N_SAMPLES_PER_MINOR			 //Number of samples in each minor frame
+#	N_MINOR_PER_MAJOR			 //Number of minor frames per major frame
+#	N_MAJFRAMECOUNTERS			 //Number of major frame counters in this link
+#	N_MINFRAME_BITPOS			 //Number of bits required for minor frame counter (e.g., up to 4 minor frames requires
+#					         //  two bit positions to count 0, 1, 2, 3). This is used to form a unique counter from
+#	N_GPS_WORDS				 //Number of GPS words defined in the PCM stream. (Max is two!)
+#						 
+#	Arrays
+#	======
+#	MEAS_NAME
+#	MEAS_ABBREV
+#	MEAS_USER
+#	MEAS_SAMPLE_LOC_IN_MINFRAME
+#	MEAS_SAMPLE_INTERVAL_IN_MINFRAME
+#	MEAS_SAMPLE_FRAME
+#	MEAS_FRAME_INTERVAL
+#	MEAS_SAMPLE_RATE
+#	MEAS_N_ASYM_WORD_RANGES
+#	MEAS_ASYM_WORD_RANGES
+#	MEAS_N_ASYM_FRAME_RANGES
+#	MEAS_ASYM_FRAME_RANGES
+#	MEAS_LSB_WORD
+#	MEAS_TSTAMP_CALC_TYPE
+#	MEAS_TSTAMP_SEARCH_WORD
+#	MEAS_INTERN_SAMP_RATE
+#	MAJFRAME_INDEX
+#	GPS_INDEX
+
+# Last of all, note that an array word (e.g., MEAS_USER) that is immediately followed by ';' on the next line
+#   denotes that all values of the array should be zero.
+
+#Description of TM link
+NAME			:TM1
+N_MEASUREMENTS		:66
+SFID_IDX		:25
+BPS			:9600000
+
+#Minor/major frame description
+SAMPLE_BITLENGTH	:10
+N_SAMPLES_PER_MINOR	:120
+N_MINOR_PER_MAJOR	:32
+N_MAJFRAMECOUNTERS	:3
+N_MINFRAME_BITPOS	:5
+
+#Extra
+N_GPS_WORDS		:2
+
+
+//Static variables to accommodate combination of MSB/LSB channels for measurements that are separated
+#define TM_SKIP_LSB               499    //Skip this channel if combination is done on the fly
+#define TM_NO_LSB                 498    //Don't try to combine this channel
+#define TM_UPPER6_MSB_LOWER10_LSB 109
+
+//Static variable to indicate that there is no timestamp_searchword
+#define TM1_NO_TS_SEARCH       0x0000
+
+#Names of measurements, defined by NASA PCM doc
+MEAS_NAME:
+Langmuir Probe Channel 1 MSB
+Langmuir Probe Channel 1 LSB
+Langmuir Probe Channel 2 MSB 
+Langmuir Probe Channel 2 LSB 
+Langmuir Probe Channel 3 MSB 
+Langmuir Probe Channel 3 LSB 
+Langmuir Probe Channel 4 MSB 
+Langmuir Probe Channel 4 LSB 
+
+(Remote A/D # 1) VCO1 MSB    
+(Remote A/D # 1) VCO1 LSB    
+(Remote A/D # 1) VCO2 MSB    
+(Remote A/D # 1) VCO2 LSB    
+(Remote A/D # 1) FixedLP MSB 
+(Remote A/D # 1) FixedLP LSB 
+(Remote A/D # 1) SweptLP MSB 
+(Remote A/D # 1) SweptLP LSB 
+
+(Remote A/D # 2) MAG X MSB   
+(Remote A/D # 2) MAG X LSB   
+(Remote A/D # 2) MAG Y MSB   
+(Remote A/D # 2) MAG Y LSB   
+(Remote A/D # 2) MAG Z MSB   
+(Remote A/D # 2) MAG Z LSB   
+
+(Remote A/D # 3) VLF-A MSB   
+(Remote A/D # 3) VLF-A LSB   
+(Remote A/D # 3) VLF-B MSB   
+(Remote A/D # 3) VLF-B LSB   
+(Remote A/D # 3) VLF-AGCA MSB
+(Remote A/D # 3) VLF-AGCA LSB
+(Remote A/D # 3) VLF-AGCB MSB
+(Remote A/D # 3) VLF-AGCB LSB
+
+(Remote A/D # 4) VF-ALO MSB  
+(Remote A/D # 4) VF-ALO LSB  
+(Remote A/D # 4) VF-AHI MSB  
+(Remote A/D # 4) VF-AHI LSB  
+(Remote A/D # 4) VF-BLO MSB  
+(Remote A/D # 4) VF-BLO LSB  
+(Remote A/D # 4) VF-BHI MSB  
+(Remote A/D # 4) VF-BHI LSB  
+
+(Remote A/D # 5) ELF-ALO MSB 
+(Remote A/D # 5) ELF-ALO LSB 
+(Remote A/D # 5) ELF-AHI MSB 
+(Remote A/D # 5) ELF-AHI LSB 
+(Remote A/D # 5) ELF-BLO MSB 
+(Remote A/D # 5) ELF-BLO LSB 
+(Remote A/D # 5) ELF-BHI MSB 
+(Remote A/D # 5) ELF-BHI LSB 
+
+(Remote A/D # 6) SKIN-LO MSB 
+(Remote A/D # 6) SKIN-LO LSB 
+(Remote A/D # 6) SKIN-HI MSB 
+(Remote A/D # 6) SKIN-HI LSB 
+(Remote A/D # 6) HF-AGC MSB  
+(Remote A/D # 6) HF-AGC LSB  
+
+Subframe ID
+
+Major Frame Counter 1        
+Major Frame Counter 2        
+Major Frame Counter 3        
+Frame Sync 1                 
+Frame Sync 2                 
+Frame Sync 3                 
+
+GPS 1PPS msb                 
+GPS 1PPS lsb                 
+ACS 1PPS msb                 
+ACS 1PPS lsb                 
+
+Correlator 1 FEEA Bagel 1 N/S
+Correlator 2 FEEA Bagel 2 N/S
+EEPAA (!!!NOT SYMMETRIC!!!)
+;
+
+MEAS_ABBREV:
+LP01_MSB
+LP01_LSB
+LP02_MSB
+LP02_LSB
+LP03_MSB
+LP03_LSB
+LP04_MSB
+LP04_LSB
+
+VCO1_MSB
+VCO1_LSB
+VCO2_MSB
+VCO2_LSB
+FixedLP_MSB
+FixedLP_LSB
+SweptLP_MSB
+SweptLP_LSB
+
+MAG_X_MSB
+MAG_X_LSB
+MAG_Y_MSB
+MAG_Y_LSB
+MAG_Z_MSB
+MAG_Z_LSB
+
+VLF-A_MSB
+VLF-A_LSB
+VLF-B_MSB
+VLF-B_LSB
+VLF-AGCA_MSB
+VLF-AGCA_LSB
+VLF-AGCB_MSB
+VLF-AGCB_LSB
+
+VF-ALO_MSB
+VF-ALO_LSB
+VF-AHI_MSB
+VF-AHI_LSB
+VF-BLO_MSB
+VF-BLO_LSB
+VF-BHI_MSB
+VF-BHI_LSB
+
+ELF-ALO_MSB
+ELF-ALO_LSB
+ELF-AHI_MSB
+ELF-AHI_LSB
+ELF-BLO_MSB
+ELF-BLO_LSB
+ELF-BHI_MSB
+ELF-BHI_LSB
+
+SKIN-LO_MSB
+SKIN-LO_LSB
+SKIN-HI_MSB
+SKIN-HI_LSB
+HF-AGC_MSB
+HF-AGC_LSB
+
+SFID
+
+MF1
+MF2
+MF3
+FS1
+FS2
+FS3
+
+GPS_1PPS_msb
+GPS_1PPS_lsb
+ACS_1PPS_msb
+ACS_1PPS_lsb
+
+FEEA_Bagel1
+FEEA_Bagel2
+EEPAA
+;
+
+#User of measurement, as defined by NASA PCM doc
+MEAS_USER:
+UiO
+UiO
+UiO
+UiO
+UiO
+UiO
+UiO
+UiO
+
+U_Iowa
+U_Iowa
+U_Iowa
+U_Iowa
+U_Iowa
+U_Iowa
+U_Iowa
+U_Iowa
+
+U_Iowa
+U_Iowa
+U_Iowa
+U_Iowa
+U_Iowa
+U_Iowa
+
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+Dartmouth
+
+TM
+TM
+TM
+TM
+TM
+TM
+TM
+
+TM
+TM
+ACS
+ACS
+
+U_Iowa
+U_Iowa
+U_Iowa
+;
+
+
+#Sample number within minor frame, counting from 1
+#If the number is 0, it means there is a range of words in the minor frame that contain the relevant measurement.
+# These are usually marked "(!!!NOT SYMMETRIC!!!)" in NASA PCM docs
+MEAS_SAMPLE_LOC_IN_MINFRAME:
+94
+95
+96
+97
+98
+101
+102
+114
+
+29
+30
+29
+30
+29
+30
+29
+30
+
+33
+34
+35
+36
+37
+38
+
+3
+4
+7
+8
+5
+6
+9
+10
+
+13
+14
+17
+18
+21
+22
+23
+24
+
+29
+30
+29
+30
+33
+34
+33
+34
+
+33
+34
+33
+34
+1
+2
+
+25
+65
+66
+113
+118
+119
+120
+
+110
+109
+110
+109
+
+45
+57
+73
+;
+
+#Word interval within a minor frame
+#When the interval is the size of the minor frame, the word only occurs once within the minor frame containing it.
+MEAS_SAMPLE_INTERVAL_IN_MINFRAME:
+120
+120
+120
+120
+120
+120
+120
+120
+
+120
+120
+120
+120
+120
+120
+120
+120
+
+120
+120
+120
+120
+120
+120
+
+12
+12
+12
+12
+120
+120
+120
+120
+
+120
+120
+120
+120
+120
+120
+120
+120
+
+120
+120
+120
+120
+120
+120
+120
+120
+
+120
+120
+120
+120
+40
+40
+
+120
+120
+120
+120
+120
+120
+120
+
+120
+120
+120
+120
+
+120
+120
+120
+;
+					    
+#First frame containing each word
+MEAS_SAMPLE_FRAME:
+1
+1
+1
+1
+1
+1
+1
+1
+
+1
+1
+2
+2
+3
+3
+4
+4
+					      
+1
+1
+1
+1
+1
+1
+					      
+1
+1
+1
+1
+1
+1
+1
+1
+					      
+1
+1
+1
+1
+1
+1
+1
+1
+					      
+7
+7
+8
+8
+2
+2
+3
+3
+					      
+4
+4
+5
+5
+1
+1
+					      
+1
+1
+1
+1
+1
+1
+1
+					      
+29
+29
+30
+30
+					      
+1
+1
+1
+;
+
+
+#Interval of frames containing each word
+MEAS_FRAME_INTERVAL:
+1
+1
+1
+1
+1
+1
+1
+1
+					      
+4
+4
+4
+4
+8
+8
+8
+8
+					      
+8
+8
+8
+8
+8
+8
+					      
+1
+1
+1
+1
+1
+1
+1
+1
+					      
+1
+1
+1
+1
+1
+1
+1
+1
+					      
+8
+8
+8
+8
+8
+8
+8
+8
+					      
+8
+8
+8
+8
+1
+1
+					      
+1
+1
+1
+1
+1
+1
+1
+					      
+32
+32
+32
+32
+					      
+1
+1
+1
+;
+
+#Sampling rate of each measurement
+MEAS_SAMPLE_RATE:
+8000
+8000
+8000
+8000
+8000
+8000
+8000
+8000
+					       
+2000
+2000
+2000
+2000
+1000
+1000
+1000
+1000
+					       
+1000
+1000
+1000
+1000
+1000
+1000
+					       
+80000
+80000
+80000
+80000
+8000
+8000
+8000
+8000
+					       
+8000
+8000
+8000
+8000
+8000
+8000
+8000
+8000
+					       
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+					       
+1000
+1000
+1000
+1000
+24000
+24000
+
+8000
+8000
+8000
+8000
+8000
+8000
+8000
+					       
+250
+250
+250
+250
+					       
+64000
+64000
+80000
+;
+
+#Number of asym word ranges in minor frame for each measurement
+#A range of zero means the measurement corresponds to a single word
+MEAS_N_ASYM_WORD_RANGES:
+0
+0
+0
+0
+0
+0
+0
+0
+					        
+0
+0
+0
+0
+0
+0
+0
+0
+					        
+0
+0
+0
+0
+0
+0
+					        
+0
+0
+0
+0
+0
+0
+0
+0
+					        
+0
+0
+0
+0
+0
+0
+0
+0
+					        
+0
+0
+0
+0
+0
+0
+0
+0
+					        
+0
+0
+0
+0
+0
+0
+
+0
+0
+0
+0
+0
+0
+0
+						
+0
+0
+0
+0
+						
+2
+2
+5
+;
+
+#Specification of the asym word ranges w/in a minor frame, inclusive
+#The following are just for RxDSP words, inclusive of words
+MEAS_ASYM_WORD_RANGES:
+45, 50
+53, 54
+
+57, 62
+69, 70
+73, 74
+77, 78
+83, 85
+89, 90
+93, 93
+;
+
+#Number of asym frame ranges in minor frame for this measurement
+MEAS_N_ASYM_FRAME_RANGES:
+0
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+					      
+0
+0
+0
+;
+
+/*Specification of the frame ranges w/in a minor frame, inclusive*/
+#Specification of the frame ranges w/in a minor frame, inclusive
+#Just for MF2 words, inclusive of frame 2
+MEAS_ASYM_FRAME_RANGES:
+0, 0
+;
+
+#If any channel has an LSB word, mark it here
+MEAS_LSB_WORD
+95
+TM_SKIP_LSB
+97
+TM_SKIP_LSB
+101
+TM_SKIP_LSB
+114
+TM_SKIP_LSB
+
+30
+TM_SKIP_LSB
+30
+TM_SKIP_LSB
+30
+TM_SKIP_LSB
+30
+TM_SKIP_LSB
+
+34
+TM_SKIP_LSB
+36
+TM_SKIP_LSB
+38
+TM_SKIP_LSB
+
+4
+TM_SKIP_LSB
+8
+TM_SKIP_LSB
+6
+TM_SKIP_LSB
+10
+TM_SKIP_LSB
+
+14
+TM_SKIP_LSB
+18
+TM_SKIP_LSB
+22
+TM_SKIP_LSB
+24
+TM_SKIP_LSB
+					       
+30
+TM_SKIP_LSB
+30
+TM_SKIP_LSB
+34
+TM_SKIP_LSB
+34
+TM_SKIP_LSB
+
+34
+TM_SKIP_LSB
+34
+TM_SKIP_LSB
+2
+TM_SKIP_LSB
+					       
+TM_NO_LSB
+TM_NO_LSB
+TM_NO_LSB
+TM_NO_LSB
+TM_NO_LSB
+TM_NO_LSB
+TM_NO_LSB
+
+109
+TM_SKIP_LSB
+109
+TM_SKIP_LSB
+
+TM_NO_LSB
+TM_NO_LSB
+TM_NO_LSB
+;
+
+#Type of timestamp calculation for this measurement
+MEAS_TSTAMP_CALC_TYPE:
+0
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+					      
+2
+0
+2
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+0
+0
+0
+					      
+0
+0
+0
+0
+					      
+0
+0
+0 
+;
+
+#Search words for calculation of timestamp
+MEAS_TSTAMP_SEARCH_WORD:
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+;
+
+#Sampling rate of the measurement (not the rate at which it is sampled within the PCM range, but
+#  the sampling rate of instrument making the measurement).
+#This is used for calculating timestamps relative to the instrument sampling rate
+MEAS_INTERN_SAMP_RATE:
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+TM1_NO_TS_SEARCH
+;
+
+#Major frame sample index (or indices), indexing from zero in the arrays above
+MAJFRAME_INDEX:
+53
+54
+55
+;
+
+#GPS 1pps measurement index (or indices), indexing from zero in the arrays above
+GPS_INDEX:
+59
+60
+;
