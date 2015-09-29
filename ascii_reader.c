@@ -9,7 +9,7 @@
 #include "PCM_and_measurement_structs.h"
 #include "ascii_reader.h"
 
-#define  DEBUG            1
+#define  DEBUG            0  /*Turn on debug to see what is read from the PCM config file*/
 
 #define READ_INT_TO_STRUCT(pattern,pStruct,iField)			\
     else if ( strncasecmp(szCodeNameTrimmed, #pattern, strlen(#pattern)) == 0 ) \
@@ -656,7 +656,19 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
     //Do timestamp stuff
     if ( psuMeasInfo->uTSCalcType > 0 )
 	{
-	sprintf(psuMeasInfo->szTStampFile,"%s--%s--tstamps.txt",szOutPrefix,psuMeasInfo->szAbbrev);
+	char szTStampSuffix[128];
+	
+	if ( ( psuMeasInfo->uTSCalcType == 1 ) )
+	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_GPS");
+	else if ( ( psuMeasInfo->uTSCalcType == 2 ) )
+	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_GPS--samples");
+	else if ( ( psuMeasInfo->uTSCalcType == 3 ) )
+	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_searchword--samples");
+	else if ( psuMeasInfo->uTSCalcType == 4 )
+	    sprintf(szTStampSuffix,"%s","searchword_tstamps--searchword_samplenumber");
+
+
+	sprintf(psuMeasInfo->szTStampFile,"%s--%s--%s.txt",szOutPrefix,psuMeasInfo->szAbbrev,szTStampSuffix);
 	psuMeasInfo->psuTStampFile    = (FILE *) fopen(psuMeasInfo->szTStampFile,"w");
 	psuMeasInfo->pallPCMWdOffsets  = (int64_t *) malloc(psuMeasInfo->uSampsPerMinorFrame * sizeof(int64_t));
 	if ( psuMeasInfo->pallPCMWdOffsets == NULL )
@@ -673,7 +685,8 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
 
 	//Output file things
 	//Don't make an output file is this is an LSB channel and we're combining samples
-    if ( ( ( psuPCMInfo->uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineTM1Meas ) ) && !bDoCheckSFIDIncrement )
+        if ( ( ( psuPCMInfo->uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineTM1Meas ) ) && !bDoCheckSFIDIncrement 
+	 && ( psuMeasInfo->uTSCalcType != 2 ) && ( psuMeasInfo->uTSCalcType != 3 ) )
 	{
 	sprintf(psuMeasInfo->szOutFile,"%s--%s.out",szOutPrefix,psuMeasInfo->szAbbrev);
 	psuMeasInfo->psuOutFile       = (FILE *) fopen(psuMeasInfo->szOutFile,"wb");

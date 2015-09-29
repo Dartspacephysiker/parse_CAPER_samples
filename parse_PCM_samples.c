@@ -809,7 +809,6 @@ int iInitMeasurement(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 	psuMeasInfo->psuTStampFile    = NULL;
 	psuMeasInfo->pallPCMWdOffsets = NULL;
 	}
-    //	psuMeasInfo->uOffsetBufCount  = 0;
 
 	//Output file things
 	//Don't make an output file is this is an LSB channel and we're combining samples
@@ -1592,6 +1591,7 @@ void vPrintPCMInfo (struct suPCMInfo * psuPCMInfo)
     printf("Sample word length in bits           :   %" PRIu64 "\n",psuPCMInfo->ullSampBitLength);
     printf("Number of samples per minor frame    :   %" PRIu64 "\n",psuPCMInfo->ullSampsPerMinorFrame);
     printf("N Minor frames per major frame       :   %" PRIi64 "\n",psuPCMInfo->llMinorFramesPerMajorFrame);
+    printf("\n");
     printf("N bits in minor frame counter        :   %" PRIu16 "\n",psuPCMInfo->uMinorFrameBitShift);
     printf("N major frame counters               :   %" PRIu16 "\n",psuPCMInfo->uNumMFCounters);
     printf("\n");		                 
@@ -1606,29 +1606,41 @@ void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo)
     //    printf("Measurement Name          :   %s\n",psuMeasInfo->szName);
     printf("Abbrev                    :   %s\n",psuMeasInfo->szAbbrev);
     printf("User                      :   %s\n",psuMeasInfo->szUser);
+    printf("Samples per second        :   %" PRIu16 "\n",psuMeasInfo->ulSPS);
+    printf("\n");
     printf("Word                      :   %" PRIu16 "\n",psuMeasInfo->uWord);
     printf("Word Interval             :   %" PRIu16 "\n",psuMeasInfo->uWdInt);
-    printf("Samples per second        :   %" PRIu16 "\n",psuMeasInfo->ulSPS);
-    printf("\n");		      
+    //    printf("# Asym word ranges        :   %" PRIu16 "\n",psuMeasInfo->uNAsymWRanges);
+    if ( psuMeasInfo->uNAsymWRanges > 0 )
+	{
+	for (iArgIdx = 0; iArgIdx < psuMeasInfo->uNAsymWRanges; iArgIdx++)
+	    {
+	    printf("Asymm word range #%3i     :   [%u,%u]\n",iArgIdx+1,psuMeasInfo->ppauAsymWRanges[iArgIdx][0],
+		   psuMeasInfo->ppauAsymWRanges[iArgIdx][1]);
+	    }
+	}
+
     //    printf("N Words in Minor Frame :   %" PRIu16 "\n",psuMeasInfo->uSampsPerMinorFrame);
+    printf("\n");		      
     printf("Minor Frame               :   %" PRIu16 "\n",psuMeasInfo->uMinorFrame);
     printf("Minor Frame Interval      :   %" PRIu16 "\n",psuMeasInfo->uMinorFrInt);
     printf("Samples per minor frame   :   %" PRIu16 "\n",psuMeasInfo->uSampsPerMinorFrame);
-    printf("\n");
-    //    printf("# Asym word ranges        :   %" PRIu16 "\n",psuMeasInfo->uNAsymWRanges);
-    for (iArgIdx = 0; iArgIdx < psuMeasInfo->uNAsymWRanges; iArgIdx++)
-	{
-	printf("Asymm word range #%3i     :   [%u,%u]\n",iArgIdx+1,psuMeasInfo->ppauAsymWRanges[iArgIdx][0],
-	       psuMeasInfo->ppauAsymWRanges[iArgIdx][1]);
-	}
     //    printf("# Asym frame ranges       :   %" PRIu16 "\n",psuMeasInfo->uNAsymFRanges);
-    for (iArgIdx = 0; iArgIdx < psuMeasInfo->uNAsymFRanges; iArgIdx++)
+    if ( psuMeasInfo->uNAsymFRanges > 0 )
 	{
-	printf("Asymm frame range #%3i    :   [%u,%u]\n",iArgIdx+1,psuMeasInfo->ppauAsymFRanges[iArgIdx][0],
-	       psuMeasInfo->ppauAsymFRanges[iArgIdx][1]);
+	for (iArgIdx = 0; iArgIdx < psuMeasInfo->uNAsymFRanges; iArgIdx++)
+	    {
+	    printf("Asymm frame range #%3i    :   [%u,%u]\n",iArgIdx+1,psuMeasInfo->ppauAsymFRanges[iArgIdx][0],
+		   psuMeasInfo->ppauAsymFRanges[iArgIdx][1]);
+	    }
 	}
-    printf("\n");		      
+    printf("\n");
     printf("TStamp calc enabled       :   %" PRIu8 "\n",psuMeasInfo->uTSCalcType);
+    printf("\n");
+    if ( psuMeasInfo->szTSSearchWord != TM_NO_TS_SEARCH )
+	printf("Search word               :   %s\n",psuMeasInfo->szTSSearchWord);
+    if ( psuMeasInfo->dInternalWordPeriod > 0.1 )
+	printf("Internal word period (s)  :   %10.3f\n",psuMeasInfo->dInternalWordPeriod);
     printf("\n");
 }
 

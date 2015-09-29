@@ -11,3 +11,5 @@ parse_PCM_samples
 #no timestamp files
 *tstamps.txt
 *tstamp_summary.txt
+*tstamps_rel_to_*.txt
+*searchword_tstamps*.txt

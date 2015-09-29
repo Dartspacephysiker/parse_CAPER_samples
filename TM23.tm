@@ -229,12 +229,12 @@ MEAS_TSTAMP_CALC_TYPE:
 
 #Search words for calculation of timestamp
 MEAS_TSTAMP_SEARCH_WORD:
-500
-500
-500
-500
-500
-500
+0
+0
+0
+0
+0
+0
 aDtr
 ;
 
@@ -242,12 +242,12 @@ aDtr
 #  the sampling rate of instrument making the measurement).
 #This is used for calculating timestamps relative to the instrument sampling rate
 MEAS_INTERN_SAMP_RATE:
-500
-500
-500
-500
-500
-500
+0
+0
+0
+0
+0
+0
 333333
 ;
 
