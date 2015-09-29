@@ -2,7 +2,10 @@
 #
 #NOTE the following:
 #  -->A line beginning with '#' is treated as a comment
-#  -->A line beginning with ';' marks the end of an array
+#
+#  -->A line beginning with ';' marks the end of an array. 
+#     If ';' is the ONLY value below an array keyword (e.g., MEAS_LSB_WORD), it is special shorthand to indicate
+#        that all corresponding array values should be zero.
 #
 #  -->A line beginning with any of the following is read into the program:
 #
@@ -42,9 +45,15 @@
 #	MEAS_INTERN_SAMP_RATE
 #	MAJFRAME_INDEX
 #	GPS_INDEX
-
-# Last of all, note that an array word (e.g., MEAS_USER) that is immediately followed by ';' on the next line
-#   denotes that all values of the array should be zero.
+#
+#******SPECIAL VALUES******
+#
+#MEAS_TSTAMP_SEARCH_WORD: '500' corresponds to NO_TS_SEARCH, or no search word
+#
+#MEAS_LSB_WORD          : '499' corresponds to TM_SKIP_LSB, so that if channels are being combined, this channel is not outputted
+#			    e.g., For ELF-AHI_MSB and ELF-AHI_LSB, the ELF-AHI_LSB entry for MEAS_LSB_WORD is '499' to indicate that
+#                           we don't want to output ELF-AHI_LSB as its own channel.
+#                       : '498' corresponds to TM_NO_LSB, to indicate that this channel has no associated LSB word.
 
 #Description of TM link
 NAME			:TM1
@@ -63,13 +72,13 @@ N_MINFRAME_BITPOS	:5
 #Extra
 N_GPS_WORDS		:2
 
-//Static variables to accommodate combination of MSB/LSB channels for measurements that are separated
+#//Static variable to indicate that there is no timestamp_searchword
+#define TM1_NO_TS_SEARCH          500
+
+#//Static variables to accommodate combination of MSB/LSB channels for measurements that are separated
 #define TM_SKIP_LSB               499    //Skip this channel if combination is done on the fly
 #define TM_NO_LSB                 498    //Don't try to combine this channel
 #define TM_UPPER6_MSB_LOWER10_LSB 109
-
-//Static variable to indicate that there is no timestamp_searchword
-#define TM1_NO_TS_SEARCH       0x0000
 
 #Names of measurements, defined by NASA PCM doc
 MEAS_NAME:
@@ -891,7 +900,7 @@ MEAS_ASYM_FRAME_RANGES:
 ;
 
 #If any channel has an LSB word, mark it here
-MEAS_LSB_WORD
+MEAS_LSB_WORD:
 95
 499
 97
@@ -1050,162 +1059,162 @@ MEAS_TSTAMP_CALC_TYPE:
 
 #Search words for calculation of timestamp
 MEAS_TSTAMP_SEARCH_WORD:
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
 ;
 
 #Sampling rate of the measurement (not the rate at which it is sampled within the PCM range, but
 #  the sampling rate of instrument making the measurement).
 #This is used for calculating timestamps relative to the instrument sampling rate
 MEAS_INTERN_SAMP_RATE:
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
+500
 
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
-TM1_NO_TS_SEARCH
+500
+500
+500
 ;
 
 #Major frame sample index (or indices), indexing from zero in the arrays above

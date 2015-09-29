@@ -18,10 +18,10 @@
 //Static variables to accommodate combination of MSB/LSB channels for measurements that are separated
 //#define TM_SKIP_LSB               499    //Skip this channel if combination is done on the fly
 //#define TM_NO_LSB                 498    //Don't try to combine this channel
-#define TM_UPPER6_MSB_LOWER10_LSB 109
+//#define TM_UPPER6_MSB_LOWER10_LSB 109
 
 //Static variable to indicate that there is no timestamp_searchword
-//#define TM1_NO_TS_SEARCH       0x0000
+//#define TM1_NO_TS_SEARCH          500
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM1SerialMeasNames[]  =    { "Langmuir Probe Channel 1 MSB ", "Langmuir Probe Channel 1 LSB ",    //Serial #1, 0-7

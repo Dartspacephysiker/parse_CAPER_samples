@@ -48,7 +48,8 @@ static uint16_t         uTM23Word[]        =    {  1, 201,
 /*When the interval is the size of the minor frame, the word only occurs once within the minor frame containing it*/
 static uint16_t         uTM23WdInt[]       =    {400, 400,
 					         400, 400,
-					         400, 400};
+					         400, 400,
+						   0};
 /*First frame containing each word*/
 static uint16_t        uTM23Frame[]        =    {1, 4,  
 					         1, 1,

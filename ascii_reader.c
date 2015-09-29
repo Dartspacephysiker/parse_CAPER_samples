@@ -517,100 +517,58 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
     psuMeasInfo->llTSSW_MFCVal       = -1;
     psuMeasInfo->uTSSWIdx            = -1;
 
-    //    if ( psuPCMInfo->uTMLink == 1)
-    //	{
+    szTempLen = 0;
+    while ( psuPCMInfo->pszSerialMeasNames[iMeasIdx][szTempLen] != '\0' )
+	szTempLen++;
+    strncpy(psuMeasInfo->szName, psuPCMInfo->pszSerialMeasNames[iMeasIdx], //Name of measurement, e.g., "Langmuir Probe Measurement 1 MSB"
+	    szTempLen );    
 
-	szTempLen = 0;
-	while ( psuPCMInfo->pszSerialMeasNames[iMeasIdx][szTempLen] != '\0' )
-	    szTempLen++;
-	strncpy(psuMeasInfo->szName, psuPCMInfo->pszSerialMeasNames[iMeasIdx], //Name of measurement, e.g., "Langmuir Probe Measurement 1 MSB"
-		szTempLen );    
-
-	szAbbrevLen = 0;
-	while ( psuPCMInfo->pszSerialMeasAbbrev[iMeasIdx][szAbbrevLen] != '\0' )
-		szAbbrevLen++;
-	strncpy(psuMeasInfo->szAbbrev, psuPCMInfo->pszSerialMeasAbbrev[iMeasIdx],	//Abbreviation for measurement, e.g., "LP01MSB"
-		szAbbrevLen );
-
-	szTempLen = 0;
-	while ( psuPCMInfo->pszUser[iMeasIdx][szTempLen] != '\0' )
-		szTempLen++;
-        strncpy(psuMeasInfo->szUser, psuPCMInfo->pszUser[iMeasIdx],			   //Who is the user? E.g., Dartmouth, U Iowa
-		szTempLen );
-
-        psuMeasInfo->uWord               = psuPCMInfo->pauWord[iMeasIdx] - 1;  //Beginning word in the frame, -1 for counting from zero
-        psuMeasInfo->uWdInt              = psuPCMInfo->pauWdInt[iMeasIdx];     //Word interval
-        psuMeasInfo->uMinorFrame         = psuPCMInfo->pauFrame[iMeasIdx];     //Which minor frame is it in?
-        psuMeasInfo->uMinorFrInt         = psuPCMInfo->pauFrInt[iMeasIdx];     //How often does it show up?
-        psuMeasInfo->ulSPS               = psuPCMInfo->paulSPS[iMeasIdx];
-	psuMeasInfo->uSampsPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
-        			         
-	psuMeasInfo->uLSBWord            = psuPCMInfo->pauLSBWord[iMeasIdx] - 1;
-	if ( ( bCombineTM1Meas && ( psuMeasInfo->uLSBWord != TM_SKIP_LSB - 1 ) ) && ( psuMeasInfo->uLSBWord != TM_NO_LSB -1 ) )
-	    psuMeasInfo->szAbbrev[szAbbrevLen-4] = '\0';
-
-        uNAsymWRanges                    = psuPCMInfo->pauNAsymWRanges[iMeasIdx];
-        uNAsymFRanges                    = psuPCMInfo->pauNAsymFRanges[iMeasIdx];
-
-	if ( bTStampMode )
-	    {
-	    psuMeasInfo->uTSCalcType     = psuPCMInfo->pauTSCalcType[iMeasIdx];
-	    if ( psuPCMInfo->pszTSSearchWords[iMeasIdx] != '\0' )
-		sprintf(psuMeasInfo->szTSSearchWord,"%s",psuPCMInfo->pszTSSearchWords[iMeasIdx]); 
-	    else
-		psuMeasInfo->szTSSearchWord[0] = '\0';
-	    }
+    szAbbrevLen = 0;
+    while ( psuPCMInfo->pszSerialMeasAbbrev[iMeasIdx][szAbbrevLen] != '\0' )
+	szAbbrevLen++;
+    strncpy(psuMeasInfo->szAbbrev, psuPCMInfo->pszSerialMeasAbbrev[iMeasIdx],	//Abbreviation for measurement, e.g., "LP01MSB"
+	    szAbbrevLen );
+    
+    szTempLen = 0;
+    while ( psuPCMInfo->pszUser[iMeasIdx][szTempLen] != '\0' )
+	szTempLen++;
+    strncpy(psuMeasInfo->szUser, psuPCMInfo->pszUser[iMeasIdx],			   //Who is the user? E.g., Dartmouth, U Iowa
+	    szTempLen );
+    
+    psuMeasInfo->uWord               = psuPCMInfo->pauWord[iMeasIdx] - 1;  //Beginning word in the frame, -1 for counting from zero
+    psuMeasInfo->uWdInt              = psuPCMInfo->pauWdInt[iMeasIdx];     //Word interval
+    psuMeasInfo->uMinorFrame         = psuPCMInfo->pauFrame[iMeasIdx];     //Which minor frame is it in?
+    psuMeasInfo->uMinorFrInt         = psuPCMInfo->pauFrInt[iMeasIdx];     //How often does it show up?
+    psuMeasInfo->ulSPS               = psuPCMInfo->paulSPS[iMeasIdx];
+    if ( psuMeasInfo->uWdInt != 0 )
+	psuMeasInfo->uSampsPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame/psuMeasInfo->uWdInt; //How many of these to expect per frame?
+    
+    psuMeasInfo->uLSBWord            = psuPCMInfo->pauLSBWord[iMeasIdx] - 1;
+    if ( ( bCombineTM1Meas && ( psuMeasInfo->uLSBWord != TM_SKIP_LSB - 1 ) ) && ( psuMeasInfo->uLSBWord != TM_NO_LSB -1 ) )
+	psuMeasInfo->szAbbrev[szAbbrevLen-4] = '\0';
+    
+    uNAsymWRanges                    = psuPCMInfo->pauNAsymWRanges[iMeasIdx];
+    uNAsymFRanges                    = psuPCMInfo->pauNAsymFRanges[iMeasIdx];
+    
+    if ( bTStampMode )
+	{
+	psuMeasInfo->uTSCalcType     = psuPCMInfo->pauTSCalcType[iMeasIdx];
+	if ( psuPCMInfo->pszTSSearchWords[iMeasIdx] != '\0' )
+	    sprintf(psuMeasInfo->szTSSearchWord,"%s",psuPCMInfo->pszTSSearchWords[iMeasIdx]); 
 	else
-	    {
+	    psuMeasInfo->szTSSearchWord[0] = '\0';
+	}
+    else
+	{
 	    psuMeasInfo->uTSCalcType     = 0;
-	    }
-	if ( psuPCMInfo->pullInternWordRate[iMeasIdx] > 0 )
-	    psuMeasInfo->dInternalWordPeriod     = (double)1/(double)psuPCMInfo->pullInternWordRate[iMeasIdx];
-	else
-	    psuMeasInfo->dInternalWordPeriod     = 0;
-
-
-	//	}
-	//    else if ( ( psuPCMInfo->uTMLink == 2 ) || ( psuPCMInfo->uTMLink == 3 ) )
-	//	{
-	/* strncpy(psuMeasInfo->szName, psuPCMInfo->pszSerialMeasNames[iMeasIdx],	                   //Name of measurement, e.g., "Langmuir Probe Measurement 1 MSB" */
-	/* 	strlen(psuPCMInfo->pszSerialMeasNames[iMeasIdx]) );     */
-	/* strncpy(psuMeasInfo->szAbbrev, psuPCMInfo->pszSerialMeasAbbrev[iMeasIdx],		   //Abbreviation for measurement, e.g., "LP01MSB" */
-	/* 	strlen(psuPCMInfo->pszSerialMeasAbbrev[iMeasIdx]) ); */
-        /* strncpy(psuMeasInfo->szUser, psuPCMInfo->pszUser[iMeasIdx],				   //Who is the user? E.g., Dartmouth, U Iowa */
-	/* 	strlen(psuPCMInfo->pszUser[iMeasIdx]) ); */
-        /* psuMeasInfo->uWord               = psuPCMInfo->pauWord[iMeasIdx] - 1;			   //Beginning word in the frame, -1 for counting from zero */
-        /* psuMeasInfo->uWdInt              = psuPCMInfo->pauWdInt[iMeasIdx];			   //Word interval */
-        /* psuMeasInfo->uMinorFrame         = psuPCMInfo->pauFrame[iMeasIdx];			   //Which minor frame is it in? */
-        /* psuMeasInfo->uMinorFrInt         = psuPCMInfo->pauFrInt[iMeasIdx];			   //How often does it show up? */
-        /* psuMeasInfo->ulSPS               = psuPCMInfo->paulSPS[iMeasIdx]; */
-	/* psuMeasInfo->uSampsPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.         */
-	/* //        psuMeasInfo->uSample             = -1; */
-
-	/* psuMeasInfo->uLSBWord            = psuPCMInfo->pauLSBWord[iMeasIdx] - 1; */
-
-        /* uNAsymWRanges                    = psuPCMInfo->pauNAsymWRanges[iMeasIdx]; */
-        /* uNAsymFRanges                    = psuPCMInfo->pauNAsymFRanges[iMeasIdx]; */
-
-	/* if ( bTStampMode ) */
-	/*     { */
-	/*     psuMeasInfo->uTSCalcType     = psuPCMInfo->pauTSCalcType[iMeasIdx]; */
-	/*     if ( psuPCMInfo->pszTSSearchWords[iMeasIdx] != '\0' ) */
-	/* 	sprintf(psuMeasInfo->szTSSearchWord,"%s",psuPCMInfo->pszTSSearchWords[iMeasIdx]);  */
-	/*     else */
-	/* 	psuMeasInfo->szTSSearchWord[0] = '\0'; */
-	/*     } */
-	/* else */
-	/*     { */
-	/*     psuMeasInfo->uTSCalcType     = 0; */
-	/*     } */
-	/* if ( psuPCMInfo->pullInternWordRate[iMeasIdx] > 0 ) */
-	/*     psuMeasInfo->dInternalWordPeriod     = (double)1/(double)psuPCMInfo->pullInternWordRate[iMeasIdx]; */
-	/* else */
-	/*     psuMeasInfo->dInternalWordPeriod     = 0; */
-	//	}
-
-	//handle asymmetric word ranges
+	}
+    if ( psuPCMInfo->pullInternWordRate[iMeasIdx] > 0 )
+	psuMeasInfo->dInternalWordPeriod     = (double)1/(double)psuPCMInfo->pullInternWordRate[iMeasIdx];
+    else
+	psuMeasInfo->dInternalWordPeriod     = 0;
+    
+    
+    //handle asymmetric word ranges
     if (uNAsymWRanges > 0)
 	{
 	psuMeasInfo->uNAsymWRanges       = uNAsymWRanges;
@@ -635,18 +593,13 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
 	//Now assign the values
 	for (uWRangeIdx = 0; uWRangeIdx < uNAsymWRanges; uWRangeIdx++)
 	    {
-	    if ( psuPCMInfo->uTMLink == 1)
-		{
-		psuMeasInfo->ppauAsymWRanges[uWRangeIdx][0] = psuPCMInfo->ppauAsymWRanges[psuPCMInfo->uAsymWRInd][0];
-		psuMeasInfo->ppauAsymWRanges[uWRangeIdx][1] = psuPCMInfo->ppauAsymWRanges[psuPCMInfo->uAsymWRInd][1];
-		}
-	    else if ( ( psuPCMInfo->uTMLink == 2 ) || ( psuPCMInfo->uTMLink == 3 ) )
-		{
-		psuMeasInfo->ppauAsymWRanges[uWRangeIdx][0] = psuPCMInfo->ppauAsymWRanges[psuPCMInfo->uAsymWRInd][0];
-		psuMeasInfo->ppauAsymWRanges[uWRangeIdx][1] = psuPCMInfo->ppauAsymWRanges[psuPCMInfo->uAsymWRInd][1];
-		}
+	    psuMeasInfo->ppauAsymWRanges[uWRangeIdx][0] = psuPCMInfo->ppauAsymWRanges[psuPCMInfo->uAsymWRInd][0];
+	    psuMeasInfo->ppauAsymWRanges[uWRangeIdx][1] = psuPCMInfo->ppauAsymWRanges[psuPCMInfo->uAsymWRInd][1];
+
 	    psuMeasInfo->uSampsPerMinorFrame += (psuMeasInfo->ppauAsymWRanges[uWRangeIdx][1] - psuMeasInfo->ppauAsymWRanges[uWRangeIdx][0] + 1);
 	    psuPCMInfo->uAsymWRInd++;
+
+	    printf("%s: Asymm Range is [%u,%u]\n",psuMeasInfo->szName,psuMeasInfo->ppauAsymWRanges[uWRangeIdx][0],psuMeasInfo->ppauAsymWRanges[uWRangeIdx][1]);
 	    }
 	}
     else
@@ -679,16 +632,9 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
 	//Now assign the values
 	for (uFRangeIdx = 0; uFRangeIdx < uNAsymFRanges; uFRangeIdx++)
 	    {
-		//	    if ( psuPCMInfo->uTMLink == 1)
-		//		{
-		psuMeasInfo->ppauAsymFRanges[uFRangeIdx][0] = psuPCMInfo->ppauAsymFRanges[psuPCMInfo->uAsymFRInd][0];
-		psuMeasInfo->ppauAsymFRanges[uFRangeIdx][1] = psuPCMInfo->ppauAsymFRanges[psuPCMInfo->uAsymFRInd][1];
-		//		}
-	    /* else if ( ( psuPCMInfo->uTMLink == 2 ) || ( psuPCMInfo->uTMLink == 3 ) ) */
-	    /* 	{ */
-	    /* 	psuMeasInfo->ppauAsymFRanges[uFRangeIdx][0] = psuPCMInfo->ppauAsymFRanges[psuPCMInfo->uAsymFRInd][0]; */
-	    /* 	psuMeasInfo->ppauAsymFRanges[uFRangeIdx][1] = psuPCMInfo->ppauAsymFRanges[psuPCMInfo->uAsymFRInd][1]; */
-	    /* 	} */
+	    psuMeasInfo->ppauAsymFRanges[uFRangeIdx][0] = psuPCMInfo->ppauAsymFRanges[psuPCMInfo->uAsymFRInd][0];
+	    psuMeasInfo->ppauAsymFRanges[uFRangeIdx][1] = psuPCMInfo->ppauAsymFRanges[psuPCMInfo->uAsymFRInd][1];
+
 	    psuPCMInfo->uAsymFRInd++;
 	    }
 	}
