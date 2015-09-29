@@ -4,7 +4,7 @@
 
 SRC_DIR=./
 CFLAGS=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -ggdb -fpack-struct=1
-LDFLAGS = -pipe -Wall -lm -pthread
+LDFLAGS = -pipe -Wall
 
 CC = gcc
 

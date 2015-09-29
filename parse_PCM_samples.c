@@ -80,6 +80,7 @@ int main( int argc, char * argv[] )
     int64_t                     llPCMWdOffset_GPS;
 
     uint8_t                     bVerbose;
+    uint8_t                     bDebug;
     int                         err;
 
     if (argc < 2)
@@ -136,6 +137,7 @@ int main( int argc, char * argv[] )
     llPCMWdOffset_GPS              = 0;
 			           
     bVerbose                       = DEF_VERBOSE;
+    bDebug                         = 0;
     err                            = 0;
 
     for (iArgIdx=1; iArgIdx<argc; iArgIdx++)   //start with 1 to skip input file
@@ -221,6 +223,11 @@ int main( int argc, char * argv[] )
 	err = iInitPCMFromASCII(szPCMConfFile, psuPCMInfo, ppsuMeasInfo, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode );
     else
 	err = iInitPCM(psuPCMInfo, uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
+    if ( err == EXIT_FAILURE )
+	{
+	    printf("Couldn't init PCM! Exiting...\n");
+	    return EXIT_FAILURE;
+	}
 
     if (bVerbose) vPrintPCMInfo (psuPCMInfo);
     //	return EXIT_SUCCESS;
@@ -340,7 +347,7 @@ int main( int argc, char * argv[] )
 	//Determine which minor frame this is
 	llOldMinorFrameIdx = llMinorFrameIdx;
 	llMinorFrameIdx = llGetMinorFrameIdx(psuPCMInfo, pauMinorFrame);  //The TM list counts from 1, not zero
-	if (bVerbose ) printf("Minor frame: %" PRIX64 "\n",llMinorFrameIdx);
+	if ( bDebug ) printf("Minor frame: %" PRIX64 "\n",llMinorFrameIdx);
 
 	if (bDoCheckSFIDIncrement)
 	    {
@@ -386,9 +393,9 @@ int main( int argc, char * argv[] )
 	//did we get the whole major frame?
 	psuPCMInfo->ullMinorFrameCount++;
 	if ( llMinorFrameIdx == psuPCMInfo->llMinorFramesPerMajorFrame ) psuPCMInfo->llMajorFrameCount++; //NOTE: This assumes that we don't skip the last frame!
-	if ( bVerbose ) printf("Major frame #%" PRIu64 "\n", psuPCMInfo->llMajorFrameCount);
+	if ( bDebug ) printf("Major frame #%" PRIu64 "\n", psuPCMInfo->llMajorFrameCount);
 
-    	if (bVerbose) 
+    	if ( bDebug ) 
     	    {
     	    printf("N InSamps read     : %" PRIu64 "\n",ullNSampsRead);
     	    printf("InFile Position (bytes) : %" PRIu64 "\n",ullInFilePos);
@@ -546,6 +553,8 @@ int iInitPCM(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM
 
 
 	}
+
+    return EXIT_SUCCESS;
 }
 
 int iInitMeasurement(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, 
@@ -606,7 +615,8 @@ int iInitMeasurement(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
         psuMeasInfo->uMinorFrame         = uTM1Frame[iMeasIdx];				   //Which minor frame is it in?
         psuMeasInfo->uMinorFrInt         = uTM1FrInt[iMeasIdx];				   //How often does it show up?
         psuMeasInfo->ulSPS               = ulTM1SPS[iMeasIdx];
-	psuMeasInfo->uSampsPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
+	if ( psuMeasInfo->uWdInt != 0 )
+	    psuMeasInfo->uSampsPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.
         			         
 	psuMeasInfo->uLSBWord            = uTM1LSBWord[iMeasIdx] - 1;
 	if ( ( bCombineTM1Meas && ( psuMeasInfo->uLSBWord != TM_SKIP_LSB - 1 ) ) && ( psuMeasInfo->uLSBWord != TM_NO_LSB -1 ) )
@@ -647,7 +657,8 @@ int iInitMeasurement(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
         psuMeasInfo->uMinorFrame         = uTM23Frame[iMeasIdx];			   //Which minor frame is it in?
         psuMeasInfo->uMinorFrInt         = uTM23FrInt[iMeasIdx];			   //How often does it show up?
         psuMeasInfo->ulSPS               = ulTM23SPS[iMeasIdx];
-	psuMeasInfo->uSampsPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.        
+	if ( psuMeasInfo->uWdInt != 0 )
+	    psuMeasInfo->uSampsPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.        
 	//        psuMeasInfo->uSample             = -1;
 
 	psuMeasInfo->uLSBWord            = uTM23LSBWord[iMeasIdx] - 1;
@@ -773,7 +784,19 @@ int iInitMeasurement(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
     //Do timestamp stuff
     if ( psuMeasInfo->uTSCalcType > 0 )
 	{
-	sprintf(psuMeasInfo->szTStampFile,"%s--%s--tstamps.txt",szOutPrefix,psuMeasInfo->szAbbrev);
+	char szTStampSuffix[128];
+	
+	if ( ( psuMeasInfo->uTSCalcType == 1 ) )
+	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_GPS");
+	else if ( ( psuMeasInfo->uTSCalcType == 2 ) )
+	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_GPS--samples");
+	else if ( ( psuMeasInfo->uTSCalcType == 3 ) )
+	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_searchword--samples");
+	else if ( psuMeasInfo->uTSCalcType == 4 )
+	    sprintf(szTStampSuffix,"%s","searchword_tstamps--searchword_samplenumber");
+
+
+	sprintf(psuMeasInfo->szTStampFile,"%s--%s--%s.txt",szOutPrefix,psuMeasInfo->szAbbrev,szTStampSuffix);
 	psuMeasInfo->psuTStampFile    = (FILE *) fopen(psuMeasInfo->szTStampFile,"w");
 	psuMeasInfo->pallPCMWdOffsets  = (int64_t *) malloc(psuMeasInfo->uSampsPerMinorFrame * sizeof(int64_t));
 	if ( psuMeasInfo->pallPCMWdOffsets == NULL )
@@ -790,7 +813,8 @@ int iInitMeasurement(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * p
 
 	//Output file things
 	//Don't make an output file is this is an LSB channel and we're combining samples
-    if ( ( ( psuPCMInfo->uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineTM1Meas ) ) && !bDoCheckSFIDIncrement )
+    if ( ( ( psuPCMInfo->uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineTM1Meas ) ) && !bDoCheckSFIDIncrement 
+	 && ( psuMeasInfo->uTSCalcType != 2 ) && ( psuMeasInfo->uTSCalcType != 3 ) )
 	{
 	sprintf(psuMeasInfo->szOutFile,"%s--%s.out",szOutPrefix,psuMeasInfo->szAbbrev);
 	psuMeasInfo->psuOutFile       = (FILE *) fopen(psuMeasInfo->szOutFile,"wb");
@@ -1557,6 +1581,8 @@ void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx)
 void vPrintPCMInfo (struct suPCMInfo * psuPCMInfo)
 {
     printf("\n");		                 
+    printf("*************************************\n");
+    printf("**********PCM Configuration**********\n");
     printf("Subframe ID word index               :   %" PRIu16 "\n",psuPCMInfo->uSFIDIdx);
     printf("TM Link #                            :   %" PRIu16 "\n",psuPCMInfo->uTMLink);
     printf("PCM bit rate                         :   %" PRIu64 "\n",psuPCMInfo->ullBitRate);
@@ -1573,20 +1599,37 @@ void vPrintPCMInfo (struct suPCMInfo * psuPCMInfo)
 
 void vPrintMeasurementInfo (struct suMeasurementInfo * psuMeasInfo)
 {
-    printf("Measurement Name       :   %s\n",psuMeasInfo->szName);
-    printf("Abbrev                 :   %s\n",psuMeasInfo->szAbbrev);
-    printf("User                   :   %s\n",psuMeasInfo->szUser);
-    printf("Word                   :   %" PRIu16 "\n",psuMeasInfo->uWord);
-    printf("Word Interval          :   %" PRIu16 "\n",psuMeasInfo->uWdInt);
+    int iArgIdx;
+
+    printf("****************************************************\n");
+    printf("******%-40.40s******\n",psuMeasInfo->szName);
+    //    printf("Measurement Name          :   %s\n",psuMeasInfo->szName);
+    printf("Abbrev                    :   %s\n",psuMeasInfo->szAbbrev);
+    printf("User                      :   %s\n",psuMeasInfo->szUser);
+    printf("Word                      :   %" PRIu16 "\n",psuMeasInfo->uWord);
+    printf("Word Interval             :   %" PRIu16 "\n",psuMeasInfo->uWdInt);
+    printf("Samples per second        :   %" PRIu16 "\n",psuMeasInfo->ulSPS);
+    printf("\n");		      
     //    printf("N Words in Minor Frame :   %" PRIu16 "\n",psuMeasInfo->uSampsPerMinorFrame);
-    printf("Minor Frame            :   %" PRIu16 "\n",psuMeasInfo->uMinorFrame);
-    printf("Minor Frame Interval   :   %" PRIu16 "\n",psuMeasInfo->uMinorFrInt);
-    printf("Samples per second     :   %" PRIu16 "\n",psuMeasInfo->ulSPS);
+    printf("Minor Frame               :   %" PRIu16 "\n",psuMeasInfo->uMinorFrame);
+    printf("Minor Frame Interval      :   %" PRIu16 "\n",psuMeasInfo->uMinorFrInt);
+    printf("Samples per minor frame   :   %" PRIu16 "\n",psuMeasInfo->uSampsPerMinorFrame);
     printf("\n");
-    printf("# Asym word ranges     :   %" PRIu16 "\n",psuMeasInfo->uNAsymWRanges);
-    printf("# Asym frame ranges    :   %" PRIu16 "\n",psuMeasInfo->uNAsymFRanges);
+    //    printf("# Asym word ranges        :   %" PRIu16 "\n",psuMeasInfo->uNAsymWRanges);
+    for (iArgIdx = 0; iArgIdx < psuMeasInfo->uNAsymWRanges; iArgIdx++)
+	{
+	printf("Asymm word range #%3i     :   [%u,%u]\n",iArgIdx+1,psuMeasInfo->ppauAsymWRanges[iArgIdx][0],
+	       psuMeasInfo->ppauAsymWRanges[iArgIdx][1]);
+	}
+    //    printf("# Asym frame ranges       :   %" PRIu16 "\n",psuMeasInfo->uNAsymFRanges);
+    for (iArgIdx = 0; iArgIdx < psuMeasInfo->uNAsymFRanges; iArgIdx++)
+	{
+	printf("Asymm frame range #%3i    :   [%u,%u]\n",iArgIdx+1,psuMeasInfo->ppauAsymFRanges[iArgIdx][0],
+	       psuMeasInfo->ppauAsymFRanges[iArgIdx][1]);
+	}
+    printf("\n");		      
+    printf("TStamp calc enabled       :   %" PRIu8 "\n",psuMeasInfo->uTSCalcType);
     printf("\n");
-    printf("TStamp calc enabled    :   %" PRIu8 "\n",psuMeasInfo->uTSCalcType);
 }
 
 void vUsage(void)

@@ -19,7 +19,7 @@
 #define TM_NO_LSB                       498    //Don't try to combine this channel
 
 //#define TM_NO_TS_SEARCH                '\0'
-#define TM_NO_TS_SEARCH                 500
+#define TM_NO_TS_SEARCH                0x00
 
 //#define MAX_N_MINORFRAMES               256
 //#define MAX_GPS_WORDS                     2

@@ -48,12 +48,21 @@
 #
 #******SPECIAL VALUES******
 #
-#MEAS_TSTAMP_SEARCH_WORD: '500' corresponds to NO_TS_SEARCH, or no search word
+#MEAS_TSTAMP_SEARCH_WORD: 0x00 corresponds to NO_TS_SEARCH, or no search word
 #
 #MEAS_LSB_WORD          : '499' corresponds to TM_SKIP_LSB, so that if channels are being combined, this channel is not outputted
 #			    e.g., For ELF-AHI_MSB and ELF-AHI_LSB, the ELF-AHI_LSB entry for MEAS_LSB_WORD is '499' to indicate that
 #                           we don't want to output ELF-AHI_LSB as its own channel.
 #                       : '498' corresponds to TM_NO_LSB, to indicate that this channel has no associated LSB word.
+#
+#
+#******Note on timestamp calculation (MEAS_TSTAMP_CALC_TYPE)******
+#
+#CalcType = 1: TStamps calculated relative to GPS word, samples output to binary
+#CalcType = 2: TStamps calculated relative to GPS word, samples and TStamps output to ASCII
+#Calctype = 3: TStamps calculated rel. to TSSW, using measurement's word period.
+#Calctype = 4: TStamps for searchword are outputted along with the TSSW sample number where the searchword was found
+##################################################################################
 
 #Description of TM link
 NAME			:TM1

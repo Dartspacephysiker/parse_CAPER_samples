@@ -303,8 +303,8 @@ int iInitPCMFromASCII(char * szPCMConfFile, struct suPCMInfo * psuPCMInfo, struc
 
     if( szLine == NULL)
     {
-        perror("Unable to allocate buffer");
-        exit(1);
+        perror("Unable to allocate string buffer\n");
+        return EXIT_FAILURE;
     }
 
     psuPCMConfFile = (FILE *) fopen(szPCMConfFile,"r");
@@ -694,23 +694,41 @@ void vFreePCMASCIIArrays(struct suPCMInfo * psuPCMInfo)
 
     for( iMeasIdx = 0; iMeasIdx < psuPCMInfo->iNMeasurements; iMeasIdx++ )
 	{
-	    if ( psuPCMInfo->pszSerialMeasNames[iMeasIdx]     != NULL )
-		free( psuPCMInfo->pszSerialMeasNames[iMeasIdx] );
+	    if ( psuPCMInfo->pszSerialMeasNames               != NULL )
+		{
+		if ( psuPCMInfo->pszSerialMeasNames[iMeasIdx] != NULL )
+		    free( psuPCMInfo->pszSerialMeasNames[iMeasIdx] );
+		}
 
-	    if ( psuPCMInfo->pszSerialMeasAbbrev[iMeasIdx]    != NULL )
-		free( psuPCMInfo->pszSerialMeasAbbrev[iMeasIdx] );
+	    if ( psuPCMInfo->pszSerialMeasAbbrev              != NULL )
+		{
+		if ( psuPCMInfo->pszSerialMeasAbbrev[iMeasIdx]!= NULL )
+		    free( psuPCMInfo->pszSerialMeasAbbrev[iMeasIdx] );
+		}
 
-	    if ( psuPCMInfo->pszUser[iMeasIdx]                != NULL )
-		free( psuPCMInfo->pszUser[iMeasIdx] );
+	    if ( psuPCMInfo->pszUser                          != NULL )
+		{
+		if ( psuPCMInfo->pszUser[iMeasIdx]            != NULL )
+		    free( psuPCMInfo->pszUser[iMeasIdx] );
+		}
 
-	    if ( psuPCMInfo->pszTSSearchWords[iMeasIdx]       != NULL )
-		free( psuPCMInfo->pszTSSearchWords[iMeasIdx] );
+	    if ( psuPCMInfo->pszTSSearchWords                 != NULL )
+		{
+		if ( psuPCMInfo->pszTSSearchWords[iMeasIdx]   != NULL )
+		    free( psuPCMInfo->pszTSSearchWords[iMeasIdx] );
+		}
 
-	    if ( psuPCMInfo->ppauAsymWRanges[iMeasIdx]        != NULL )
-		free( psuPCMInfo->ppauAsymWRanges[iMeasIdx] );
+	    if ( psuPCMInfo->ppauAsymWRanges                  != NULL )
+		{
+		if ( psuPCMInfo->ppauAsymWRanges[iMeasIdx]    != NULL )
+		    free( psuPCMInfo->ppauAsymWRanges[iMeasIdx] );
+		}
 
-	    if ( psuPCMInfo->ppauAsymFRanges[iMeasIdx]        != NULL )
-		free( psuPCMInfo->ppauAsymFRanges[iMeasIdx] );
+	    if ( psuPCMInfo->ppauAsymFRanges                  != NULL )
+		{
+		if ( psuPCMInfo->ppauAsymFRanges[iMeasIdx]    != NULL )
+		    free( psuPCMInfo->ppauAsymFRanges[iMeasIdx] );
+		}
 	}
 
     if ( psuPCMInfo->pszSerialMeasNames != NULL )
@@ -752,11 +770,11 @@ void vFreePCMASCIIArrays(struct suPCMInfo * psuPCMInfo)
     if ( psuPCMInfo->pullInternWordRate != NULL )
 	free( psuPCMInfo->pullInternWordRate );
     
-    if ( psuPCMInfo->pauMFCMeasIdx != NULL )
-	free( psuPCMInfo->pauMFCMeasIdx );
+    //    if ( psuPCMInfo->pauMFCMeasIdx != NULL )
+    //	free( psuPCMInfo->pauMFCMeasIdx );
     
-    if ( psuPCMInfo->pauGPSMeasIdx != NULL )
-	free( psuPCMInfo->pauGPSMeasIdx );
+    //    if ( psuPCMInfo->pauGPSMeasIdx != NULL )
+    //	free( psuPCMInfo->pauGPSMeasIdx );
 }
 
 char * trimwhitespace(char * str)

@@ -17,7 +17,7 @@
 
 //Static variable to indicate that there is no timestamp_searchword
 //#define TM23_NO_TS_SEARCH    '\0'
-//#define TM23_NO_TS_SEARCH      0x0000
+#define TM23_NO_TS_SEARCH        0x00
 
 /*Names of measurements, defined by NASA PCM doc*/
 static char   * szTM23SerialMeasNames[]    =    {"Subframe ID                 ", "GPS 1PPS                                   ",
