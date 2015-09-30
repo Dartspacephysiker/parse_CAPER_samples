@@ -3,7 +3,7 @@
 #ifndef _PARSE_PCM_DEFS
 #define _PARSE_PCM_DEFS
 
-#define DEF_TM_LINK                       1
+//#define DEF_TM_LINK                       1
 
 #define DEF_PCMCONF_FILE          "TM23.tm"
 #define DEF_OUTPREFIX  "parsed_PCM_samples"
@@ -20,6 +20,8 @@
 
 //#define TM_NO_TS_SEARCH                '\0'
 #define TM_NO_TS_SEARCH                0x00
+
+#define TM_UPPER6_MSB_LOWER10_LSB       109
 
 //#define MAX_N_MINORFRAMES               256
 //#define MAX_GPS_WORDS                     2

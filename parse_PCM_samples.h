@@ -2,11 +2,17 @@
 #define _PARSE_PCM
 
 //function declarations
-int iInitPCM(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
+/* int iInitPCM(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode ); */
 
-int iInitMeasurement(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, 
-		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
+/* int iInitMeasurement(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix,  */
+/* 		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode ); */
 
+int iInitPCMFromASCII(char * szPCMConfFile, struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
+		      uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode, uint8_t bDebug );
+void vInitPCMASCIIArrays(struct suPCMInfo * psuPCMInfo);
+
+int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, 
+			      uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode );
 
 uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int iMeasIdx, 
 				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, 
@@ -47,6 +53,7 @@ void vUpdateSearchWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo *
 
 //Routines for freeing memory
 int iPCMFree(struct suPCMInfo * psuPCMInfo);
+void vFreePCMASCIIArrays(struct suPCMInfo * psuPCMInfo);
 int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo);
 
 void vPrintSubFrame (uint16_t * pauMajorFrame, int64_t llMinorFrameIdx);

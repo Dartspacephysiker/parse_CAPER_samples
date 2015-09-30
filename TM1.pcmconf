@@ -25,8 +25,13 @@
 #					         //  two bit positions to count 0, 1, 2, 3). This is used to form a unique counter from
 #	N_GPS_WORDS				 //Number of GPS words defined in the PCM stream. (Max is two!)
 #       
-#       COMBINE_MSB_AND_LSB                      //If this PCM stream contains MSB and LSB channels, combine channels on the fly
+#       *For combining MSB/LSB channels*
+#       COMBINE_MSB_AND_LSB                      //For PCM streams with MSB and LSB words of measurements, combine MSB and LSB on the fly
 #						 
+#       UPPER6_MSB_LOWER10_LSB                   //Oddly, some measurements split into MSB/LSB words are packed differently.
+#                                                //This value indicates the word location for which the upper 6 bits of the MSB word
+#                                                       and the lower 10 bits of the LSB word are to be kept
+#
 #	Arrays
 #	======
 #	MEAS_NAME
@@ -84,6 +89,7 @@ N_MINFRAME_BITPOS	:5
 N_GPS_WORDS		:2
 
 COMBINE_MSB_AND_LSB     :1
+UPPER6_MSB_LOWER10_LSB  :109
 
 #//Static variable to indicate that there is no timestamp_searchword
 #define TM1_NO_TS_SEARCH          500

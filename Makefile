@@ -9,7 +9,7 @@ LDFLAGS = -pipe -Wall
 CC = gcc
 
 EXEC= parse_PCM_samples
-SRC = parse_PCM_samples.c ascii_reader.c
+SRC = parse_PCM_samples.c
 OBJ = $(SRC:.c=.o)
 HEADERS = parse_PCM_samples.h PCM_and_measurement_structs.h defaults.h TM1_majorframe.h TM23_majorframe.h ascii_reader.h
 

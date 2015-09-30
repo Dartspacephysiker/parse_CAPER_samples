@@ -98,6 +98,8 @@ struct suPCMInfo
     uint64_t  *     pullInternWordRate;
     //    uint16_t  *     pauMFCMeasIdx;
 
+    int16_t         iUpper10MSBLower6LSBWord;
+
     uint8_t         bDoCombineMSBAndLSB;
 };
 
