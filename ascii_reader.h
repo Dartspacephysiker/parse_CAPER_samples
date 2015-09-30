@@ -1,3 +1,16 @@
+/* 
+
+     ascii_reader.h - A bunch of C macros to facilitate reading ASCII .conf files.
+                      I need to make an ascii_reader_example.c file so you can see
+                      how slick this is.
+
+     Author: Spencer M. Hatch
+             Dartmouth College
+
+     Date  : 2015/09/30
+*/
+
+
 #ifndef _ASCII_READER
 #define _ASCII_READER
 

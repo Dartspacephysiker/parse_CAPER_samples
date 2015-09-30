@@ -1,15 +1,27 @@
 /*
+     parse_PCM_samples - A program for decoding binary dumps of PCM streams from IRIG-106
+     =================   Chapter 10 files produced by the Wideband Recorders at the NASA
+			 Wallops Flight Facility in Wallops Island, VA.
 
-2015/09/07 Beginnings
-2015/09/18 Adding time calculation
-           NOTE: This assumes that we don't skip the last frame! Otherwise the major frame
-                 count is botched.
-2015/09/19 Made a structure for PCM info. Ultimately it would be nice to read in a text file
-                 to define PCM information.
-2015/09/21 Separated structure definitions and defaults from parse_PCM_samples.h
-2015/09/30 (v0.3) The program now exclusively runs with .pcmconf files (using newfangled 
-                      ascii_reader.h), and many error guards are now in place. Cool updated 
-		      usage screen. Maybe it's ready to give to Jim Diehl?
+     Author:             Spencer M. Hatch, Dartmouth College
+     ======= 
+
+     Revision history:
+     =================
+     2015/09/07           Beginnings
+		          
+     2015/09/18           Adding time calculation
+                          NOTE: This assumes that we don't skip the last frame! Otherwise the major frame
+                                count is botched.
+		          
+     2015/09/19           Made a structure for PCM info. Ultimately it would be nice to read in a text file
+                          to define PCM information.
+		          
+     2015/09/21           Separated structure definitions and defaults from parse_PCM_samples.h
+		          
+     2015/09/30 (v0.3)    The program now exclusively runs with .pcmconf files (using newfangled 
+                          ascii_reader.h), and many error guards are now in place. Cool updated 
+		          usage screen. Maybe it's ready to give to Jim Diehl?
 */
 
 
