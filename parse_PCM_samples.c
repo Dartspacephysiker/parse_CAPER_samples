@@ -229,6 +229,35 @@ int main( int argc, char * argv[] )
 	    return EXIT_FAILURE;
 	}
 
+    if ( bTStampMode )
+	{
+	if ( ( psuPCMInfo->pauGPSMeasIdx == NULL ) || ( psuPCMInfo->pauMFCIndices == NULL ) )
+	    {
+	    printf("Neither GPS word location nor major frame counter location(s) specified in %s!\n",szPCMConfFile);
+	    printf("Please edit %s to include these and try re-running, or disable timestamp calculation.\n",szPCMConfFile);
+	    }
+	else if ( psuPCMInfo->pauGPSMeasIdx == NULL )
+	    {
+	    printf("Can't calculate timestamps if GPS word location is not specified in %s!\n",szPCMConfFile);
+	    printf("Please edit %s to include the GPS word location and try re-running, or disable timestamp calculation.\n",szPCMConfFile);
+	    }
+	else if ( psuPCMInfo->pauMFCIndices == NULL ) 
+	    {
+	    printf("Can't calculate major frame counter location(s) not specified in %s!\n",szPCMConfFile);
+	    printf("Please edit %s to include major frame counter location(s) and try re-running, or disable timestamp calculation.\n",szPCMConfFile);
+	    }
+	printf("Exiting...\n");
+	return EXIT_FAILURE;
+	}
+
+    if ( bAssembleCounter && ( psuPCMInfo->pauMFCIndices == NULL ) )
+	{
+	printf("Can't assemble unique counter if major frame counter location(s) not specified in %s!\n",szPCMConfFile);
+	printf("Please edit %s to include major frame counter location(s) and try re-running, or disable timestamp calculation.\n",szPCMConfFile);
+	printf("Exiting...\n");
+	return EXIT_FAILURE;
+	}
+
     if (bVerbose) vPrintPCMInfo (psuPCMInfo);
     //	return EXIT_SUCCESS;
 

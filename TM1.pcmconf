@@ -24,6 +24,8 @@
 #	N_MINFRAME_BITPOS			 //Number of bits required for minor frame counter (e.g., up to 4 minor frames requires
 #					         //  two bit positions to count 0, 1, 2, 3). This is used to form a unique counter from
 #	N_GPS_WORDS				 //Number of GPS words defined in the PCM stream. (Max is two!)
+#       
+#       COMBINE_MSB_AND_LSB                      //If this PCM stream contains MSB and LSB channels, combine channels on the fly
 #						 
 #	Arrays
 #	======
@@ -80,6 +82,8 @@ N_MINFRAME_BITPOS	:5
 
 #Extra
 N_GPS_WORDS		:2
+
+COMBINE_MSB_AND_LSB     :1
 
 #//Static variable to indicate that there is no timestamp_searchword
 #define TM1_NO_TS_SEARCH          500

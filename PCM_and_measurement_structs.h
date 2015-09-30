@@ -16,7 +16,8 @@ static char   * szPCMConfValNames[]   = {"NAME",
 					 "N_MINOR_PER_MAJOR",
 					 "N_MAJFRAMECOUNTERS",
 					 "N_MINFRAME_BITPOS",
-					 "N_GPS_WORDS"};
+					 "N_GPS_WORDS",
+					 "COMBINE_MSB_AND_LSB"};
 
 static char  * szPCMMeasConfNames[]   = {"MEAS_NAME",
 					 "MEAS_ABBREV",
@@ -96,6 +97,8 @@ struct suPCMInfo
     char      **    pszTSSearchWords;
     uint64_t  *     pullInternWordRate;
     //    uint16_t  *     pauMFCMeasIdx;
+
+    uint8_t         bDoCombineMSBAndLSB;
 };
 
 

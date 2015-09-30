@@ -75,6 +75,26 @@
 	    assert(0);							\
 	}
 
+#define READ_BOOL_TO_STRUCT(pattern,pStruct,bField)			\
+    else if ( strncasecmp(szCodeNameTrimmed, #pattern, strlen(#pattern)) == 0 ) \
+        {								\
+	int             iTokens;					\
+	int16_t         iTemp;						\
+									\
+	iTokens = sscanf(szDataItemTrimmed, "%" PRIu16, &iTemp);	\
+	if (iTokens == 1)						\
+	    {								\
+	    iTemp = atoi(szDataItemTrimmed);		                \
+	    if ( iTemp > 0 )						\
+		pStruct->bField = iTemp;				\
+	    else							\
+		pStruct->bField = 0;					\
+	    if (DEBUG) printf("%s: %" PRIu8"\n",#pattern,pStruct->bField); \
+	    }								\
+	else								\
+	    assert(0);							\
+	}
+
 #define READ_STR_TO_STRUCT(pattern,pStruct,szField)			\
     else if (strcasecmp(szCodeNameTrimmed, #pattern) == 0)		\
         {								\
@@ -297,6 +317,8 @@ int iInitPCMFromASCII(char * szPCMConfFile, struct suPCMInfo * psuPCMInfo, struc
     psuPCMInfo->ullGPSWordCount                = -1;     //This will go to zero once we initialize the GPS word and MFC count
     psuPCMInfo->ullGPSWordStreakCount          = 0;
 
+    psuPCMInfo->bDoCombineMSBAndLSB            = 0;
+
     bufsize=DEF_STR_SIZE;
 
     szLine = (char * )malloc(bufsize*sizeof(char));
@@ -345,6 +367,7 @@ int iInitPCMFromASCII(char * szPCMConfFile, struct suPCMInfo * psuPCMInfo, struc
 	    READ_UINT_TO_STRUCT(N_MAJFRAMECOUNTERS,psuPCMInfo,uNumMFCounters)
 	    READ_UINT_TO_STRUCT(N_MINFRAME_BITPOS,psuPCMInfo,uMinorFrameBitShift)
 	    READ_UINT_TO_STRUCT(N_GPS_WORDS,psuPCMInfo,uNGPSWordsInPCM)
+	    READ_BOOL_TO_STRUCT(COMBINE_MSB_AND_LSB,psuPCMInfo,bDoCombineMSBAndLSB)
 
 	    }
 	else
