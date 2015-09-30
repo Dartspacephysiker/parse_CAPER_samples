@@ -6,7 +6,7 @@
 #define DEF_TM_LINK                       1
 
 #define DEF_PCMCONF_FILE          "TM23.tm"
-#define DEF_OUTPREFIX  "parsed_TM1-samples"
+#define DEF_OUTPREFIX  "parsed_PCM_samples"
 #define DEF_COMBINE_TM1                   0    //combine TM1 channels on the fly
 #define DEF_DO_CHECK_SFID_INCREMENT       0    //Check that SFID increments uniformly
 #define DEF_ASSEMBLE_COUNTER              0    //Create and output unique counter produced by major and minor frame counters

@@ -210,8 +210,8 @@ int main( int argc, char * argv[] )
 	    } /* end command line arg switch */
 	} /* end for all arguments */
 
-    if ( szPCMConfFile[0] == '\0' )
-	strncpy(szPCMConfFile,DEF_PCMCONF_FILE,DEF_STR_SIZE);
+    /* if ( szPCMConfFile[0] == '\0' ) */
+    /* 	strncpy(szPCMConfFile,DEF_PCMCONF_FILE,DEF_STR_SIZE); */
 
     if ( szOutPrefix[0] == '\0' )
 	strncpy(szOutPrefix,DEF_OUTPREFIX,DEF_STR_SIZE);
@@ -1648,28 +1648,47 @@ void vUsage(void)
 {
     printf("\n");
     printf("parse_PCM_samples\n");
-    printf("Convert a Chapter 10 PCM dump into separate measurement files!             \n");
-    printf(" Note: All of the TMs are defined in the respective header files!          \n");
-    printf("\n");
-    printf("Usage: parse_CAPER_samples <filename> [flags]                              \n");
-    printf("                                                                           \n");
-    printf("   <filename>   Input file name                                            \n");
-    printf("                                                                           \n");
-    printf("   INPUT FILE PARAMETERS                                                   \n");
-    printf("   -L           TM link number (can be 1-4)                        [%i]    \n",DEF_TM_LINK);
-    printf("                                                                           \n");
-    printf("                                                                           \n");
-    printf("   OPTIONAL PARAMETERS                                                     \n");
-    printf("   -P           PCM config file                                    [%s]    \n",DEF_PCMCONF_FILE);
-    printf("   -p           Prefix for output files                            [%s]    \n",DEF_OUTPREFIX);
-    printf("   -C           Combine MSB/LSB channels on the fly(TM1 Only!)     [%i]    \n",DEF_COMBINE_TM1);
-    printf("   -c           Check integrity of data by following SFID,         [%i]    \n",DEF_DO_CHECK_SFID_INCREMENT);
-    printf("                    (no parsed output is produced)                         \n");
-    printf("   -A           Assemble unique counter based on major/minor       [%i]    \n",DEF_ASSEMBLE_COUNTER);
-    printf("                    frames, and output to file                             \n");
-    printf("   -T           Produce timestamps based on GPS pulse data for     [%i]    \n",DEF_CALC_TSTAMPS);
-    printf("                    measurements specified in PCM config file              \n");
-    printf("   -v           Verbose                                            [%i]    \n",DEF_VERBOSE);
-    printf("                                                                           \n");
-    printf("   -h           Help (this menu)                                           \n");
+    printf("Convert a Chapter 10 PCM dump into separate measurement files!                  \n");
+    printf(" Note: All of the TMs are defined in the respective header files!               \n");
+    printf("                                                                                \n");
+    printf("Usage: parse_CAPER_samples <filename> [parameters]                              \n");
+    printf("                                                                                \n");
+    printf("   <filename>   Input file name                                                 \n");
+    printf("                                                                                \n");
+    printf("   INPUT FILE PARAMETERS                                                        \n");
+    printf("   -L           TM link number (can be 1-4)                             [%i]    \n",DEF_TM_LINK);
+    printf("                                                                                \n");
+    printf("                                                                                \n");
+    printf("   OPTIONAL PARAMETERS                                                          \n");
+    printf("   -P           PCM config file                                         [none]  \n");
+    printf("                 *Open PCM_conf_header.pcmconf to see the format                \n");
+    printf("                                                                                \n");
+    printf("   -p           Prefix for output files                                 [%s]    \n",DEF_OUTPREFIX);
+    printf("                                                                                \n");
+    printf("   -C           Combine MSB/LSB channels on the fly(TM1 Only!)          [%i]    \n",DEF_COMBINE_TM1);
+    printf("   -c           Check integrity of data by following SFID,              [%i]    \n",DEF_DO_CHECK_SFID_INCREMENT);
+    printf("                    (no parsed output is produced)                              \n");
+    printf("                                                                                \n");
+    printf("   -A           Assemble unique counter based on major/minor            [%i]    \n",DEF_ASSEMBLE_COUNTER);
+    printf("                    frames, and output to file                                  \n");
+    printf("                                                                                \n");
+    printf("   -T           Produce timestamps for measurements specified           [%i]    \n",DEF_CALC_TSTAMPS);
+    printf("                    in PCM config file (NOT on command line!)                   \n");
+    printf("                The following are valid values for the                          \n");
+    printf("                  MEAS_TSTAMP_CALC_TYPE variable in PCM config files:           \n"); 
+    printf("                1) TStamps calculated relative to GPS word,                     \n");
+    printf("                     sample output in separate BINARY file                      \n");
+    printf("                2) TStamps calculated relative to GPS word,                     \n");
+    printf("                     samples and TStamps output to the same ASCII file          \n");
+    printf("                3) TStamps calculated relative to measurement searchword,       \n");
+    printf("                     using the corresponding measurement's (internal)           \n");
+    printf("                     word period.                                               \n");
+    printf("                4) TStamps corresponding to the searchword are outputted,       \n");
+    printf("                     along with the TSSW sample number where the                \n");
+    printf("                     searchword was found. (Useful for making sure that         \n");
+    printf("                     the searchword is showing up at the right intervals.)      \n");
+    printf("                                                                                \n");
+    printf("   -v           Verbose                                                 [%i]    \n",DEF_VERBOSE);
+    printf("                                                                                \n");
+    printf("   -h           Help (this menu)                                                \n");
 }
