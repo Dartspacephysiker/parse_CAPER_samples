@@ -25,13 +25,6 @@
 #					         //  two bit positions to count 0, 1, 2, 3). This is used to form a unique counter from
 #	N_GPS_WORDS				 //Number of GPS words defined in the PCM stream. (Max is two!)
 #       
-#       *For combining MSB/LSB channels*
-#       COMBINE_MSB_AND_LSB                      //For PCM streams with MSB and LSB words of measurements, combine MSB and LSB on the fly
-#						 
-#       UPPER6_MSB_LOWER10_LSB                   //Oddly, some measurements split into MSB/LSB words are packed differently.
-#                                                //This value indicates the word location for which the upper 6 bits of the MSB word
-#                                                       and the lower 10 bits of the LSB word are to be kept
-#
 #	Arrays
 #	======
 #	MEAS_NAME
@@ -57,10 +50,17 @@
 #
 #MEAS_TSTAMP_SEARCH_WORD: 0x00 corresponds to NO_TS_SEARCH, or no search word
 #
-#MEAS_LSB_WORD          : '499' corresponds to TM_SKIP_LSB, so that if channels are being combined, this channel is not outputted
-#			    e.g., For ELF-AHI_MSB and ELF-AHI_LSB, the ELF-AHI_LSB entry for MEAS_LSB_WORD is '499' to indicate that
-#                           we don't want to output ELF-AHI_LSB as its own channel.
-#                       : '498' corresponds to TM_NO_LSB, to indicate that this channel has no associated LSB word.
+#*For combining MSB/LSB channels*
+#COMBINE_MSB_AND_LSB      : For PCM streams with MSB and LSB words of measurements, combine MSB and LSB on the fly
+#
+#UPPER6_MSB_LOWER10_LSB   : Oddly, some measurements split into MSB/LSB words are packed differently.
+#                           This value indicates the word location for which the upper 6 bits of the MSB word
+#                            and the lower 10 bits of the LSB word are to be kept.
+#
+#MEAS_LSB_WORD            : '499' corresponds to TM_SKIP_LSB, so that if channels are being combined, this channel is not outputted
+#			      e.g., For ELF-AHI_MSB and ELF-AHI_LSB, the ELF-AHI_LSB entry for MEAS_LSB_WORD is '499' to indicate that
+#                             we don't want to output ELF-AHI_LSB as its own channel.
+#                         : '498' corresponds to TM_NO_LSB, to indicate that this channel has no associated LSB word.
 #
 #
 #******Note on timestamp calculation (MEAS_TSTAMP_CALC_TYPE)******

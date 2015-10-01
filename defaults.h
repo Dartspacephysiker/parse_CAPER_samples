@@ -3,11 +3,8 @@
 #ifndef _PARSE_PCM_DEFS
 #define _PARSE_PCM_DEFS
 
-//#define DEF_TM_LINK                       1
-
-#define DEF_PCMCONF_FILE          "TM23.tm"
 #define DEF_OUTPREFIX  "parsed_PCM_samples"
-#define DEF_COMBINE_TM1                   0    //combine TM1 channels on the fly
+#define DEF_COMBINE_MSBLSB                0    //combine MSB/LSB samples of measurements specified in .pcmconf on the fly
 #define DEF_DO_CHECK_SFID_INCREMENT       0    //Check that SFID increments uniformly
 #define DEF_ASSEMBLE_COUNTER              0    //Create and output unique counter produced by major and minor frame counters
 #define DEF_CALC_TSTAMPS                  0    //Create and output timestamps based on GPS 1 pps
@@ -18,13 +15,8 @@
 #define TM_SKIP_LSB                     499    //Skip this channel if combination is done on the fly
 #define TM_NO_LSB                       498    //Don't try to combine this channel
 
-//#define TM_NO_TS_SEARCH                '\0'
 #define TM_NO_TS_SEARCH                0x00
 
 #define TM_UPPER6_MSB_LOWER10_LSB       109
-
-//#define MAX_N_MINORFRAMES               256
-//#define MAX_GPS_WORDS                     2
-
 
 #endif //end #ifndef _PARSE_PCM_DEFS

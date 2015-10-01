@@ -37,10 +37,6 @@
 #include "PCM_and_measurement_structs.h"
 #include "parse_PCM_samples.h"
 
-//Definitions of TM1, TM2, and TM3
-/* #include "TM1_majorframe.h" */
-/* #include "TM23_majorframe.h" */
-
 int main( int argc, char * argv[] )
 {
     //************
@@ -84,7 +80,7 @@ int main( int argc, char * argv[] )
     int                         iArgIdx;
 		                
     //    uint16_t                    uTMLink;
-    uint8_t                     bCombineTM1Meas;
+    uint8_t                     bCombineMSBLSBMeas;
     uint8_t                     bDoCheckSFIDIncrement;
     uint8_t                     bTStampMode;
     uint8_t                     bAssembleCounter;
@@ -141,7 +137,7 @@ int main( int argc, char * argv[] )
     iArgIdx                        = 0;
 			           
     //    uTMLink                        = DEF_TM_LINK;
-    bCombineTM1Meas                = DEF_COMBINE_TM1;
+    bCombineMSBLSBMeas             = DEF_COMBINE_MSBLSB;
     bDoCheckSFIDIncrement          = DEF_DO_CHECK_SFID_INCREMENT;
     bTStampMode                    = DEF_CALC_TSTAMPS;
     bAssembleCounter               = DEF_ASSEMBLE_COUNTER;
@@ -187,7 +183,7 @@ int main( int argc, char * argv[] )
 			break;
 
 		    case 'C' :                  /* Combine TM1 MSB/LSB measurements */
-			bCombineTM1Meas       = 1;
+			bCombineMSBLSBMeas       = 1;
 			break;
 
 		    case 'c' :                  /* Check that SFID increments uniformly */
@@ -235,14 +231,14 @@ int main( int argc, char * argv[] )
     psuPCMInfo = (struct suPCMInfo * ) malloc( sizeof(struct suPCMInfo) );
     ppsuMeasInfo = (struct suMeasurementInfo ** ) malloc(psuPCMInfo->iNMeasurements * sizeof(struct suMeasurementInfo *));
     if ( bHavePCMConfFile )
-	err = iInitPCMFromASCII(szPCMConfFile, psuPCMInfo, ppsuMeasInfo, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode, bDebug );
+	err = iInitPCMFromASCII(szPCMConfFile, psuPCMInfo, ppsuMeasInfo, bCombineMSBLSBMeas, bDoCheckSFIDIncrement, bTStampMode, bDebug );
     else
 	{
 	err = EXIT_FAILURE;
 	printf("No .pcmconf file specified! Please specify with -P <pcmconf file> at the command line.\n");
 	}
     /* else */
-    /* 	err = iInitPCM(psuPCMInfo, uTMLink, bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode); */
+    /* 	err = iInitPCM(psuPCMInfo, uTMLink, bCombineMSBLSBMeas, bDoCheckSFIDIncrement, bTStampMode); */
     if ( err == EXIT_FAILURE )
 	{
 	printf("Couldn't init PCM! Exiting...\n");
@@ -309,7 +305,7 @@ int main( int argc, char * argv[] )
 	    }
 
 	err = iInitMeasurementFromASCII(psuPCMInfo, ppsuMeasInfo[iMeasIdx], iMeasIdx, szOutPrefix, 
-					    bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode);
+					    bCombineMSBLSBMeas, bDoCheckSFIDIncrement, bTStampMode);
 	if ( err == EXIT_FAILURE )
 	    {
 	    printf("Couldn't init PCM! Exiting...\n");
@@ -317,7 +313,7 @@ int main( int argc, char * argv[] )
 	    }
 	/* else */
 	/*     err = iInitMeasurement(psuPCMInfo, ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix, */
-	/* 			   bCombineTM1Meas, bDoCheckSFIDIncrement, bTStampMode); */
+	/* 			   bCombineMSBLSBMeas, bDoCheckSFIDIncrement, bTStampMode); */
 	if (bVerbose) vPrintMeasurementInfo(ppsuMeasInfo[iMeasIdx]);
 	}
     //    return EXIT_SUCCESS;
@@ -381,7 +377,7 @@ int main( int argc, char * argv[] )
     printf("\n");
 
     //Get first GPS word and MFCVal
-    if ( !bFoundFirstMFCValGPSWordAndSearchWords(psuInFile,suInFileStat.st_size, psuPCMInfo, ppsuMeasInfo, pauMinorFrame, bCombineTM1Meas, &llPCMWdOffset_GPS) )
+    if ( !bFoundFirstMFCValGPSWordAndSearchWords(psuInFile,suInFileStat.st_size, psuPCMInfo, ppsuMeasInfo, pauMinorFrame, bCombineMSBLSBMeas, &llPCMWdOffset_GPS) )
 	{
 	printf("TStampMode: Unable to get a first major frame count! Is something wrong with your data?\n");
 	printf("Exiting...");
@@ -433,7 +429,7 @@ int main( int argc, char * argv[] )
 		    ppsuMeasInfo[iMeasIdx]->llSampIdx = 0; 		    //Reset at beginning of loop
 		    ppsuMeasInfo[iMeasIdx]->llTSIdx   = 0;
 
-		    uParseMeasurementSamples(psuPCMInfo,ppsuMeasInfo[iMeasIdx],iMeasIdx,pauMinorFrame,llMinorFrameIdx,&ullWordsWritten,bCombineTM1Meas,bAssembleCounter,1);
+		    uParseMeasurementSamples(psuPCMInfo,ppsuMeasInfo[iMeasIdx],iMeasIdx,pauMinorFrame,llMinorFrameIdx,&ullWordsWritten,bCombineMSBLSBMeas,bAssembleCounter,1);
 		}
 	    
 	    //assemble unique counter, if requested
@@ -447,7 +443,7 @@ int main( int argc, char * argv[] )
 	    if ( bTStampMode )
 		{
 		    iCalcTStamps(psuPCMInfo, ppsuMeasInfo, pauMinorFrame, llMinorFrameIdx, 
-				 &llPCMWdOffset_MajorFrame, &llPCMWdOffset_MinorFrame, &llPCMWdOffset_GPS, &ullWordsWritten, bCombineTM1Meas);
+				 &llPCMWdOffset_MajorFrame, &llPCMWdOffset_MinorFrame, &llPCMWdOffset_GPS, &ullWordsWritten, bCombineMSBLSBMeas);
 		}
 
 	    }
@@ -513,385 +509,8 @@ int main( int argc, char * argv[] )
     return EXIT_SUCCESS;
 }
 
-/* int iInitPCM(struct suPCMInfo * psuPCMInfo, uint16_t uTMLink, uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode ) */
-/* { */
-/*     int iArgIdx; */
-
-/*     //\******************* */
-/*     //Initialize vars */
-/*     psuPCMInfo->uAsymWRInd                     = 0; */
-/*     psuPCMInfo->uAsymFRInd                     = 0; */
-/*     psuPCMInfo->uSFIDIdx                       = 0; */
-/*     psuPCMInfo->uTMLink                        = uTMLink; */
-
-/*     psuPCMInfo->ulMinorFrameSampCount          = 0; */
-/*     psuPCMInfo->ullMinorFrameCount             = 0; */
-/*     psuPCMInfo->ullSkippedFrameCount           = 0; */
-/*     psuPCMInfo->llMajorFrameCount              = 0; */
-
-/*     psuPCMInfo->pauMFCIndices                  = NULL; */
-/*     psuPCMInfo->paullMajorFrameVals            = NULL; */
-/*     psuPCMInfo->ullFirstMFCVal                 = 0; */
-/*     psuPCMInfo->ullCurrentMFCVal               = 0; */
-/*     psuPCMInfo->ullGPSMFCVal                   = 0; */
-
-/*     psuPCMInfo->ullCounterVal                  = 0; */
-/*     psuPCMInfo->pauGPSMeasIdx                  = NULL; */
-/*     psuPCMInfo->llFirstGPSWord                 = -1; */
-/*     psuPCMInfo->llCurrentGPSWord               = -1; */
-/*     psuPCMInfo->ullGPSWordCount                = -1;     //This will go to zero once we initialize the GPS word and MFC count */
-/*     psuPCMInfo->ullGPSWordStreakCount          = 0; */
-
-/*     //    psuPCMInfo->bDoSearchFrameForWord          = 0; */
-
-/*     if ( psuPCMInfo->uTMLink == 1 ) */
-/* 	{ */
-/* 	printf("TM1 : SKIN/ELF/VF/VLF/AGC samples\n"); */
-
-/* 	psuPCMInfo->iNMeasurements                   = N_TM1_MEASUREMENTS; */
-/*         psuPCMInfo->uSFIDIdx                         = TM1_SFID_IDX; */
-/* 	psuPCMInfo->ullSampsPerMinorFrame            = TM1_SAMPSPERMINORFRAME; */
-/* 	psuPCMInfo->ullBytesPerMinorFrame            = psuPCMInfo->ullSampsPerMinorFrame * sizeof(uint16_t); */
-/* 	psuPCMInfo->llMinorFramesPerMajorFrame       = TM1_MINOR_PER_MAJOR; */
-/* 	psuPCMInfo->uNumMFCounters                   = TM1_NUM_MFCOUNTERS; */
-/* 	psuPCMInfo->paullMajorFrameVals              = (uint64_t *) malloc(psuPCMInfo->uNumMFCounters * sizeof(uint64_t)); */
-/* 	psuPCMInfo->pauMFCIndices                    = (uint16_t *) malloc(psuPCMInfo->uNumMFCounters * sizeof(uint16_t)); */
-/* 	for ( iArgIdx = 0; iArgIdx < psuPCMInfo->uNumMFCounters; iArgIdx++ ) */
-/* 	    {			          */
-/* 	    psuPCMInfo->pauMFCIndices[iArgIdx]       = auTM1MFCMeasIdx[iArgIdx]; */
-/* 	    psuPCMInfo->paullMajorFrameVals[iArgIdx] = -1; */
-/* 	    }			          */
-				         
-/* 	psuPCMInfo->ullSampBitLength                 = TM1_WORD_BITLENGTH; */
-/* 	psuPCMInfo->uMinorFrameBitShift              = TM1_MINORFRAME_BITSHIFT; */
-/* 	psuPCMInfo->ullBitRate                       = TM1_BPS; */
-/* 	psuPCMInfo->dWordPeriod                      = (double) psuPCMInfo->ullSampBitLength/ (double) psuPCMInfo->ullBitRate; */
-			                   
-/* 	if ( bTStampMode )                */
-/* 	    {		                    */
-/* 	    psuPCMInfo->uNGPSWordsInPCM              = TM1_N_GPS_WORDS; */
-/* 	    psuPCMInfo->pauGPSMeasIdx                = (uint16_t *) malloc(psuPCMInfo->uNGPSWordsInPCM * sizeof(uint16_t)); */
-/* 	    for ( iArgIdx = 0; iArgIdx < psuPCMInfo->uNGPSWordsInPCM; iArgIdx++ ) */
-/* 		{		          */
-/* 		psuPCMInfo->pauGPSMeasIdx[iArgIdx]   = auTM1GPSMeasIdx[iArgIdx]; */
-/* 		} */
-/* 	    } */
-
-/* 	if ( bCombineTM1Meas ) printf("Combining MSB/LSB measurements on TM1!\n"); */
-
-/* 	} */
-/*     else */
-/* 	{ */
-/* 	printf("TM2/3: RxDSP samples\n"); */
-
-/* 	psuPCMInfo->iNMeasurements                   = N_TM23_MEASUREMENTS; */
-/*         psuPCMInfo->uSFIDIdx                         = TM23_SFID_IDX; */
-/* 	psuPCMInfo->ullSampsPerMinorFrame            = TM23_SAMPSPERMINORFRAME; */
-/* 	psuPCMInfo->ullBytesPerMinorFrame            = psuPCMInfo->ullSampsPerMinorFrame * sizeof(uint16_t); */
-/* 	psuPCMInfo->llMinorFramesPerMajorFrame       = TM23_MINOR_PER_MAJOR;				          */
-/* 	psuPCMInfo->uNumMFCounters                   = TM23_NUM_MFCOUNTERS; */
-/* 	psuPCMInfo->paullMajorFrameVals              = (uint64_t *) malloc(psuPCMInfo->uNumMFCounters * sizeof(uint64_t)); */
-/* 	psuPCMInfo->pauMFCIndices                    = (uint16_t *) malloc(psuPCMInfo->uNumMFCounters * sizeof(uint16_t)); */
-/* 	for ( iArgIdx = 0; iArgIdx < psuPCMInfo->uNumMFCounters; iArgIdx++ ) */
-/* 	    {			          */
-/* 	    psuPCMInfo->pauMFCIndices[iArgIdx]       = auTM23MFCMeasIdx[iArgIdx]; */
-/* 	    psuPCMInfo->paullMajorFrameVals[iArgIdx] = -1; */
-/* 	    }			          */
-				         
-/* 	psuPCMInfo->ullSampBitLength                 = TM23_WORD_BITLENGTH; */
-/* 	psuPCMInfo->uMinorFrameBitShift              = TM23_MINORFRAME_BITSHIFT; */
-/* 	psuPCMInfo->ullBitRate                       = TM23_BPS; */
-/* 	psuPCMInfo->dWordPeriod                      = (double) psuPCMInfo->ullSampBitLength/(double) psuPCMInfo->ullBitRate; */
-				         
-/* 	if ( bTStampMode )                */
-/* 	    {		                    */
-/* 	    psuPCMInfo->uNGPSWordsInPCM              = TM23_N_GPS_WORDS; */
-/* 	    psuPCMInfo->pauGPSMeasIdx                = (uint16_t *) malloc(psuPCMInfo->uNGPSWordsInPCM * sizeof(uint16_t)); */
-/* 	    for ( iArgIdx = 0; iArgIdx < psuPCMInfo->uNGPSWordsInPCM; iArgIdx++ ) */
-/* 		{		          */
-/* 		psuPCMInfo->pauGPSMeasIdx[iArgIdx]   = auTM23GPSMeasIdx[iArgIdx]; */
-/* 		}		          */
-/* 	    }			          */
-
-
-/* 	} */
-
-/*     return EXIT_SUCCESS; */
-/* } */
-
-/* int iInitMeasurement(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix,  */
-/* 		     uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode ) */
-/* { */
-/*     uint16_t uNAsymWRanges; */
-/*     uint16_t uNAsymFRanges; */
-
-/*     uint64_t ullBytesInAsymWRanges; */
-/*     uint64_t ullBytesInAsymFRanges; */
-
-/*     uint64_t ullAsymRangeIdx; */
-
-/*     uint16_t uWRangeIdx; */
-/*     uint16_t uFRangeIdx; */
-
-/*     size_t   szTempLen; */
-/*     size_t   szAbbrevLen; */
-
-/*     int iTmpIdx; */
-
-/*     psuMeasInfo->szAbbrev[0]         = '\0'; */
-/*     psuMeasInfo->szOutFile[0]        = '\0'; */
-/*     psuMeasInfo->szTStampFile[0]     = '\0'; */
-
-/*     psuMeasInfo->llSampIdx           =  0; */
-/*     psuMeasInfo->llTotalSampCount    =  0; */
-/*     psuMeasInfo->llPCMWdOffset_TSSW  = -1;       //In any case, set these based on TM descriptions */
-/*     psuMeasInfo->llTSIdx             =  0; */
-/*     psuMeasInfo->uTSSWIdx            = -1;        */
-/*     psuMeasInfo->llTSSW_SampleNum    = -1;        */
-/*     psuMeasInfo->llTSSW_MFCVal       = -1; */
-/*     psuMeasInfo->uTSSWIdx            = -1; */
-
-/*     if ( psuPCMInfo->uTMLink == 1) */
-/* 	{ */
-
-/* 	szTempLen = 0; */
-/* 	while ( szTM1SerialMeasNames[iMeasIdx][szTempLen] != '\0' ) */
-/* 	    szTempLen++; */
-/* 	strncpy(psuMeasInfo->szName, szTM1SerialMeasNames[iMeasIdx],	                   //Name of measurement, e.g., "Langmuir Probe Measurement 1 MSB" */
-/* 		szTempLen );     */
-
-/* 	szAbbrevLen = 0; */
-/* 	while ( szTM1SerialMeasAbbrev[iMeasIdx][szAbbrevLen] != '\0' ) */
-/* 		szAbbrevLen++; */
-/* 	strncpy(psuMeasInfo->szAbbrev, szTM1SerialMeasAbbrev[iMeasIdx],			   //Abbreviation for measurement, e.g., "LP01MSB" */
-/* 		szAbbrevLen ); */
-
-/* 	szTempLen = 0; */
-/* 	while ( szTM1User[iMeasIdx][szTempLen] != '\0' ) */
-/* 		szTempLen++; */
-/*         strncpy(psuMeasInfo->szUser, szTM1User[iMeasIdx],				   //Who is the user? E.g., Dartmouth, U Iowa */
-/* 		szTempLen ); */
-
-/*         psuMeasInfo->uWord               = uTM1Word[iMeasIdx] - 1;	                   //Beginning word in the frame, -1 for counting from zero */
-/*         psuMeasInfo->uWdInt              = uTM1WdInt[iMeasIdx];				   //Word interval */
-/*         psuMeasInfo->uMinorFrame         = uTM1Frame[iMeasIdx];				   //Which minor frame is it in? */
-/*         psuMeasInfo->uMinorFrInt         = uTM1FrInt[iMeasIdx];				   //How often does it show up? */
-/*         psuMeasInfo->ulSPS               = ulTM1SPS[iMeasIdx]; */
-/* 	if ( psuMeasInfo->uWdInt != 0 ) */
-/* 	    psuMeasInfo->uSampsPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one. */
-        			         
-/* 	psuMeasInfo->uLSBWord            = uTM1LSBWord[iMeasIdx] - 1; */
-/* 	if ( ( bCombineTM1Meas && ( psuMeasInfo->uLSBWord != TM_SKIP_LSB - 1 ) ) && ( psuMeasInfo->uLSBWord != TM_NO_LSB -1 ) ) */
-/* 	    psuMeasInfo->szAbbrev[szAbbrevLen-4] = '\0'; */
-
-/*         uNAsymWRanges                    = uTM1NAsymWRanges[iMeasIdx]; */
-/*         uNAsymFRanges                    = uTM1NAsymFRanges[iMeasIdx]; */
-
-/* 	if ( bTStampMode ) */
-/* 	    { */
-/* 	    psuMeasInfo->uTSCalcType     = auTM1TSCalcType[iMeasIdx]; */
-/* 	    if ( aszTM1TSSearchWords[iMeasIdx] != '\0' ) */
-/* 		sprintf(psuMeasInfo->szTSSearchWord,"%s",aszTM1TSSearchWords[iMeasIdx]);  */
-/* 	    else */
-/* 		psuMeasInfo->szTSSearchWord[0] = '\0'; */
-/* 	    } */
-/* 	else */
-/* 	    { */
-/* 	    psuMeasInfo->uTSCalcType     = 0; */
-/* 	    } */
-/* 	if ( aullTM1InternWordRate[iMeasIdx] > 0 ) */
-/* 	    psuMeasInfo->dInternalWordPeriod     = (double)1/(double)aullTM1InternWordRate[iMeasIdx]; */
-/* 	else */
-/* 	    psuMeasInfo->dInternalWordPeriod     = 0; */
-
-
-/* 	} */
-/*     else if ( ( psuPCMInfo->uTMLink == 2 ) || ( psuPCMInfo->uTMLink == 3 ) ) */
-/* 	{ */
-/* 	strncpy(psuMeasInfo->szName, szTM23SerialMeasNames[iMeasIdx],	                   //Name of measurement, e.g., "Langmuir Probe Measurement 1 MSB" */
-/* 		strlen(szTM23SerialMeasNames[iMeasIdx]) );     */
-/* 	strncpy(psuMeasInfo->szAbbrev, szTM23SerialMeasAbbrev[iMeasIdx],		   //Abbreviation for measurement, e.g., "LP01MSB" */
-/* 		strlen(szTM23SerialMeasAbbrev[iMeasIdx]) ); */
-/*         strncpy(psuMeasInfo->szUser, szTM23User[iMeasIdx],				   //Who is the user? E.g., Dartmouth, U Iowa */
-/* 		strlen(szTM23User[iMeasIdx]) ); */
-/*         psuMeasInfo->uWord               = uTM23Word[iMeasIdx] - 1;			   //Beginning word in the frame, -1 for counting from zero */
-/*         psuMeasInfo->uWdInt              = uTM23WdInt[iMeasIdx];			   //Word interval */
-/*         psuMeasInfo->uMinorFrame         = uTM23Frame[iMeasIdx];			   //Which minor frame is it in? */
-/*         psuMeasInfo->uMinorFrInt         = uTM23FrInt[iMeasIdx];			   //How often does it show up? */
-/*         psuMeasInfo->ulSPS               = ulTM23SPS[iMeasIdx]; */
-/* 	if ( psuMeasInfo->uWdInt != 0 ) */
-/* 	    psuMeasInfo->uSampsPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame/psuMeasInfo->uWdInt;      //How many of these to expect per frame? Most are just one.         */
-/* 	//        psuMeasInfo->uSample             = -1; */
-
-/* 	psuMeasInfo->uLSBWord            = uTM23LSBWord[iMeasIdx] - 1; */
-
-/*         uNAsymWRanges                    = uTM23NAsymWRanges[iMeasIdx]; */
-/*         uNAsymFRanges                    = uTM23NAsymFRanges[iMeasIdx]; */
-
-/* 	if ( bTStampMode ) */
-/* 	    { */
-/* 	    psuMeasInfo->uTSCalcType     = auTM23TSCalcType[iMeasIdx]; */
-/* 	    if ( aszTM23TSSearchWords[iMeasIdx] != '\0' ) */
-/* 		sprintf(psuMeasInfo->szTSSearchWord,"%s",aszTM23TSSearchWords[iMeasIdx]);  */
-/* 	    else */
-/* 		psuMeasInfo->szTSSearchWord[0] = '\0'; */
-/* 	    } */
-/* 	else */
-/* 	    { */
-/* 	    psuMeasInfo->uTSCalcType     = 0; */
-/* 	    } */
-/* 	if ( aullTM23InternWordRate[iMeasIdx] > 0 ) */
-/* 	    psuMeasInfo->dInternalWordPeriod     = (double)1/(double)aullTM23InternWordRate[iMeasIdx]; */
-/* 	else */
-/* 	    psuMeasInfo->dInternalWordPeriod     = 0; */
-/* 	} */
-
-/* 	//handle asymmetric word ranges */
-/*     if (uNAsymWRanges > 0) */
-/* 	{ */
-/* 	psuMeasInfo->uNAsymWRanges       = uNAsymWRanges; */
-/* 	psuMeasInfo->ppauAsymWRanges     = (uint16_t **) malloc(uNAsymWRanges * sizeof(uint16_t *)); */
-/* 	if ( psuMeasInfo->ppauAsymWRanges == NULL ) */
-/* 	    return EXIT_FAILURE; */
-
-/* 	ullBytesInAsymWRanges            = uNAsymWRanges * sizeof(uint16_t *) * 2; */
-	
-/* 	psuMeasInfo->uSampsPerMinorFrame = 0; //This has to be recalculated */
-
-/* 	//initialize memory word ranges */
-/* 	psuMeasInfo->pauWtemp            = malloc(uNAsymWRanges * 2 * sizeof(uint16_t)); */
-/* 	if ( psuMeasInfo->pauWtemp == NULL ) */
-/* 	    return EXIT_FAILURE; */
-
-/* 	for (ullAsymRangeIdx = 0; ullAsymRangeIdx < uNAsymWRanges; ullAsymRangeIdx++)  */
-/* 	    { */
-/* 	    psuMeasInfo->ppauAsymWRanges[ullAsymRangeIdx] = psuMeasInfo->pauWtemp + (ullAsymRangeIdx * 2); */
-/* 	    } */
-	
-/* 	//Now assign the values */
-/* 	for (uWRangeIdx = 0; uWRangeIdx < uNAsymWRanges; uWRangeIdx++) */
-/* 	    { */
-/* 	    if ( psuPCMInfo->uTMLink == 1) */
-/* 		{ */
-/* 		psuMeasInfo->ppauAsymWRanges[uWRangeIdx][0] = uTM1AsymWRanges[psuPCMInfo->uAsymWRInd][0]; */
-/* 		psuMeasInfo->ppauAsymWRanges[uWRangeIdx][1] = uTM1AsymWRanges[psuPCMInfo->uAsymWRInd][1]; */
-/* 		} */
-/* 	    else if ( ( psuPCMInfo->uTMLink == 2 ) || ( psuPCMInfo->uTMLink == 3 ) ) */
-/* 		{ */
-/* 		psuMeasInfo->ppauAsymWRanges[uWRangeIdx][0] = uTM23AsymWRanges[psuPCMInfo->uAsymWRInd][0]; */
-/* 		psuMeasInfo->ppauAsymWRanges[uWRangeIdx][1] = uTM23AsymWRanges[psuPCMInfo->uAsymWRInd][1]; */
-/* 		} */
-/* 	    psuMeasInfo->uSampsPerMinorFrame += (psuMeasInfo->ppauAsymWRanges[uWRangeIdx][1] - psuMeasInfo->ppauAsymWRanges[uWRangeIdx][0] + 1); */
-/* 	    psuPCMInfo->uAsymWRInd++; */
-/* 	    } */
-/* 	} */
-/*     else */
-/* 	{ */
-/* 	psuMeasInfo->uNAsymWRanges   = 0; */
-/* 	psuMeasInfo->ppauAsymWRanges = NULL; */
-/* 	psuMeasInfo->pauWtemp        = NULL; */
-/* 	} */
-    
-/*     //handle asymmetric frame ranges */
-/*     if (uNAsymFRanges > 0) */
-/* 	{ */
-/*         psuMeasInfo->uNAsymFRanges   = uNAsymFRanges; */
-/* 	psuMeasInfo->ppauAsymFRanges = (uint16_t **) malloc(uNAsymFRanges * sizeof(uint16_t *)); */
-/* 	if ( psuMeasInfo->ppauAsymFRanges == NULL ) */
-/* 	    return EXIT_FAILURE; */
-	
-/* 	ullBytesInAsymFRanges        = uNAsymFRanges * sizeof(uint16_t *) * 2; */
-	
-/* 	//initialize memory word ranges */
-/* 	psuMeasInfo->pauFtemp = malloc(uNAsymFRanges * 2 * sizeof(uint16_t)); */
-/* 	if ( psuMeasInfo->pauFtemp == NULL ) */
-/* 	    return EXIT_FAILURE; */
-	
-/* 	for (ullAsymRangeIdx = 0; ullAsymRangeIdx < uNAsymFRanges; ullAsymRangeIdx++)  */
-/* 	    { */
-/* 	    psuMeasInfo->ppauAsymFRanges[ullAsymRangeIdx] = psuMeasInfo->pauFtemp + (ullAsymRangeIdx * 2); */
-/* 	    } */
-	
-/* 	//Now assign the values */
-/* 	for (uFRangeIdx = 0; uFRangeIdx < uNAsymFRanges; uFRangeIdx++) */
-/* 	    { */
-/* 	    if ( psuPCMInfo->uTMLink == 1) */
-/* 		{ */
-/* 		psuMeasInfo->ppauAsymFRanges[uFRangeIdx][0] = uTM1AsymFRanges[psuPCMInfo->uAsymFRInd][0]; */
-/* 		psuMeasInfo->ppauAsymFRanges[uFRangeIdx][1] = uTM1AsymFRanges[psuPCMInfo->uAsymFRInd][1]; */
-/* 		} */
-/* 	    else if ( ( psuPCMInfo->uTMLink == 2 ) || ( psuPCMInfo->uTMLink == 3 ) ) */
-/* 		{ */
-/* 		psuMeasInfo->ppauAsymFRanges[uFRangeIdx][0] = uTM23AsymFRanges[psuPCMInfo->uAsymFRInd][0]; */
-/* 		psuMeasInfo->ppauAsymFRanges[uFRangeIdx][1] = uTM23AsymFRanges[psuPCMInfo->uAsymFRInd][1]; */
-/* 		} */
-/* 	    psuPCMInfo->uAsymFRInd++; */
-/* 	    } */
-/* 	} */
-/*     else */
-/* 	{ */
-/* 	psuMeasInfo->uNAsymFRanges   = 0; */
-/* 	psuMeasInfo->ppauAsymFRanges = NULL; */
-/* 	psuMeasInfo->pauFtemp        = NULL; */
-/* 	} */
-    
-/*     //Now handle initialization of buffers */
-/*     psuMeasInfo->paullSample         = (uint64_t *) malloc(psuMeasInfo->uSampsPerMinorFrame * sizeof(uint64_t)); */
-/*     if ( psuMeasInfo->paullSample == NULL ) */
-/* 	return EXIT_FAILURE; */
-	
-/*     for ( iTmpIdx = 0; iTmpIdx < psuMeasInfo->uSampsPerMinorFrame; iTmpIdx++ ) */
-/* 	psuMeasInfo->paullSample[iTmpIdx] = -1; */
-
-/*     //Do timestamp stuff */
-/*     if ( psuMeasInfo->uTSCalcType > 0 ) */
-/* 	{ */
-/* 	char szTStampSuffix[128]; */
-	
-/* 	if ( ( psuMeasInfo->uTSCalcType == 1 ) ) */
-/* 	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_GPS"); */
-/* 	else if ( ( psuMeasInfo->uTSCalcType == 2 ) ) */
-/* 	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_GPS--samples"); */
-/* 	else if ( ( psuMeasInfo->uTSCalcType == 3 ) ) */
-/* 	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_searchword--samples"); */
-/* 	else if ( psuMeasInfo->uTSCalcType == 4 ) */
-/* 	    sprintf(szTStampSuffix,"%s","searchword_tstamps--searchword_samplenumber"); */
-
-
-/* 	sprintf(psuMeasInfo->szTStampFile,"%s--%s--%s.txt",szOutPrefix,psuMeasInfo->szAbbrev,szTStampSuffix); */
-/* 	psuMeasInfo->psuTStampFile    = (FILE *) fopen(psuMeasInfo->szTStampFile,"w"); */
-/* 	psuMeasInfo->pallPCMWdOffsets  = (int64_t *) malloc(psuMeasInfo->uSampsPerMinorFrame * sizeof(int64_t)); */
-/* 	if ( psuMeasInfo->pallPCMWdOffsets == NULL ) */
-/* 	    return EXIT_FAILURE; */
-	
-/* 	} */
-/*     else */
-/* 	{ */
-/* 	psuMeasInfo->szTStampFile[0]  = '\0'; */
-/* 	psuMeasInfo->psuTStampFile    = NULL; */
-/* 	psuMeasInfo->pallPCMWdOffsets = NULL; */
-/* 	} */
-
-/* 	//Output file things */
-/* 	//Don't make an output file is this is an LSB channel and we're combining samples */
-/*     if ( ( ( !psuPCMInfo->bDoCombineMSBAndLSB ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineTM1Meas ) ) && !bDoCheckSFIDIncrement  */
-/* 	 && ( psuMeasInfo->uTSCalcType != 2 ) && ( psuMeasInfo->uTSCalcType != 3 ) ) */
-/* 	{ */
-/* 	sprintf(psuMeasInfo->szOutFile,"%s--%s.out",szOutPrefix,psuMeasInfo->szAbbrev); */
-/* 	psuMeasInfo->psuOutFile       = (FILE *) fopen(psuMeasInfo->szOutFile,"wb"); */
-/* 	} */
-/*     else */
-/* 	{ */
-/* 	psuMeasInfo->szOutFile[0]     = '\0'; */
-/* 	psuMeasInfo->psuOutFile       = NULL; */
-/* 	} */
-
-
-/*     return EXIT_SUCCESS; */
-/* } */
-
 int iInitPCMFromASCII(char * szPCMConfFile, struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, 
-		      uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode, uint8_t bDebug )
+		      uint8_t bCombineMSBLSBMeas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode, uint8_t bDebug )
 {
     int iArgIdx;
 
@@ -1124,7 +743,7 @@ void vInitPCMASCIIArrays(struct suPCMInfo * psuPCMInfo)
 }
 
 int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int16_t iMeasIdx,char * szOutPrefix, 
-			      uint8_t bCombineTM1Meas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode )
+			      uint8_t bCombineMSBLSBMeas, uint8_t bDoCheckSFIDIncrement, uint8_t bTStampMode )
 {
     uint16_t uNAsymWRanges;
     uint16_t uNAsymFRanges;
@@ -1182,7 +801,8 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
 	psuMeasInfo->uSampsPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame/psuMeasInfo->uWdInt; //How many of these to expect per frame?
     
     psuMeasInfo->uLSBWord            = psuPCMInfo->pauLSBWord[iMeasIdx] - 1;
-    if ( ( bCombineTM1Meas && ( psuMeasInfo->uLSBWord != TM_SKIP_LSB - 1 ) ) && ( psuMeasInfo->uLSBWord != TM_NO_LSB -1 ) )
+    if ( ( bCombineMSBLSBMeas && ( psuMeasInfo->uLSBWord != TM_SKIP_LSB - 1 ) ) && ( psuMeasInfo->uLSBWord != TM_NO_LSB -1 ) &&
+	 ( psuMeasInfo->uLSBWord != 65535 ) ) //'65535' means uLSBWord was zero for this measurement in the .pcmconf file
 	psuMeasInfo->szAbbrev[szAbbrevLen-4] = '\0';
     
     uNAsymWRanges                    = psuPCMInfo->pauNAsymWRanges[iMeasIdx];
@@ -1323,7 +943,7 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
 
 	//Output file things
 	//Don't make an output file is this is an LSB channel and we're combining samples
-        if ( ( ( psuPCMInfo->uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineTM1Meas ) ) && !bDoCheckSFIDIncrement 
+        if ( ( ( psuPCMInfo->uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineMSBLSBMeas ) ) && !bDoCheckSFIDIncrement 
 	 && ( psuMeasInfo->uTSCalcType != 2 ) && ( psuMeasInfo->uTSCalcType != 3 ) )
 	{
 	sprintf(psuMeasInfo->szOutFile,"%s--%s.out",szOutPrefix,psuMeasInfo->szAbbrev);
@@ -1342,7 +962,7 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
 uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int iMeasIdx, 
 				  uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, 
 				  uint64_t * pullWordsWritten,
-				  uint8_t bCombineTM1Meas, uint8_t bAssembleCounter, uint8_t iWriteSamplesToFile)
+				  uint8_t bCombineMSBLSBMeas, uint8_t bAssembleCounter, uint8_t iWriteSamplesToFile)
 {
 //Modes for iWriteMode
 //====================
@@ -1375,7 +995,7 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 	{
 	if ( (llMinorFrameIdx % psuMeasInfo->uMinorFrInt) == ( psuMeasInfo->uMinorFrame % psuMeasInfo->uMinorFrInt ) )
 	    {
-	    if ( ( psuPCMInfo->bDoCombineMSBAndLSB ) && ( bCombineTM1Meas ) )
+	    if ( ( psuPCMInfo->bDoCombineMSBAndLSB ) && ( bCombineMSBLSBMeas ) )
 		{
 		int iLSBWdIdx;
 		uint16_t uCombinedSample;
@@ -1588,7 +1208,7 @@ uint64_t ullAssembleCounterVal(struct suPCMInfo * psuPCMInfo, int64_t llMinorFra
 
 uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFileSize, 
 					       struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo,
-					       uint16_t * pauMinorFrame, uint8_t bCombineTM1Meas, int64_t * pllPCMWdOffset_GPS)
+					       uint16_t * pauMinorFrame, uint8_t bCombineMSBLSBMeas, int64_t * pllPCMWdOffset_GPS)
 {
     int                  iMeasIdx;
     int                  iArgIdx;
@@ -1667,7 +1287,7 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
 	    ppsuMeasInfo[iMeasIdx]->llSampIdx = 0; 		    //Reset at beginning of loop
 	    ppsuMeasInfo[iMeasIdx]->llTSIdx   = 0;
 
-	    uParseMeasurementSamples(psuPCMInfo, ppsuMeasInfo[iMeasIdx], iMeasIdx, pauMinorFrame, llMinorFrameIdx, &ullWordsWritten, bCombineTM1Meas,1,0);
+	    uParseMeasurementSamples(psuPCMInfo, ppsuMeasInfo[iMeasIdx], iMeasIdx, pauMinorFrame, llMinorFrameIdx, &ullWordsWritten, bCombineMSBLSBMeas,1,0);
 
 	    if ( uTSSWIdx <  uNTSSearchWords )
 		{
@@ -1714,7 +1334,7 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
 
 	if ( !bGotFirstGPSWord )
 	    {
-		if ( bGotNewGPSWord(psuPCMInfo, ppsuMeasInfo[psuPCMInfo->pauGPSMeasIdx[0]], llMinorFrameIdx, pauMinorFrame, bCombineTM1Meas) )
+		if ( bGotNewGPSWord(psuPCMInfo, ppsuMeasInfo[psuPCMInfo->pauGPSMeasIdx[0]], llMinorFrameIdx, pauMinorFrame, bCombineMSBLSBMeas) )
 		{
 		bGotFirstGPSWord = 1;
 		psuPCMInfo->ullCounterVal = ullAssembleCounterVal(psuPCMInfo, llMinorFrameIdx,&psuPCMInfo->ullGPSMFCVal);
@@ -1763,7 +1383,7 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
 }
 
 int bGotNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psuMeasInfo, int64_t llMinorFrameIdx, uint16_t * pauMinorFrame,
-			uint8_t bCombineTM1Meas)
+			uint8_t bCombineMSBLSBMeas)
 {
     int iWdIdx;
 
@@ -1775,7 +1395,7 @@ int bGotNewGPSWord(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * psu
 
     if ( (llMinorFrameIdx % psuMeasInfo->uMinorFrInt) == ( psuMeasInfo->uMinorFrame % psuMeasInfo->uMinorFrInt ) )
 	{
-	if ( ( psuPCMInfo->bDoCombineMSBAndLSB ) && ( bCombineTM1Meas ) )
+	if ( ( psuPCMInfo->bDoCombineMSBAndLSB ) && ( bCombineMSBLSBMeas ) )
 	    {
 	    int iLSBWdIdx;
 	    iWdIdx = psuMeasInfo->uWord;
@@ -1866,7 +1486,7 @@ void vSetTStampInfo(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * ps
 	}
 }
 
-int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, int64_t * pllPCMWdOffset_MajorFrame, int64_t * pllPCMWdOffset_MinorFrame, int64_t * pllPCMWdOffset_GPS, uint64_t * pullWordsWritten, uint8_t bCombineTM1Meas)
+int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsuMeasInfo, uint16_t * pauMinorFrame, int64_t llMinorFrameIdx, int64_t * pllPCMWdOffset_MajorFrame, int64_t * pllPCMWdOffset_MinorFrame, int64_t * pllPCMWdOffset_GPS, uint64_t * pullWordsWritten, uint8_t bCombineMSBLSBMeas)
 {
     int iMeasIdx;
 
@@ -1876,7 +1496,7 @@ int iCalcTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo ** ppsu
     *pllPCMWdOffset_MinorFrame = ( llMinorFrameIdx - 1 ) * psuPCMInfo->ullSampsPerMinorFrame;
     
     //Check for new GPS word in this minor frame, then calculate GPS word offset
-    if ( bGotNewGPSWord(psuPCMInfo, ppsuMeasInfo[psuPCMInfo->pauGPSMeasIdx[0]], llMinorFrameIdx, pauMinorFrame, bCombineTM1Meas) )
+    if ( bGotNewGPSWord(psuPCMInfo, ppsuMeasInfo[psuPCMInfo->pauGPSMeasIdx[0]], llMinorFrameIdx, pauMinorFrame, bCombineMSBLSBMeas) )
 	{
 	vUpdateGPSWord(psuPCMInfo, pllPCMWdOffset_MajorFrame, pllPCMWdOffset_GPS);
 	}
@@ -2138,9 +1758,6 @@ void vFreePCMASCIIArrays(struct suPCMInfo * psuPCMInfo)
     if ( psuPCMInfo->pullInternWordRate != NULL )
 	free( psuPCMInfo->pullInternWordRate );
     
-    //    if ( psuPCMInfo->pauMFCMeasIdx != NULL )
-    //	free( psuPCMInfo->pauMFCMeasIdx );
-    
     //    if ( psuPCMInfo->pauGPSMeasIdx != NULL )
     //	free( psuPCMInfo->pauGPSMeasIdx );
 }
@@ -2148,18 +1765,12 @@ void vFreePCMASCIIArrays(struct suPCMInfo * psuPCMInfo)
 int iMeasurementFree(struct suMeasurementInfo * psuMeasInfo)
 {
     
-    //    if (psuMeasInfo->uNAsymWRanges > 0)
-    //	{
     if ( psuMeasInfo->pauWtemp        != NULL ) free(psuMeasInfo->pauWtemp);
     if ( psuMeasInfo->ppauAsymWRanges != NULL ) free(psuMeasInfo->ppauAsymWRanges);
-	//	}
     
     //free asymm frame ranges
-	//    if (psuMeasInfo->uNAsymFRanges > 0)
-	//	{
     if ( psuMeasInfo->pauFtemp         != NULL ) free(psuMeasInfo->pauFtemp);
     if ( psuMeasInfo->ppauAsymFRanges  != NULL ) free(psuMeasInfo->ppauAsymFRanges);
-        //      }
 
     if ( psuMeasInfo->paullSample      != NULL ) free(psuMeasInfo->paullSample);
 
@@ -2266,18 +1877,13 @@ void vUsage(void)
     printf("                                                                                \n");
     printf("   <filename>   Input file name                                                 \n");
     printf("                                                                                \n");
-    /* printf("   INPUT FILE PARAMETERS                                                        \n"); */
-    /* printf("   -L           TM link number (can be 1-4)                             [%i]    \n",DEF_TM_LINK); */
-    /* printf("                                                                                \n"); */
-    /* printf("                                                                                \n"); */
-    /* printf("   OPTIONAL PARAMETERS                                                          \n"); */
     printf("   PARAMETERS                                                                   \n");
     printf("   -P           PCM config file                                         [none]  \n");
     printf("                 *Open PCM_conf_header.pcmconf to see the format                \n");
     printf("                                                                                \n");
     printf("   -p           Prefix for output files                                 [%s]    \n",DEF_OUTPREFIX);
     printf("                                                                                \n");
-    printf("   -C           Combine MSB/LSB channels on the fly(TM1 Only!)          [%i]    \n",DEF_COMBINE_TM1);
+    printf("   -C           Combine MSB/LSB channels on the fly(TM1 Only!)          [%i]    \n",DEF_COMBINE_MSBLSB);
     printf("   -c           Check integrity of data by following SFID,              [%i]    \n",DEF_DO_CHECK_SFID_INCREMENT);
     printf("                    (no parsed output is produced)                              \n");
     printf("                                                                                \n");
