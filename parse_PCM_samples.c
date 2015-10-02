@@ -479,8 +479,8 @@ int main( int argc, char * argv[] )
     else
 	{
 	printf("\n");
-	printf("Wrote %" PRIu64 "./%" PRIu64 ". (Bytes / Total Bytes) \n", ullTotWordsWritten*2, (suInFileStat.st_size));
-	printf("Wrote %" PRIu64 "./%" PRIu64 ". (Bytes / Total Bytes) \n", ullTotWordsWritten*2, (suInFileStat.st_size));
+	printf("Wrote %" PRIu64 "./%" PRIu64 ". (Bytes / Input File Bytes ) \n", ullTotWordsWritten*2, (suInFileStat.st_size));
+	printf("Wrote %" PRIu64 "./%" PRIu64 ". (Bytes / Input File Bytes ) \n", ullTotWordsWritten*2, (suInFileStat.st_size));
 	printf("Output file size is %.2f%% of input file\n", (float)((float)( ullTotWordsWritten*2 )/(float)(suInFileStat.st_size))*100);
 	}
     
@@ -1347,7 +1347,7 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
 	//Get the proper GPS offset
 	(*pllPCMWdOffset_GPS) = psuPCMInfo->llFirstGPSWord + psuPCMInfo->llMinorFramesPerMajorFrame * (psuPCMInfo->ullGPSMFCVal - psuPCMInfo->ullFirstMFCVal) * psuPCMInfo->ullSampsPerMinorFrame - 1;
 
-	//Get the proper TSSW offset
+	//Get the proper TSSW offset, reset total number of samples
 	for ( iArgIdx = 0; iArgIdx < uNTSSearchWords; iArgIdx++ )
 	    {
 	    iMeasIdx = paiMeasIdx[iArgIdx];
@@ -1364,6 +1364,7 @@ uint8_t bFoundFirstMFCValGPSWordAndSearchWords(FILE * psuInFile, size_t szInFile
 	    /* printf(" psuPCMInfo->ullCounterVal: %11" PRIi64 "\n",psuPCMInfo->ullCounterVal); */
 	    /* printf("             llTSSW_MFCVal: %11" PRIi64 "\n",ppsuMeasInfo[iMeasIdx]->llTSSW_MFCVal); */
 	    /* printf("End search word init\n\n"); */
+	    ppsuMeasInfo[iMeasIdx]->llTotalSampCount = 0;
 	    }
 
 	/* printf("First GPS word       : %" PRIi64 "\n",psuPCMInfo->llFirstGPSWord); */
