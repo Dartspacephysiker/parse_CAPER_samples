@@ -810,15 +810,15 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
     
     if ( bTStampMode )
 	{
-	psuMeasInfo->uTSCalcType     = psuPCMInfo->pauTSCalcType[iMeasIdx];
+	psuMeasInfo->uTSCalcType             = psuPCMInfo->pauTSCalcType[iMeasIdx];
 	if ( psuPCMInfo->pszTSSearchWords[iMeasIdx] != '\0' )
 	    sprintf(psuMeasInfo->szTSSearchWord,"%s",psuPCMInfo->pszTSSearchWords[iMeasIdx]); 
 	else
-	    psuMeasInfo->szTSSearchWord[0] = '\0';
+	    psuMeasInfo->szTSSearchWord[0]   = '\0';
 	}
     else
 	{
-	    psuMeasInfo->uTSCalcType     = 0;
+	    psuMeasInfo->uTSCalcType         = 0;
 	}
     if ( psuPCMInfo->pullInternWordRate[iMeasIdx] > 0 )
 	psuMeasInfo->dInternalWordPeriod     = (double)1/(double)psuPCMInfo->pullInternWordRate[iMeasIdx];
@@ -924,6 +924,8 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
 	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_searchword--samples");
 	else if ( psuMeasInfo->uTSCalcType == 4 )
 	    sprintf(szTStampSuffix,"%s","searchword_tstamps--searchword_samplenumber");
+	else if ( psuMeasInfo->uTSCalcType == 5 )
+	    sprintf(szTStampSuffix,"%s","tstamps_rel_to_searchword");
 
 
 	sprintf(psuMeasInfo->szTStampFile,"%s--%s--%s.txt",szOutPrefix,psuMeasInfo->szAbbrev,szTStampSuffix);
@@ -943,8 +945,8 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
 
 	//Output file things
 	//Don't make an output file is this is an LSB channel and we're combining samples
-        if ( ( ( psuPCMInfo->uTMLink > 1 ) || ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineMSBLSBMeas ) ) && !bDoCheckSFIDIncrement 
-	 && ( psuMeasInfo->uTSCalcType != 2 ) && ( psuMeasInfo->uTSCalcType != 3 ) )
+    if ( ( ( psuMeasInfo->uLSBWord  != TM_SKIP_LSB - 1 ) || !bCombineMSBLSBMeas )  && !bDoCheckSFIDIncrement 
+	 && ( psuMeasInfo->uTSCalcType != 2 ) && ( psuMeasInfo->uTSCalcType != 3 ) ) 
 	{
 	sprintf(psuMeasInfo->szOutFile,"%s--%s.out",szOutPrefix,psuMeasInfo->szAbbrev);
 	psuMeasInfo->psuOutFile       = (FILE *) fopen(psuMeasInfo->szOutFile,"wb");
@@ -975,15 +977,15 @@ uint16_t uParseMeasurementSamples(struct suPCMInfo * psuPCMInfo, struct suMeasur
 
     int iWriteMode;
 
-    if ( iWriteSamplesToFile == 1 )
-	{
-	if ( psuMeasInfo->uTSCalcType <= 1 )
+    if ( iWriteSamplesToFile == 1 ) 
+        {
+	if ( ( psuMeasInfo->uTSCalcType <= 1 ) || ( psuMeasInfo->uTSCalcType == 4 ) || ( psuMeasInfo->uTSCalcType == 5 ) )
 	    iWriteMode = 1;
 	else if ( ( psuMeasInfo->uTSCalcType == 2 ) || ( psuMeasInfo->uTSCalcType == 3 ) )
 	    iWriteMode = 2;
 	else if ( psuMeasInfo->uTSCalcType == 4 )
 	    iWriteMode = 1;
-	}
+        }
     else
 	{
 	iWriteMode = 0;
@@ -1466,7 +1468,7 @@ void vSetTStampInfo(struct suPCMInfo * psuPCMInfo, struct suMeasurementInfo * ps
 	psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llTSIdx] = iWdIdx;
 	psuMeasInfo->llTSIdx++;
 	}
-    else if ( psuMeasInfo->uTSCalcType == 3 )
+    else if ( ( psuMeasInfo->uTSCalcType == 3 ) || ( psuMeasInfo->uTSCalcType == 5 ) )
 	{
 	psuMeasInfo->pallPCMWdOffsets[psuMeasInfo->llTSIdx] = psuMeasInfo->llTotalSampCount;
 	psuMeasInfo->llTSIdx++;
@@ -1543,7 +1545,10 @@ int iWriteMeasurementTStamps(struct suPCMInfo * psuPCMInfo, struct suMeasurement
 	    llPCMWdOffset_Measurement = ( psuMeasInfo->pallPCMWdOffsets[iArgIdx] - psuMeasInfo->llTSSW_SampleNum ) / 2.0; //rel to current search word
 	    dTimeOffset_Measurement = (double) llPCMWdOffset_Measurement * psuMeasInfo->dInternalWordPeriod + dTimeOffset_SW;
 		
-	    fprintf(psuMeasInfo->psuTStampFile,"%12.8f\t%10" PRIu64 "\n",dTimeOffset_Measurement,psuMeasInfo->paullSample[iArgIdx]);
+	    if ( ( psuMeasInfo->uTSCalcType == 3 ) || ( psuMeasInfo->uTSCalcType == 4 ) )
+	        fprintf(psuMeasInfo->psuTStampFile,"%12.8f\t%10" PRIu64 "\n",dTimeOffset_Measurement,psuMeasInfo->paullSample[iArgIdx]);
+	    else
+	        fprintf(psuMeasInfo->psuTStampFile,"%12.8f\n",dTimeOffset_Measurement);
 	    (*pullWordsWritten)++;
 	    }
 	}
