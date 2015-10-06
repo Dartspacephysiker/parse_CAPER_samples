@@ -22,6 +22,9 @@
      2015/09/30 (v0.3)    The program now exclusively runs with .pcmconf files (using newfangled 
                           ascii_reader.h), and many error guards are now in place. Cool updated 
 		          usage screen. Maybe it's ready to give to Jim Diehl?
+			  
+     2015/10/06           Added 5 as a TSCalc mode so we can have ASCII tstamps rel. to TSSW and binary data.
+                          Also some error protection for invalid TSCalc modes.
 */
 
 
@@ -237,8 +240,6 @@ int main( int argc, char * argv[] )
 	err = EXIT_FAILURE;
 	printf("No .pcmconf file specified! Please specify with -P <pcmconf file> at the command line.\n");
 	}
-    /* else */
-    /* 	err = iInitPCM(psuPCMInfo, uTMLink, bCombineMSBLSBMeas, bDoCheckSFIDIncrement, bTStampMode); */
     if ( err == EXIT_FAILURE )
 	{
 	printf("Couldn't init PCM! Exiting...\n");
@@ -308,16 +309,12 @@ int main( int argc, char * argv[] )
 					    bCombineMSBLSBMeas, bDoCheckSFIDIncrement, bTStampMode);
 	if ( err == EXIT_FAILURE )
 	    {
-	    printf("Couldn't init PCM! Exiting...\n");
+	    printf("Couldn't initialize measurement %" PRIi16 "! Exiting...\n", iMeasIdx);
+	    iPCMFree(psuPCMInfo);
 	    return EXIT_FAILURE;
 	    }
-	/* else */
-	/*     err = iInitMeasurement(psuPCMInfo, ppsuMeasInfo[iMeasIdx],iMeasIdx,szOutPrefix, */
-	/* 			   bCombineMSBLSBMeas, bDoCheckSFIDIncrement, bTStampMode); */
 	if (bVerbose) vPrintMeasurementInfo(ppsuMeasInfo[iMeasIdx]);
 	}
-    //    return EXIT_SUCCESS;
-
 
     //initialize major frame, binary array for keeping track of
     psuPCMInfo->ullBytesPerMinorFrame = psuPCMInfo->ullSampsPerMinorFrame * sizeof(uint16_t);
@@ -912,7 +909,13 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
 	psuMeasInfo->paullSample[iTmpIdx] = -1;
 
     //Do timestamp stuff
-    if ( psuMeasInfo->uTSCalcType > 0 )
+    if ( psuMeasInfo->uTSCalcType == 0 )
+	{
+	psuMeasInfo->szTStampFile[0]  = '\0';
+	psuMeasInfo->psuTStampFile    = NULL;
+	psuMeasInfo->pallPCMWdOffsets = NULL;
+	}
+    else if ( ( psuMeasInfo->uTSCalcType > 0 ) && ( psuMeasInfo->uTSCalcType <= 5 ) )
 	{
 	char szTStampSuffix[128];
 	
@@ -933,13 +936,12 @@ int iInitMeasurementFromASCII(struct suPCMInfo * psuPCMInfo, struct suMeasuremen
 	psuMeasInfo->pallPCMWdOffsets  = (int64_t *) malloc(psuMeasInfo->uSampsPerMinorFrame * sizeof(int64_t));
 	if ( psuMeasInfo->pallPCMWdOffsets == NULL )
 	    return EXIT_FAILURE;
-	
 	}
     else
 	{
-	psuMeasInfo->szTStampFile[0]  = '\0';
-	psuMeasInfo->psuTStampFile    = NULL;
-	psuMeasInfo->pallPCMWdOffsets = NULL;
+	    printf("Invalid uTSCalcType for measurement %s: %" PRIu16 "\n",psuMeasInfo->szName,psuMeasInfo->uTSCalcType);
+	    printf("Exiting...\n");
+	    return EXIT_FAILURE;
 	}
     //	psuMeasInfo->uOffsetBufCount  = 0;
 

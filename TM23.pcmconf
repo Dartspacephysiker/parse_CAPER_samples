@@ -67,8 +67,9 @@
 #
 #CalcType = 1: TStamps calculated relative to GPS word, samples output to binary
 #CalcType = 2: TStamps calculated relative to GPS word, samples and TStamps output to ASCII
-#Calctype = 3: TStamps calculated rel. to TSSW, using measurement's word period.
-#Calctype = 4: TStamps for searchword are outputted along with the TSSW sample number where the searchword was found
+#CalcType = 3: TStamps calculated rel. to TSSW, using measurement's word period; samples and TStamps output to ASCII
+#CalcType = 4: TStamps for searchword are outputted along with the TSSW sample number where the searchword was found
+#CalcType = 5: TStamps calculated rel. to TSSW, using measurement's word period; samples to binary and TStamps to ASCII
 ##################################################################################
 
 #Description of TM link
